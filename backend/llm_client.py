@@ -38,6 +38,23 @@ class LLMClient:
         # Obtém o adaptador correspondente ao provedor configurado
         self.adapter: BaseLLMAdapter = LLMGatewayFactory.from_config(config)
 
+    def _resolve_model(self, model_override: Optional[str]) -> Optional[str]:
+        """
+        Sanitiza overrides de modelo por agente.
+        Se o provedor atual não for Ollama e o override contiver formato de tag local (ex: 'llama3:latest'),
+        faz fallback seguro para o modelo configurado no provedor ativo.
+        """
+        if not model_override or not model_override.strip():
+            return None
+        candidate = model_override.strip()
+        if self.provider != "ollama" and ":" in candidate:
+            logger.warning(
+                f"Ignorando model_override '{candidate}' incompatível com o provedor '{self.provider}'. "
+                f"Utilizando modelo ativo '{self.model}'."
+            )
+            return None
+        return candidate
+
     async def generate_response(
         self,
         messages: List[Dict[str, str]],
@@ -47,11 +64,12 @@ class LLMClient:
         timeout: float = 60.0
     ) -> str:
         """Executa a inferência e retorna a resposta completa em texto."""
+        effective_model = self._resolve_model(model_override)
         try:
             return await self.adapter.generate(
                 messages=messages,
                 system_prompt=system_prompt,
-                model_override=model_override,
+                model_override=effective_model,
                 json_mode=json_mode,
                 timeout=timeout
             )
@@ -68,11 +86,12 @@ class LLMClient:
         timeout: float = 60.0
     ) -> AsyncGenerator[str, None]:
         """Gera resposta em streaming gerando tokens em tempo real."""
+        effective_model = self._resolve_model(model_override)
         try:
             async for token in self.adapter.stream(
                 messages=messages,
                 system_prompt=system_prompt,
-                model_override=model_override,
+                model_override=effective_model,
                 timeout=timeout
             ):
                 yield token

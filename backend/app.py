@@ -426,7 +426,7 @@ async def create_agent(req: AgentCreateRequest):
         subordinate_ids=[],
         desk_id=req.desk_id,
         system_prompt=req.system_prompt or "Você é um assistente técnico inteligente.",
-        model_name=req.model_name or config.model or "llama3:latest"
+        model_name=(req.model_name or "").strip()
     )
 
     # Ocupar a mesa

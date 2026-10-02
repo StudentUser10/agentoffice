@@ -256,7 +256,7 @@ class OfficeUI {
       supervisor_id: this.agentRoleSelect.value === 'worker' ? this.agentSupervisorSelect.value : null,
       desk_id: this.agentDeskSelect.value,
       system_prompt: this.agentPromptInput.value.trim(),
-      model_name: this.agentModelInput.value.trim() || undefined
+      model_name: this.agentModelInput.value.trim()
     };
 
     if (!payload.name) {

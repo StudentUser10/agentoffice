@@ -13,7 +13,7 @@
       ],
       "desk_id": "desk-1",
       "system_prompt": "Você é o Tech Lead do time.",
-      "model_name": "llama3:latest",
+      "model_name": "",
       "state": "idle"
     },
     {
@@ -26,7 +26,7 @@
       "subordinate_ids": [],
       "desk_id": "desk-2",
       "system_prompt": "Você desenvolve APIs robustas.",
-      "model_name": "llama3:latest",
+      "model_name": "",
       "state": "idle"
     }
   ],
@@ -179,6 +179,24 @@
         "role": "user",
         "text": "Construa uma rota para listar produtos.",
         "timestamp": 1790925553.7693765
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "oi",
+        "timestamp": 1790925937.2848346
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "oi",
+        "timestamp": 1790925968.571164
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "oi",
+        "timestamp": 1790926005.080163
       }
     ]
   }
