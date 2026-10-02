@@ -55,14 +55,19 @@ DEFAULT_WORKSPACE = {
     "version": "2.0",
     "agents": [],
     "desks": [
-        {"id": "desk-1", "name": "Mesa 1 (Tech Lead)", "x": 102, "y": 120, "seat_x": 140, "seat_y": 105, "front_x": 140, "front_y": 185, "width": 76, "height": 48, "agent_id": None},
-        {"id": "desk-2", "name": "Mesa 2 (Backend)", "x": 342, "y": 120, "seat_x": 380, "seat_y": 105, "front_x": 380, "front_y": 185, "width": 76, "height": 48, "agent_id": None},
-        {"id": "desk-3", "name": "Mesa 3 (Frontend)", "x": 582, "y": 120, "seat_x": 620, "seat_y": 105, "front_x": 620, "front_y": 185, "width": 76, "height": 48, "agent_id": None},
-        {"id": "desk-4", "name": "Mesa 4 (DevOps)", "x": 102, "y": 340, "seat_x": 140, "seat_y": 325, "front_x": 140, "front_y": 405, "width": 76, "height": 48, "agent_id": None},
-        {"id": "desk-5", "name": "Mesa 5 (QA & Testes)", "x": 342, "y": 340, "seat_x": 380, "seat_y": 325, "front_x": 380, "front_y": 405, "width": 76, "height": 48, "agent_id": None},
-        {"id": "desk-6", "name": "Mesa 6 (Data & AI)", "x": 582, "y": 340, "seat_x": 620, "seat_y": 325, "front_x": 620, "front_y": 405, "width": 76, "height": 48, "agent_id": None}
+        {"id": "desk-sudo", "name": "Mesa Diretoria (Sudo)", "room_id": "room_sudo", "x": 140, "y": 90, "seat_x": 195, "seat_y": 75, "front_x": 195, "front_y": 165, "width": 110, "height": 55, "agent_id": None},
+        {"id": "desk-1", "name": "Mesa 1 (Líder Dev)", "room_id": "room_dev", "x": 55, "y": 355, "seat_x": 93, "seat_y": 340, "front_x": 93, "front_y": 425, "width": 76, "height": 48, "agent_id": None},
+        {"id": "desk-2", "name": "Mesa 2 (Dev Backend)", "room_id": "room_dev", "x": 160, "y": 355, "seat_x": 198, "seat_y": 340, "front_x": 198, "front_y": 425, "width": 76, "height": 48, "agent_id": None},
+        {"id": "desk-3", "name": "Mesa 3 (Dev Frontend)", "room_id": "room_dev", "x": 265, "y": 355, "seat_x": 303, "seat_y": 340, "front_x": 303, "front_y": 425, "width": 76, "height": 48, "agent_id": None},
+        {"id": "desk-sec-1", "name": "Mesa Sec (Líder)", "room_id": "room_sec", "x": 430, "y": 95, "seat_x": 468, "seat_y": 80, "front_x": 468, "front_y": 165, "width": 76, "height": 48, "agent_id": None},
+        {"id": "desk-sec-2", "name": "Mesa Sec (Auditor)", "room_id": "room_sec", "x": 535, "y": 95, "seat_x": 573, "seat_y": 80, "front_x": 573, "front_y": 165, "width": 76, "height": 48, "agent_id": None},
+        {"id": "desk-4", "name": "Mesa 4 (SecOps / DevOps)", "room_id": "room_sec", "x": 640, "y": 95, "seat_x": 678, "seat_y": 80, "front_x": 678, "front_y": 165, "width": 76, "height": 48, "agent_id": None},
+        {"id": "desk-doc-1", "name": "Mesa Doc (Líder)", "room_id": "room_doc", "x": 430, "y": 355, "seat_x": 468, "seat_y": 340, "front_x": 468, "front_y": 425, "width": 76, "height": 48, "agent_id": None},
+        {"id": "desk-5", "name": "Mesa 5 (Tech Writer & QA)", "room_id": "room_doc", "x": 535, "y": 355, "seat_x": 573, "seat_y": 340, "front_x": 573, "front_y": 425, "width": 76, "height": 48, "agent_id": None},
+        {"id": "desk-6", "name": "Mesa 6 (UI/UX & Data)", "room_id": "room_doc", "x": 640, "y": 355, "seat_x": 678, "seat_y": 340, "front_x": 678, "front_y": 425, "width": 76, "height": 48, "agent_id": None}
     ],
-    "conversations": {}
+    "conversations": {},
+    "active_tickets": []
 }
 
 

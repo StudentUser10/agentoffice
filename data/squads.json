@@ -50,13 +50,68 @@
     {
       "id": "squad-core-engineering",
       "name": "Squad Core Engineering",
-      "description": "Equipe multifuncional de engenharia para desenvolvimento, revisão e arquitetura.",
-      "agent_ids": [
-        "template-tech-lead",
-        "template-python-dev",
-        "template-qa"
+      "room_id": "room_dev",
+      "leader_id": "agent-ed3237",
+      "member_ids": [
+        "agent-ed3237",
+        "agent-31d838",
+        "agent-628ce1"
       ],
-      "created_at": 1700000000.0
+      "agent_ids": [
+        "agent-ed3237",
+        "agent-31d838",
+        "agent-628ce1"
+      ],
+      "domain_tags": [
+        "python",
+        "fastapi",
+        "sqlite",
+        "backend",
+        "api"
+      ],
+      "color_theme": "#10b981",
+      "description": "Engenharia e desenvolvimento de software, APIs e bancos de dados.",
+      "created_at": 1790949869.0811787
+    },
+    {
+      "id": "squad-security",
+      "name": "Squad Segurança Cibernética",
+      "room_id": "room_sec",
+      "leader_id": "agent-sec-lead",
+      "member_ids": [
+        "agent-sec-lead"
+      ],
+      "agent_ids": [
+        "agent-sec-lead"
+      ],
+      "domain_tags": [
+        "security",
+        "owasp",
+        "audit",
+        "sql_injection",
+        "cryptography"
+      ],
+      "color_theme": "#a855f7",
+      "description": "Auditoria de código, sanitização, hardening e segurança ofensiva/defensiva.",
+      "created_at": 1790949869.0811932
+    },
+    {
+      "id": "squad-documentation",
+      "name": "Squad Documentação & QA",
+      "room_id": "room_doc",
+      "leader_id": "",
+      "member_ids": [],
+      "agent_ids": [],
+      "domain_tags": [
+        "documentation",
+        "qa",
+        "markdown",
+        "openapi",
+        "testing"
+      ],
+      "color_theme": "#38bdf8",
+      "description": "Especificações técnicas, relatórios arquiteturais e garantia de conformidade.",
+      "created_at": 1790949869.081198
     }
   ]
 }

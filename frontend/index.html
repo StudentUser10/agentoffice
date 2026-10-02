@@ -21,6 +21,12 @@
     </div>
 
     <div class="header-status">
+      <button class="btn-icon" id="openSudoModalBtn" type="button" title="Sala da Diretoria (Sudo Agent)" style="background: rgba(245, 158, 11, 0.15); border-color: #f59e0b; color: #fbbf24;">
+        👑 Diretoria (Sudo)
+      </button>
+      <button class="btn-icon header-badge-btn" id="openHierarchyBtn" type="button" title="Organograma Corporativo e Tickets Inter-Squad">
+        🏛️ Organograma & Tickets <span class="badge-count" id="ticketsActiveBadge" style="display: none; background: #a855f7;">0</span>
+      </button>
       <button class="btn-icon header-badge-btn" id="openKanbanBtn" type="button" title="Abrir Quadro de Tarefas Kanban">
         📋 Quadro Kanban <span class="badge-count" id="kanbanActiveBadge" style="display: none;">0</span>
       </button>
@@ -417,6 +423,111 @@
           <div class="detail-section-title" style="margin-bottom: 8px;">⚙️ Ambiente de Execução</div>
           <div class="sys-info-grid" id="diagSystemInfo"></div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal da Sala da Diretoria (Sudo Agent) -->
+  <div class="modal-overlay" id="sudoModal">
+    <div class="modal-card sudo-modal-card" style="max-width: 680px; width: 90%;">
+      <div class="modal-header" style="border-bottom: 2px solid rgba(245, 158, 11, 0.3);">
+        <div class="modal-title-group">
+          <div class="modal-icon" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b;">👑</div>
+          <div>
+            <div class="modal-title" style="color: #fbbf24;">Sala da Diretoria — Sudo Agent</div>
+            <div class="modal-subtitle">Orquestrador Supremo Corporativo & Distribuição de Metas Departamentais</div>
+          </div>
+        </div>
+        <button class="btn-close" id="closeSudoModalBtn" type="button">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 18px 24px; display: flex; flex-direction: column; gap: 16px;">
+        <div class="sudo-banner">
+          <div class="sudo-banner-icon">🏛️</div>
+          <div class="sudo-banner-info">
+            <div class="sudo-banner-title">Diretriz Executiva: Decomposição e Governança</div>
+            <div class="sudo-banner-desc">O Sudo Agent não escreve código diretamente. Ele analisa o escopo da meta macro, despacha os épicos com critérios de aceite aos Líderes Departamentais, supervisiona a colaboração inter-squad e consolida o parecer final.</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="sudoMacroGoalInput">🎯 Meta Macro do Usuário / Missão Executiva:</label>
+          <textarea class="form-input" id="sudoMacroGoalInput" rows="3" placeholder="Ex: Desenvolva uma API simples de usuários com banco SQLite e faça uma análise de vulnerabilidades de segurança das rotas criadas" style="resize: vertical; font-size: 13px;"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+          <div class="quick-examples" style="display: flex; gap: 8px;">
+            <button class="btn-action btn-sm" id="sudoExampleBtn1" type="button" style="font-size: 11px;">Exemplo: API Usuários + Auditoria Sec</button>
+            <button class="btn-action btn-sm" id="sudoExampleBtn2" type="button" style="font-size: 11px;">Exemplo: Refatorar ORM + Docs</button>
+          </div>
+          <button class="btn-primary" id="dispatchSudoGoalBtn" type="button" style="background: linear-gradient(135deg, #f59e0b, #d97706); border-color: #f59e0b;">
+            <span>🚀</span> Despachar Meta aos Squads
+          </button>
+        </div>
+
+        <!-- Live Status / Progress Bar -->
+        <div class="sudo-progress-box" id="sudoProgressBox" style="display: none;">
+          <div class="sudo-progress-header">
+            <span class="status-dot active"></span>
+            <span id="sudoProgressTitle">Orquestrador analisando demanda...</span>
+          </div>
+          <div class="sudo-steps-indicator">
+            <span class="sudo-step" id="step-1">1. Planejamento Sudo</span>
+            <span class="sudo-step" id="step-2">2. Despacho Squads</span>
+            <span class="sudo-step" id="step-3">3. Tickets Inter-Squad</span>
+            <span class="sudo-step" id="step-4">4. Parecer Executivo</span>
+          </div>
+        </div>
+
+        <!-- Executive Consolidated Delivery Card -->
+        <div class="sudo-delivery-container" id="sudoDeliveryContainer" style="display: none;">
+          <div class="delivery-header">
+            <span>🏆</span> PARECER CONSOLIDADO DA DIRETORIA
+          </div>
+          <div class="delivery-content" id="sudoDeliveryContent"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal do Organograma Corporativo e Tickets Inter-Squad -->
+  <div class="modal-overlay" id="hierarchyModal">
+    <div class="modal-card hierarchy-modal-card" style="max-width: 760px; width: 92%;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon" style="background: rgba(168, 85, 247, 0.2); border: 1px solid #a855f7;">🏛️</div>
+          <div>
+            <div class="modal-title">Governança Corporativa & Comunicação Inter-Squad</div>
+            <div class="modal-subtitle">Organograma hierárquico em 3 níveis e fila de assistência técnica entre líderes</div>
+          </div>
+        </div>
+        <button class="btn-close" id="closeHierarchyBtn" type="button">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 18px 24px; max-height: 75vh; overflow-y: auto;">
+        
+        <!-- Tabs -->
+        <div class="hierarchy-tabs" style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+          <button class="hierarchy-tab-btn active" id="tabOrganogramBtn" type="button">🏢 Organograma Corporativo</button>
+          <button class="hierarchy-tab-btn" id="tabTicketsBtn" type="button">🤝 Tickets Inter-Squad (<span id="tabTicketsCount">0</span>)</button>
+        </div>
+
+        <!-- Tab 1: Organograma -->
+        <div class="hierarchy-tab-content active" id="tabContentOrganogram">
+          <div class="organogram-tree" id="organogramTree">
+            <!-- Renderizado dinamicamente -->
+          </div>
+        </div>
+
+        <!-- Tab 2: Tickets Inter-Squad -->
+        <div class="hierarchy-tab-content" id="tabContentTickets" style="display: none;">
+          <div class="tickets-toolbar" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 12px; color: var(--text-muted);">Protocolo Lateral: Solicitações formais de serviço entre Líderes Departamentais</div>
+            <button class="btn-action btn-sm" id="refreshTicketsBtn" type="button">🔄 Atualizar Fila</button>
+          </div>
+          <div class="tickets-list" id="ticketsListContainer">
+            <!-- Cards de tickets renderizados dinamicamente -->
+          </div>
+        </div>
+
       </div>
     </div>
   </div>

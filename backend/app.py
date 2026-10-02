@@ -27,6 +27,7 @@ from backend.models import (
     Agent,
     AgentCreateRequest,
     AgentRoleType,
+    AgentTier,
     AgentTemplate,
     AgentUpdateRequest,
     ApprovalDecisionRequest,
@@ -34,6 +35,7 @@ from backend.models import (
     ChatRequest,
     ConfigResponse,
     ConfigUpdateRequest,
+    CrossSquadTicket,
     DetectModelsResponse,
     DiagnosticItem,
     DiagnosticResult,
@@ -58,6 +60,8 @@ from backend.models import (
     WorkspaceData,
 )
 from backend.orchestrator import orchestrator
+from backend.orchestrator_multi_tier import multi_tier_orchestrator
+from backend.tools.squad_tools import resolve_cross_squad_ticket
 from backend.diagnostics import run_system_diagnostics
 from backend.storage import storage
 from backend.websocket_hub import hub
@@ -567,16 +571,49 @@ async def get_agent_conversations(agent_id: str):
 async def send_chat_message(payload: ChatRequest):
     """
     Recebe um comando/mensagem do usuário para o agente e dispara a orquestração assíncrona.
+    Se o agente for do tier SUDO (ou Diretoria), executa a orquestração multinível corporativa.
     """
     workspace = storage.load_workspace()
     agent = next((a for a in workspace.agents if a.id == payload.agent_id), None)
     if not agent:
         raise HTTPException(status_code=404, detail="Agente não encontrado.")
 
-    # Dispara em background para liberar o endpoint imediatamente
-    asyncio.create_task(orchestrator.execute_task(payload.agent_id, payload.message))
+    # Se for Sudo Agent, aciona o fluxo corporativo multinível
+    if getattr(agent, "tier", None) == AgentTier.SUDO or "diretor" in agent.title.lower() or "sudo" in agent.name.lower():
+        asyncio.create_task(multi_tier_orchestrator.handle_sudo_macro_goal(payload.message))
+    else:
+        # Dispara orquestrador padrão em background
+        asyncio.create_task(orchestrator.execute_task(payload.agent_id, payload.message))
 
     return {"status": "started", "agent_id": payload.agent_id}
+
+
+@app.post("/api/sudo/chat")
+async def send_sudo_macro_chat(payload: Dict[str, str]):
+    """Endpoint direto para submissão de metas macro ao Sudo Agent na Diretoria."""
+    message = payload.get("message", "").strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="O objetivo macro não pode ser vazio.")
+
+    asyncio.create_task(multi_tier_orchestrator.handle_sudo_macro_goal(message))
+    return {"status": "started", "mode": "multi_tier_executive_governance"}
+
+
+@app.get("/api/tickets", response_model=List[CrossSquadTicket])
+async def list_cross_squad_tickets():
+    """Retorna os tickets inter-squad ativos e resolvidos."""
+    workspace = storage.load_workspace()
+    return getattr(workspace, "active_tickets", []) or []
+
+
+@app.post("/api/tickets/{ticket_id}/resolve")
+async def resolve_ticket_api(ticket_id: str, payload: Dict[str, str]):
+    """Resolve um ticket inter-squad com entrega de artefato técnico."""
+    result = payload.get("result_artifact", "Entregável aprovado e verificado.")
+    success = await resolve_cross_squad_ticket(ticket_id, result)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Ticket '{ticket_id}' não encontrado.")
+    return {"status": "resolved", "ticket_id": ticket_id}
 
 
 # --- Eventos do Ciclo de Vida da Aplicação ---

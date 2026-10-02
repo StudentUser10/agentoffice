@@ -142,6 +142,61 @@ class ConnectionManager:
             "desk_id": desk_id
         })
 
+    async def broadcast_squad_dispatched(self, payload: Dict[str, Any]):
+        """Notifica quando o Sudo Agent emite uma meta para um departamento."""
+        await self.broadcast({
+            "type": "squad.dispatched",
+            "event": "squad.dispatched",
+            **payload
+        })
+
+    async def broadcast_agent_cross_room_move(
+        self,
+        agent_id: str,
+        from_room_id: str,
+        to_room_id: str,
+        target_desk_id: str,
+        ticket_id: str = "",
+        service_label: str = ""
+    ):
+        """Notifica quando um agente transita fisicamente entre salas pelo corredor."""
+        await self.broadcast({
+            "type": "agent.cross_room_move",
+            "event": "agent.cross_room_move",
+            "agent_id": agent_id,
+            "from_room_id": from_room_id,
+            "to_room_id": to_room_id,
+            "target_desk_id": target_desk_id,
+            "ticket_id": ticket_id,
+            "service_label": service_label
+        })
+
+    async def broadcast_squad_cross_request(self, ticket_data: Dict[str, Any], from_leader_id: str, to_leader_id: str):
+        """Notifica criação de ticket inter-squad (destaca os dois líderes no mapa)."""
+        await self.broadcast({
+            "type": "squad.cross_request",
+            "event": "squad.cross_request",
+            "ticket": ticket_data,
+            "from_leader_id": from_leader_id,
+            "to_leader_id": to_leader_id
+        })
+
+    async def broadcast_squad_ticket_resolved(self, ticket_data: Dict[str, Any]):
+        """Notifica que a dependência inter-squad externa foi entregue ao líder solicitante."""
+        await self.broadcast({
+            "type": "squad.ticket_resolved",
+            "event": "squad.ticket_resolved",
+            "ticket": ticket_data
+        })
+
+    async def broadcast_sudo_final_delivery(self, payload: Dict[str, Any]):
+        """Notifica a consolidação geral da missão macro pelo Sudo Agent."""
+        await self.broadcast({
+            "type": "sudo.final_delivery",
+            "event": "sudo.final_delivery",
+            **payload
+        })
+
 
 # Instância global singleton
 hub = ConnectionManager()

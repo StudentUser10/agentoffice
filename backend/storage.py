@@ -105,8 +105,37 @@ DEFAULT_SQUADS = [
     {
         "id": "squad-core-engineering",
         "name": "Squad Core Engineering",
+        "room_id": "room_dev",
+        "leader_id": "agent-dev-leader",
+        "member_ids": ["agent-dev-leader", "agent-dev-backend", "agent-dev-frontend"],
+        "agent_ids": ["agent-dev-leader", "agent-dev-backend", "agent-dev-frontend"],
+        "domain_tags": ["python", "api", "database", "fastapi", "sqlite", "frontend"],
+        "color_theme": "#10b981",
         "description": "Equipe multifuncional de engenharia para desenvolvimento, revisão e arquitetura.",
-        "agent_ids": ["template-tech-lead", "template-python-dev", "template-qa"],
+        "created_at": 1700000000.0
+    },
+    {
+        "id": "squad-security",
+        "name": "Squad Cyber Security",
+        "room_id": "room_sec",
+        "leader_id": "agent-sec-leader",
+        "member_ids": ["agent-sec-leader", "agent-sec-auditor"],
+        "agent_ids": ["agent-sec-leader", "agent-sec-auditor"],
+        "domain_tags": ["security", "audit", "crypto", "hardening", "vulnerabilities"],
+        "color_theme": "#a855f7",
+        "description": "Auditoria de segurança, análise de vulnerabilidades, sanitização e conformidade.",
+        "created_at": 1700000000.0
+    },
+    {
+        "id": "squad-documentation",
+        "name": "Squad Documentação & QA",
+        "room_id": "room_doc",
+        "leader_id": "agent-doc-leader",
+        "member_ids": ["agent-doc-leader", "agent-doc-writer"],
+        "agent_ids": ["agent-doc-leader", "agent-doc-writer"],
+        "domain_tags": ["documentation", "qa", "specs", "manuals", "markdown", "design"],
+        "color_theme": "#f59e0b",
+        "description": "Documentação técnica, especificações de endpoints e manuais de arquitetura.",
         "created_at": 1700000000.0
     }
 ]

@@ -58,12 +58,76 @@ class OfficeUI {
     this.missionExitCondition = document.getElementById('missionExitCondition');
     this.missionAllowedTools = document.getElementById('missionAllowedTools');
     this.dismissAgentBtn = document.getElementById('dismissAgentBtn');
+
+    // Etapa 7: Sala da Diretoria (Sudo) & Hierarquia Modal
+    this.openSudoModalBtn = document.getElementById('openSudoModalBtn');
+    this.closeSudoModalBtn = document.getElementById('closeSudoModalBtn');
+    this.sudoModal = document.getElementById('sudoModal');
+    this.sudoMacroGoalInput = document.getElementById('sudoMacroGoalInput');
+    this.dispatchSudoGoalBtn = document.getElementById('dispatchSudoGoalBtn');
+    this.sudoExampleBtn1 = document.getElementById('sudoExampleBtn1');
+    this.sudoExampleBtn2 = document.getElementById('sudoExampleBtn2');
+    this.sudoProgressBox = document.getElementById('sudoProgressBox');
+    this.sudoProgressTitle = document.getElementById('sudoProgressTitle');
+    this.sudoDeliveryContainer = document.getElementById('sudoDeliveryContainer');
+    this.sudoDeliveryContent = document.getElementById('sudoDeliveryContent');
+
+    this.openHierarchyBtn = document.getElementById('openHierarchyBtn');
+    this.closeHierarchyBtn = document.getElementById('closeHierarchyBtn');
+    this.hierarchyModal = document.getElementById('hierarchyModal');
+    this.tabOrganogramBtn = document.getElementById('tabOrganogramBtn');
+    this.tabTicketsBtn = document.getElementById('tabTicketsBtn');
+    this.tabContentOrganogram = document.getElementById('tabContentOrganogram');
+    this.tabContentTickets = document.getElementById('tabContentTickets');
+    this.organogramTree = document.getElementById('organogramTree');
+    this.ticketsListContainer = document.getElementById('ticketsListContainer');
+    this.refreshTicketsBtn = document.getElementById('refreshTicketsBtn');
+    this.tabTicketsCount = document.getElementById('tabTicketsCount');
+    this.ticketsActiveBadge = document.getElementById('ticketsActiveBadge');
   }
 
   setupEvents() {
     // Fechar modais
     this.closeAgentModalBtn.addEventListener('click', () => this.closeAgentModal());
     this.closeChatBtn.addEventListener('click', () => this.closeChatDrawer());
+
+    // Modal da Diretoria (Sudo)
+    if (this.openSudoModalBtn) {
+      this.openSudoModalBtn.addEventListener('click', () => this.openSudoModal());
+    }
+    if (this.closeSudoModalBtn) {
+      this.closeSudoModalBtn.addEventListener('click', () => this.closeSudoModal());
+    }
+    if (this.sudoExampleBtn1) {
+      this.sudoExampleBtn1.addEventListener('click', () => {
+        this.sudoMacroGoalInput.value = "Desenvolva uma API simples de usuários com banco SQLite e faça uma análise de vulnerabilidades de segurança das rotas criadas";
+      });
+    }
+    if (this.sudoExampleBtn2) {
+      this.sudoExampleBtn2.addEventListener('click', () => {
+        this.sudoMacroGoalInput.value = "Crie uma camada de repositório ORM para produtos e gere a documentação técnica da arquitetura";
+      });
+    }
+    if (this.dispatchSudoGoalBtn) {
+      this.dispatchSudoGoalBtn.addEventListener('click', () => this.dispatchSudoMacroGoal());
+    }
+
+    // Modal do Organograma & Tickets
+    if (this.openHierarchyBtn) {
+      this.openHierarchyBtn.addEventListener('click', () => this.openHierarchyModal());
+    }
+    if (this.closeHierarchyBtn) {
+      this.closeHierarchyBtn.addEventListener('click', () => this.closeHierarchyModal());
+    }
+    if (this.tabOrganogramBtn) {
+      this.tabOrganogramBtn.addEventListener('click', () => this.switchHierarchyTab('organogram'));
+    }
+    if (this.tabTicketsBtn) {
+      this.tabTicketsBtn.addEventListener('click', () => this.switchHierarchyTab('tickets'));
+    }
+    if (this.refreshTicketsBtn) {
+      this.refreshTicketsBtn.addEventListener('click', () => this.loadActiveTickets());
+    }
 
     // Toggle Missão Cirúrgica do Subagente
     if (this.toggleMissionBtn) {
@@ -218,6 +282,31 @@ class OfficeUI {
       this.sendChatBtn.disabled = false;
       this.chatInput.disabled = false;
       this.chatInput.focus();
+    });
+
+    // Eventos da Arquitetura Multinível (Etapa 7: Sudo Agent & Inter-Squad)
+    socket.on('squad.dispatched', (data) => {
+      this.logActivity(`👑 [Sudo Agent] Épico '${data.epic_title}' despachado para squad '${data.squad_name || data.squad_id}'!`, 'notice');
+      this.updateSudoStep(2, `Épico despachado para ${data.squad_name || data.squad_id}...`);
+    });
+
+    socket.on('squad.cross_request', (data) => {
+      const ticket = data.ticket_data || data;
+      this.logActivity(`🤝 [Inter-Squad] Ticket aberto: ${ticket.from_squad_id} ➔ ${ticket.to_squad_id}`, 'status');
+      this.updateSudoStep(3, `Cooperação Inter-Squad: ${ticket.from_squad_id} ➔ ${ticket.to_squad_id}...`);
+      this.loadActiveTickets();
+    });
+
+    socket.on('squad.ticket_resolved', (data) => {
+      const ticket = data.ticket_data || data;
+      this.logActivity(`✅ [Inter-Squad] Ticket resolvido e entregue com sucesso!`, 'status');
+      this.updateSudoStep(3, `Ticket resolvido pelo squad de destino!`);
+      this.loadActiveTickets();
+    });
+
+    socket.on('sudo.final_delivery', (data) => {
+      this.logActivity(`🏆 [Sudo Agent] Parecer Executivo consolidado!`, 'notice');
+      this.handleSudoDelivery(data);
     });
 
     socket.on('chat.error', (data) => {
@@ -536,6 +625,302 @@ class OfficeUI {
     if (this.activityFeed.children.length > 100) {
       this.activityFeed.removeChild(this.activityFeed.firstChild);
     }
+  }
+
+  // --- ETAPA 7: SALA DA DIRETORIA (SUDO AGENT) & GOVERNANÇA ---
+
+  openSudoModal() {
+    if (window.officeModals) {
+      window.officeModals.showModal('sudoModal');
+    } else if (this.sudoModal) {
+      this.sudoModal.classList.add('active');
+    }
+  }
+
+  closeSudoModal() {
+    if (window.officeModals) {
+      window.officeModals.closeModal('sudoModal');
+    } else if (this.sudoModal) {
+      this.sudoModal.classList.remove('active');
+    }
+  }
+
+  updateSudoStep(stepNum, statusText = "") {
+    if (!this.sudoProgressBox) return;
+    this.sudoProgressBox.style.display = 'block';
+    if (statusText && this.sudoProgressTitle) {
+      this.sudoProgressTitle.textContent = statusText;
+    }
+
+    for (let s = 1; s <= 4; s++) {
+      const stepEl = document.getElementById(`step-${s}`);
+      if (!stepEl) continue;
+      if (s < stepNum) {
+        stepEl.className = 'sudo-step done';
+      } else if (s === stepNum) {
+        stepEl.className = 'sudo-step active';
+      } else {
+        stepEl.className = 'sudo-step';
+      }
+    }
+  }
+
+  async dispatchSudoMacroGoal() {
+    const promptText = (this.sudoMacroGoalInput.value || '').trim();
+    if (!promptText) {
+      if (window.officeModals) window.officeModals.showToast("Informe a meta macro para o Sudo Agent.", "warning");
+      return;
+    }
+
+    this.dispatchSudoGoalBtn.disabled = true;
+    this.dispatchSudoGoalBtn.textContent = '⏳ Orquestrando...';
+    this.sudoDeliveryContainer.style.display = 'none';
+
+    this.updateSudoStep(1, "Sudo Agent analisando meta e decompondo épicos...");
+
+    try {
+      const res = await fetch('/api/sudo/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: promptText })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "Erro no despacho executivo");
+      }
+
+      const data = await res.json();
+      this.handleSudoDelivery(data);
+    } catch (e) {
+      if (window.officeModals) {
+        window.officeModals.showToast(`Falha no despacho Sudo: ${e.message}`, "error");
+      } else {
+        alert(e.message);
+      }
+    } finally {
+      this.dispatchSudoGoalBtn.disabled = false;
+      this.dispatchSudoGoalBtn.innerHTML = '<span>🚀</span> Despachar Meta aos Squads';
+    }
+  }
+
+  handleSudoDelivery(data) {
+    this.updateSudoStep(4, "Parecer Executivo final consolidado!");
+    const step4 = document.getElementById('step-4');
+    if (step4) step4.className = 'sudo-step done';
+
+    if (this.sudoDeliveryContainer && this.sudoDeliveryContent) {
+      this.sudoDeliveryContainer.style.display = 'block';
+      const summaryText = data.final_executive_summary || data.final_summary || data.message || "Meta concluída com sucesso.";
+      this.sudoDeliveryContent.textContent = summaryText;
+    }
+
+    if (window.officeModals) {
+      window.officeModals.showToast("🏆 Sudo Agent concluiu e consolidou a meta macro!", "success");
+    }
+  }
+
+  // --- ETAPA 7: ORGANOGRAMA & TICKETS INTER-SQUAD ---
+
+  openHierarchyModal() {
+    if (window.officeModals) {
+      window.officeModals.showModal('hierarchyModal');
+    } else if (this.hierarchyModal) {
+      this.hierarchyModal.classList.add('active');
+    }
+    this.renderOrganogram();
+    this.loadActiveTickets();
+  }
+
+  closeHierarchyModal() {
+    if (window.officeModals) {
+      window.officeModals.closeModal('hierarchyModal');
+    } else if (this.hierarchyModal) {
+      this.hierarchyModal.classList.remove('active');
+    }
+  }
+
+  switchHierarchyTab(tab) {
+    if (tab === 'organogram') {
+      this.tabOrganogramBtn.classList.add('active');
+      this.tabTicketsBtn.classList.remove('active');
+      this.tabContentOrganogram.style.display = 'block';
+      this.tabContentTickets.style.display = 'none';
+      this.renderOrganogram();
+    } else {
+      this.tabOrganogramBtn.classList.remove('active');
+      this.tabTicketsBtn.classList.add('active');
+      this.tabContentOrganogram.style.display = 'none';
+      this.tabContentTickets.style.display = 'block';
+      this.loadActiveTickets();
+    }
+  }
+
+  renderOrganogram() {
+    if (!this.organogramTree) return;
+
+    const agents = (this.currentWorkspace && this.currentWorkspace.agents) || [];
+
+    // 1. Identificar Sudo Agent
+    const sudoAgent = agents.find(a => a.tier === 'sudo' || a.id === 'agent-sudo') || {
+      name: "Sudo Agent",
+      title: "Diretor Geral / Orquestrador Supremo",
+      tier: "sudo",
+      room_id: "room_sudo"
+    };
+
+    // 2. Mapear squads
+    const squads = [
+      {
+        id: 'squad-core-engineering',
+        name: 'Squad Engenharia (Dev Room)',
+        icon: '⚙️',
+        room_id: 'room_dev',
+        color: '#10b981'
+      },
+      {
+        id: 'squad-security',
+        name: 'Squad Segurança (Sec Room)',
+        icon: '🛡️',
+        room_id: 'room_sec',
+        color: '#a855f7'
+      },
+      {
+        id: 'squad-documentation',
+        name: 'Squad Documentação (Doc Room)',
+        icon: '📝',
+        room_id: 'room_doc',
+        color: '#38bdf8'
+      }
+    ];
+
+    let html = `
+      <div class="organogram-tier-sudo">
+        <div class="organogram-card sudo">
+          <span class="organogram-card-badge">👑 Nível 1: Diretoria Executiva</span>
+          <div class="organogram-card-name">👑 ${sudoAgent.name}</div>
+          <div class="organogram-card-title">${sudoAgent.title || 'Diretor Geral e Orquestrador Supremo'}</div>
+          <div style="font-size: 10px; color: #fbbf24; margin-top: 4px;">Sala Executiva • Decomposição Estratégica & Despacho</div>
+        </div>
+        <div style="width: 2px; height: 20px; background: rgba(245, 158, 11, 0.4); margin: 4px auto;"></div>
+      </div>
+
+      <div class="organogram-squads-row">
+    `;
+
+    squads.forEach(sq => {
+      const squadAgents = agents.filter(a => a.squad_id === sq.id || a.room_id === sq.room_id);
+      const leader = squadAgents.find(a => a.tier === 'squad_leader') || squadAgents[0] || null;
+      const subordinates = squadAgents.filter(a => a !== leader);
+
+      html += `
+        <div class="squad-column" style="border-top: 3px solid ${sq.color};">
+          <div class="squad-column-header" style="color: ${sq.color};">
+            <span>${sq.icon}</span> ${sq.name}
+          </div>
+
+          <!-- Líder do Squad -->
+          <div class="organogram-card leader" style="border-color: ${sq.color};">
+            <span class="organogram-card-badge" style="background: rgba(255,255,255,0.1); color: ${sq.color};">⭐ Nível 2: Líder Departamental</span>
+            <div class="organogram-card-name">${leader ? leader.name : 'Vaga Aberta'}</div>
+            <div class="organogram-card-title">${leader ? leader.title : 'Aguardando Alocação'}</div>
+          </div>
+
+          <!-- Subordinados / Especialistas -->
+          <div class="squad-members-list">
+            <div style="font-size: 9px; color: var(--text-dim); text-transform: uppercase; font-family: var(--font-pixel);">
+              Especialistas (${subordinates.length})
+            </div>
+      `;
+
+      if (subordinates.length === 0) {
+        html += `<div style="font-size: 10px; color: var(--text-muted); font-style: italic;">Nenhum especialista alocado.</div>`;
+      } else {
+        subordinates.forEach(sub => {
+          const isSubagent = sub.tier === 'subagent' || sub.is_temporary;
+          html += `
+            <div class="member-chip ${isSubagent ? 'subagent' : ''}">
+              <span>${isSubagent ? '⚡' : '⚙️'} ${sub.name}</span>
+              <span style="font-size: 9px; color: var(--text-muted);">${sub.title || 'Dev'}</span>
+            </div>
+          `;
+        });
+      }
+
+      html += `
+          </div>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+    this.organogramTree.innerHTML = html;
+  }
+
+  async loadActiveTickets() {
+    try {
+      const res = await fetch('/api/tickets');
+      if (res.ok) {
+        const tickets = await res.json();
+        this.renderTickets(tickets);
+      }
+    } catch (e) {
+      console.warn('[UI] Falha ao carregar tickets inter-squad:', e);
+    }
+  }
+
+  renderTickets(tickets = []) {
+    if (this.tabTicketsCount) {
+      this.tabTicketsCount.textContent = tickets.length;
+    }
+    if (this.ticketsActiveBadge) {
+      const pendingCount = tickets.filter(t => t.status === 'pending' || t.status === 'in_progress').length;
+      this.ticketsActiveBadge.textContent = pendingCount;
+      this.ticketsActiveBadge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+    }
+
+    if (!this.ticketsListContainer) return;
+
+    if (tickets.length === 0) {
+      this.ticketsListContainer.innerHTML = `
+        <div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 12px;">
+          🤝 Nenhum ticket inter-squad aberto no momento. Os líderes criam tickets quando precisam de assistência técnica lateral!
+        </div>
+      `;
+      return;
+    }
+
+    let html = '';
+    tickets.forEach(t => {
+      const isDelivered = t.status === 'delivered';
+      html += `
+        <div class="ticket-card" style="border-left: 3px solid ${isDelivered ? '#10b981' : '#f59e0b'};">
+          <div class="ticket-header">
+            <div class="ticket-route">
+              <span>🤝</span> ${t.from_squad_id} ➔ ${t.to_squad_id}
+            </div>
+            <span class="ticket-status-pill ${t.status}">${t.status.toUpperCase()}</span>
+          </div>
+          <div class="ticket-req-text">
+            <strong>Requisito Técnico:</strong> ${t.exact_requirement}
+          </div>
+          <div style="font-size: 10px; color: var(--text-dim); margin-bottom: 6px;">
+            <strong>Motivo fora de escopo:</strong> ${t.reason_out_of_scope}
+          </div>
+      `;
+
+      if (t.result_artifact) {
+        html += `
+          <div class="ticket-artifact-preview">
+            ${t.result_artifact}
+          </div>
+        `;
+      }
+
+      html += `</div>`;
+    });
+
+    this.ticketsListContainer.innerHTML = html;
   }
 }
 

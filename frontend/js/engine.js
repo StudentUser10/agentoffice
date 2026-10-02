@@ -61,32 +61,86 @@ class OfficeEngine {
   }
 
   initWorld() {
-    // Definir obstáculos fixos (paredes externas e móveis centrais)
-    // Paredes e móveis: [x, y, w, h]
+    // Setorização por Departamentos (Salas)
+    this.rooms = {
+      room_sudo: {
+        id: 'room_sudo',
+        name: 'SALA DA DIRETORIA (SUDO)',
+        icon: '👑',
+        themeColor: '#f59e0b',
+        bgColor: '#141728',
+        bounds: { x: 24, y: 48, w: 372, h: 170 },
+        door: { x: 200, y: 218, w: 50 },
+        insideWaypoint: { x: 200, y: 175 },
+        hallwayWaypoint: { x: 200, y: 257 }
+      },
+      room_sec: {
+        id: 'room_sec',
+        name: 'SQUAD SEGURANÇA (SEC)',
+        icon: '🛡️',
+        themeColor: '#a855f7',
+        bgColor: '#18142b',
+        bounds: { x: 404, y: 48, w: 372, h: 170 },
+        door: { x: 600, y: 218, w: 50 },
+        insideWaypoint: { x: 600, y: 175 },
+        hallwayWaypoint: { x: 600, y: 257 }
+      },
+      room_dev: {
+        id: 'room_dev',
+        name: 'SQUAD ENGENHARIA (DEV)',
+        icon: '⚙️',
+        themeColor: '#10b981',
+        bgColor: '#101a1d',
+        bounds: { x: 24, y: 298, w: 372, h: 206 },
+        door: { x: 200, y: 292, w: 50 },
+        insideWaypoint: { x: 200, y: 335 },
+        hallwayWaypoint: { x: 200, y: 257 }
+      },
+      room_doc: {
+        id: 'room_doc',
+        name: 'SQUAD DOCUMENTAÇÃO & QA',
+        icon: '📝',
+        themeColor: '#38bdf8',
+        bgColor: '#111726',
+        bounds: { x: 404, y: 298, w: 372, h: 206 },
+        door: { x: 600, y: 292, w: 50 },
+        insideWaypoint: { x: 600, y: 335 },
+        hallwayWaypoint: { x: 600, y: 257 }
+      }
+    };
+
+    // Obstáculos fixos do mapa (Paredes externas e divisórias de salas com portas)
     this.obstacles = [
-      // Parede superior (com profundidade 3D)
+      // Paredes Externas
       { x: 0, y: 0, w: 800, h: 48 },
-      // Parede inferior
       { x: 0, y: 504, w: 800, h: 16 },
-      // Parede esquerda
       { x: 0, y: 0, w: 24, h: 520 },
-      // Parede direita
       { x: 776, y: 0, w: 24, h: 520 },
-      // Rack de Servidores (canto superior esquerdo)
-      { x: 24, y: 110, w: 36, h: 74, name: "Rack de Servidores" },
-      // Bebedouro & Máquina de Café (canto esquerdo central)
-      { x: 24, y: 220, w: 40, h: 60, name: "Bebedouro & Café" },
-      // Quadro de Tarefas / Whiteboard Kanban (canto direito central)
-      { x: 746, y: 210, w: 30, h: 74, name: "Quadro Branco" }
+
+      // Divisória Central Vertical (Norte e Sul)
+      { x: 396, y: 48, w: 8, h: 170 },
+      { x: 396, y: 298, w: 8, h: 206 },
+
+      // Paredes Norte do Corredor (Portas abertas em 175..225 e 575..625)
+      { x: 24, y: 218, w: 151, h: 6 },
+      { x: 225, y: 218, w: 171, h: 6 },
+      { x: 404, y: 218, w: 171, h: 6 },
+      { x: 625, y: 218, w: 151, h: 6 },
+
+      // Paredes Sul do Corredor (Portas abertas em 175..225 e 575..625)
+      { x: 24, y: 292, w: 151, h: 6 },
+      { x: 225, y: 292, w: 171, h: 6 },
+      { x: 404, y: 292, w: 171, h: 6 },
+      { x: 625, y: 292, w: 151, h: 6 }
     ];
 
-    // Objetos interativos do mapa (Whiteboard e Rack de Servidores)
+    // Objetos interativos do mapa (Whiteboard, Rack e Bebedouro no corredor central)
     this.interactiveObjects = [
       {
         id: 'whiteboard',
         name: 'Quadro Branco (Kanban)',
-        x: 746, y: 210, w: 30, h: 74,
-        checkX: 730, checkY: 247,
+        x: 746, y: 232, w: 26, h: 52,
+        checkX: 725, checkY: 257,
         label: '[E] Abrir Quadro Kanban (Tarefas)',
         action: () => {
           if (window.officeModals) {
@@ -97,8 +151,8 @@ class OfficeEngine {
       {
         id: 'server_rack',
         name: 'Rack de Servidores (Diagnóstico)',
-        x: 24, y: 110, w: 36, h: 74,
-        checkX: 75, checkY: 147,
+        x: 28, y: 232, w: 32, h: 52,
+        checkX: 75, checkY: 257,
         label: '[E] Diagnóstico do Sistema (Rack)',
         action: () => {
           if (typeof window.openDiagnosticsModal === 'function') {
@@ -107,14 +161,24 @@ class OfficeEngine {
             window.officeModals.showModal('diagnosticsModal');
           }
         }
+      },
+      {
+        id: 'coffee_cooler',
+        name: 'Bebedouro & Café Central',
+        x: 382, y: 232, w: 34, h: 52,
+        checkX: 382, checkY: 257,
+        label: '[E] Fazer Pausa para o Café ☕',
+        action: () => {
+          this.triggerRetroNotice('☕ Você tomou um café quentinho no corredor central!', 2.5);
+        }
       }
     ];
 
-    // Inicializar partículas de vapor de café
+    // Inicializar partículas de vapor de café no corredor
     for (let i = 0; i < 15; i++) {
       this.steamParticles.push({
-        x: 40 + Math.random() * 8,
-        y: 235 + Math.random() * 15,
+        x: 396 + Math.random() * 8,
+        y: 245 + Math.random() * 10,
         vy: -0.4 - Math.random() * 0.3,
         alpha: Math.random(),
         size: 1 + Math.random() * 2
@@ -162,8 +226,8 @@ class OfficeEngine {
         return;
       }
 
-      // 2. Clique no Rack de Servidores (Diagnóstico)
-      if (clickX >= 20 && clickX <= 68 && clickY >= 105 && clickY <= 190) {
+      // 2. Clique no Rack de Servidores (Diagnóstico no Corredor)
+      if (clickX >= 20 && clickX <= 68 && clickY >= 210 && clickY <= 290) {
         if (typeof window.openDiagnosticsModal === 'function') {
           window.openDiagnosticsModal();
         } else if (window.officeModals) {
@@ -207,7 +271,9 @@ class OfficeEngine {
         targetY: existing ? existing.targetY : defaultY,
         walkSpeed: existing ? existing.walkSpeed : 2.5,
         speechBubble: existing ? existing.speechBubble : null,
-        bubbleTimer: existing ? existing.bubbleTimer : 0
+        bubbleTimer: existing ? existing.bubbleTimer : 0,
+        waypointQueue: existing && existing.waypointQueue ? existing.waypointQueue : [],
+        onWaypointComplete: existing && existing.onWaypointComplete ? existing.onWaypointComplete : null
       });
     });
 
@@ -233,6 +299,125 @@ class OfficeEngine {
       agent.walkSpeed = speed;
       agent.state = "walking";
     }
+  }
+
+  // --- NAVEGAÇÃO ENTRE SALAS & WAYPOINTS ---
+
+  getAreaForPoint(x, y) {
+    if (y < 220) {
+      return x < 400 ? 'room_sudo' : 'room_sec';
+    } else if (y > 290) {
+      return x < 400 ? 'room_dev' : 'room_doc';
+    } else {
+      return 'hallway';
+    }
+  }
+
+  calculatePathBetweenPoints(fromX, fromY, toX, toY) {
+    const fromArea = this.getAreaForPoint(fromX, fromY);
+    const toArea = this.getAreaForPoint(toX, toY);
+
+    if (fromArea === toArea) {
+      return [{ x: toX, y: toY }];
+    }
+
+    const waypoints = [];
+
+    // 1. Sair da sala de origem para o corredor
+    if (fromArea !== 'hallway' && this.rooms[fromArea]) {
+      const room = this.rooms[fromArea];
+      waypoints.push({ ...room.insideWaypoint });
+      waypoints.push({ ...room.hallwayWaypoint });
+    }
+
+    // 2. Se cruzar oeste (x<=400) para leste (x>400) ou vice-versa no corredor
+    const fromWest = fromX <= 400;
+    const toWest = toX <= 400;
+    if (fromWest !== toWest) {
+      waypoints.push({ x: 400, y: 257 });
+    }
+
+    // 3. Entrar na sala de destino a partir do corredor
+    if (toArea !== 'hallway' && this.rooms[toArea]) {
+      const room = this.rooms[toArea];
+      waypoints.push({ ...room.hallwayWaypoint });
+      waypoints.push({ ...room.insideWaypoint });
+    }
+
+    // 4. Ponto final de destino
+    waypoints.push({ x: toX, y: toY });
+    return waypoints;
+  }
+
+  queueAgentWaypoints(agentId, waypoints, speed = 2.8, onComplete = null) {
+    const agent = this.agents.get(agentId);
+    if (!agent || !waypoints || waypoints.length === 0) {
+      if (onComplete) onComplete();
+      return;
+    }
+
+    agent.waypointQueue = [...waypoints];
+    agent.walkSpeed = speed;
+    agent.state = 'walking';
+    agent.onWaypointComplete = onComplete;
+
+    const first = agent.waypointQueue.shift();
+    agent.targetX = first.x;
+    agent.targetY = first.y;
+  }
+
+  handleCrossRoomMove(data) {
+    const { agent_id, from_room_id, to_room_id, target_desk_id, ticket_id, service_label } = data;
+    const agent = this.agents.get(agent_id);
+    if (!agent) return;
+
+    // Posição de origem (mesa do agente)
+    const homeDesk = this.desks.find(d => d.id === agent.desk_id) || { seat_x: agent.x, seat_y: agent.y };
+    const homeX = homeDesk.seat_x;
+    const homeY = homeDesk.seat_y;
+
+    // Ponto de destino na sala de destino (em frente à mesa do líder ou centro da sala)
+    const targetDesk = this.desks.find(d => d.id === target_desk_id || (d.room_id === to_room_id));
+    let targetX = 600, targetY = 150;
+    if (targetDesk) {
+      targetX = targetDesk.front_x || (targetDesk.x + targetDesk.width / 2);
+      targetY = targetDesk.front_y || (targetDesk.y + targetDesk.height + 15);
+    } else if (this.rooms[to_room_id]) {
+      targetX = this.rooms[to_room_id].insideWaypoint.x;
+      targetY = this.rooms[to_room_id].insideWaypoint.y;
+    }
+
+    // Calcular caminho de ida
+    const forwardPath = this.calculatePathBetweenPoints(agent.x, agent.y, targetX, targetY);
+
+    this.triggerRetroNotice(`🚶 ${agent.name} transitando entre salas: '${service_label || 'Demanda Inter-Squad'}'...`, 3.5);
+    agent.speechBubble = "📁 Levando demanda...";
+    agent.bubbleTimer = 4.5;
+
+    this.queueAgentWaypoints(agent_id, forwardPath, 2.8, () => {
+      // Chegou na frente da mesa do líder parceiro
+      agent.speechBubble = "🤝 Inter-Squad Ticket";
+      agent.bubbleTimer = 4.0;
+      agent.state = 'working';
+
+      // Disparar efeito visual na sala parceira
+      this.triggerSpawnEffect(targetX, targetY);
+
+      // Aguardar diálogo antes de retornar à mesa de origem
+      setTimeout(() => {
+        if (!this.agents.get(agent_id)) return;
+        agent.speechBubble = "✅ Alinhado! Retornando...";
+        agent.bubbleTimer = 2.5;
+
+        // Caminho de volta
+        const returnPath = this.calculatePathBetweenPoints(agent.x, agent.y, homeX, homeY);
+        this.queueAgentWaypoints(agent_id, returnPath, 2.8, () => {
+          agent.state = 'idle';
+          agent.speechBubble = "💻 Posto reassumido";
+          agent.bubbleTimer = 2.0;
+        });
+      }, 2500);
+    });
   }
 
   start() {
@@ -300,7 +485,7 @@ class OfficeEngine {
       this.player.y = newY;
     }
 
-    // 3. Atualizar NPCs (Interpolação de movimento)
+    // 3. Atualizar NPCs (Interpolação de movimento e fila de Waypoints)
     this.agents.forEach(agent => {
       if (agent.targetX !== undefined && agent.targetY !== undefined) {
         const diffX = agent.targetX - agent.x;
@@ -314,8 +499,21 @@ class OfficeEngine {
         } else {
           agent.x = agent.targetX;
           agent.y = agent.targetY;
-          if (agent.state === 'walking') {
-            agent.state = 'idle';
+
+          // Se tem mais nós na fila de waypoints
+          if (agent.waypointQueue && agent.waypointQueue.length > 0) {
+            const nextNode = agent.waypointQueue.shift();
+            agent.targetX = nextNode.x;
+            agent.targetY = nextNode.y;
+          } else {
+            if (agent.state === 'walking') {
+              agent.state = 'idle';
+            }
+            if (typeof agent.onWaypointComplete === 'function') {
+              const cb = agent.onWaypointComplete;
+              agent.onWaypointComplete = null;
+              cb();
+            }
           }
         }
       }
@@ -525,198 +723,265 @@ class OfficeEngine {
   }
 
   renderFloor(ctx) {
-    // Fundo base
+    // 1. Fundo base
     ctx.fillStyle = '#111422';
     ctx.fillRect(0, 0, this.width, this.height);
 
-    // Padrão de ladrilhos pixel art
+    // 2. Cores temáticas de fundo de cada sala/departamento
+    if (this.rooms) {
+      Object.values(this.rooms).forEach(room => {
+        ctx.fillStyle = room.bgColor || '#151928';
+        ctx.fillRect(room.bounds.x, room.bounds.y, room.bounds.w, room.bounds.h);
+      });
+    }
+
+    // 3. Padrão de ladrilhos pixel art sutil
     const tileSize = 32;
     for (let x = 24; x < this.width - 24; x += tileSize) {
       for (let y = 48; y < this.height - 16; y += tileSize) {
-        const isAlt = ((x / tileSize) + (y / tileSize)) % 2 === 0;
-        ctx.fillStyle = isAlt ? '#151928' : '#191e30';
-        ctx.fillRect(x, y, tileSize, tileSize);
-
-        // Grid sutil
-        ctx.strokeStyle = '#101320';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
         ctx.lineWidth = 1;
         ctx.strokeRect(x, y, tileSize, tileSize);
       }
     }
 
-    // Tapete central do corredor
-    ctx.fillStyle = 'rgba(56, 189, 248, 0.04)';
-    ctx.fillRect(230, 180, 340, 160);
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.12)';
+    // 4. Tapete executivo de luxo na Sala da Diretoria (Executive Suite)
+    ctx.fillStyle = 'rgba(180, 83, 9, 0.14)';
+    ctx.fillRect(50, 65, 320, 138);
+    ctx.strokeStyle = 'rgba(245, 158, 11, 0.5)';
     ctx.lineWidth = 2;
-    ctx.strokeRect(230, 180, 340, 160);
+    ctx.strokeRect(50, 65, 320, 138);
+    // Borda interna dourada do tapete
+    ctx.strokeStyle = 'rgba(245, 158, 11, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(56, 71, 308, 126);
+
+    // 5. Passadeira / Tapete corredor central
+    ctx.fillStyle = 'rgba(14, 165, 233, 0.07)';
+    ctx.fillRect(24, 230, 752, 56);
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(24, 230, 752, 56);
+
+    // 6. Soleiras/Tapetes de entrada nas 4 portas das salas
+    const doorMats = [
+      { x: 175, y: 214, w: 50, h: 14, color: '#f59e0b' }, // Porta Sudo
+      { x: 575, y: 214, w: 50, h: 14, color: '#a855f7' }, // Porta Sec
+      { x: 175, y: 288, w: 50, h: 14, color: '#10b981' }, // Porta Dev
+      { x: 575, y: 288, w: 50, h: 14, color: '#38bdf8' }  // Porta Doc
+    ];
+    doorMats.forEach(dm => {
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+      ctx.fillRect(dm.x, dm.y, dm.w, dm.h);
+      ctx.strokeStyle = dm.color;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(dm.x, dm.y, dm.w, dm.h);
+    });
   }
 
   renderArchitecture(ctx) {
-    // Parede Norte (Profundidade com rodapé)
+    // 1. Parede Norte Principal (com profundidade e iluminação)
     ctx.fillStyle = '#202538';
     ctx.fillRect(0, 0, this.width, 42);
     ctx.fillStyle = '#2a314a';
     ctx.fillRect(0, 42, this.width, 6); // rodapé iluminado
 
-    // Molduras e decorações na parede norte
+    // 2. Molduras decorativas na parede norte
     ctx.fillStyle = '#475569';
-    ctx.fillRect(180, 12, 40, 24); // Certificado 1
+    ctx.fillRect(50, 12, 36, 24);
     ctx.fillStyle = '#f59e0b';
-    ctx.fillRect(188, 18, 24, 12);
+    ctx.fillRect(56, 18, 24, 12); // Quadro executivo
 
     ctx.fillStyle = '#475569';
-    ctx.fillRect(480, 12, 50, 24); // Certificado 2
-    ctx.fillStyle = '#10b981';
-    ctx.fillRect(488, 18, 34, 12);
+    ctx.fillRect(714, 12, 36, 24);
+    ctx.fillStyle = '#a855f7';
+    ctx.fillRect(720, 18, 24, 12); // Certificado ISO Sec
 
-    // Letreiro neon "AGENTOFFICE" no topo
-    ctx.font = "bold 10px 'Courier New', monospace";
-    ctx.fillStyle = '#38bdf8';
-    ctx.fillText("⚡ AGENTOFFICE LAB ⚡", 330, 26);
-
-    // Paredes laterais e sul
+    // 3. Paredes Externas (Leste, Oeste e Sul)
     ctx.fillStyle = '#181b2a';
     ctx.fillRect(0, 0, 24, this.height);
     ctx.fillRect(this.width - 24, 0, 24, this.height);
     ctx.fillRect(0, this.height - 16, this.width, 16);
 
-    // Rack de Servidores IT (Parede Esquerda: X=24, Y=110, W=36, H=74)
+    // 4. Divisórias de Paredes e Portas dos Departamentos
+    this.obstacles.forEach(obs => {
+      // Pular paredes externas já desenhadas
+      if (obs.x === 0 || obs.w === 800 || obs.x === 776) return;
+
+      // Paredes divisórias internas com cor solida e topo destacado
+      ctx.fillStyle = '#22283d';
+      ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+      ctx.strokeStyle = '#384263';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
+    });
+
+    // 5. Batentes de Porta das Salas (Pilares luminosos)
+    const doorPosts = [
+      { x: 173, y: 216 }, { x: 225, y: 216 }, // Porta Sudo
+      { x: 573, y: 216 }, { x: 625, y: 216 }, // Porta Sec
+      { x: 173, y: 290 }, { x: 225, y: 290 }, // Porta Dev
+      { x: 573, y: 290 }, { x: 625, y: 290 }  // Porta Doc
+    ];
+    doorPosts.forEach(dp => {
+      ctx.fillStyle = '#64748b';
+      ctx.fillRect(dp.x, dp.y, 4, 8);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(dp.x + 1, dp.y + 1, 2, 6);
+    });
+
+    // 6. Placas Neon dos Departamentos (Letreiros Luminosos)
+    const departmentPlaques = [
+      { text: "👑 SALA DA DIRETORIA (SUDO)", x: 200, y: 36, color: "#f59e0b", bg: "rgba(245, 158, 11, 0.15)" },
+      { text: "🛡️ SQUAD SEGURANÇA (SEC)", x: 600, y: 36, color: "#c084fc", bg: "rgba(168, 85, 247, 0.15)" },
+      { text: "⚙️ SQUAD ENGENHARIA (DEV)", x: 200, y: 308, color: "#34d399", bg: "rgba(16, 185, 129, 0.15)" },
+      { text: "📝 SQUAD DOCUMENTAÇÃO & QA", x: 600, y: 308, color: "#38bdf8", bg: "rgba(56, 189, 248, 0.15)" }
+    ];
+
+    departmentPlaques.forEach(pl => {
+      ctx.font = "bold 9px 'Courier New', monospace";
+      ctx.textAlign = 'center';
+      const textW = ctx.measureText(pl.text).width;
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+      ctx.fillRect(pl.x - textW / 2 - 8, pl.y - 10, textW + 16, 14);
+      ctx.fillStyle = pl.bg;
+      ctx.fillRect(pl.x - textW / 2 - 8, pl.y - 10, textW + 16, 14);
+      ctx.strokeStyle = pl.color;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(pl.x - textW / 2 - 8, pl.y - 10, textW + 16, 14);
+
+      ctx.fillStyle = pl.color;
+      ctx.fillText(pl.text, pl.x, pl.y);
+    });
+
+    // 7. Rack de Servidores IT (Corredor Central: X=26, Y=232, W=32, h=52)
     ctx.fillStyle = '#0f172a';
-    ctx.fillRect(24, 110, 36, 74);
+    ctx.fillRect(26, 232, 32, 52);
     ctx.strokeStyle = '#334155';
     ctx.lineWidth = 1.5;
-    ctx.strokeRect(24, 110, 36, 74);
+    ctx.strokeRect(26, 232, 32, 52);
 
-    // Gavetas de Servidores (4 unidades de rack com LEDs piscantes)
+    // Gavetas de Servidores com LEDs piscantes
     const now = performance.now();
-    for (let u = 0; u < 4; u++) {
-      const slotY = 114 + u * 17;
+    for (let u = 0; u < 3; u++) {
+      const slotY = 236 + u * 15;
       ctx.fillStyle = '#1e293b';
-      ctx.fillRect(26, slotY, 32, 14);
+      ctx.fillRect(28, slotY, 28, 12);
       ctx.strokeStyle = '#0284c7';
       ctx.lineWidth = 0.5;
-      ctx.strokeRect(26, slotY, 32, 14);
+      ctx.strokeRect(28, slotY, 28, 12);
 
-      // Grades de ventilação
-      ctx.fillStyle = '#0b0f19';
-      ctx.fillRect(28, slotY + 3, 14, 8);
-
-      // LEDs piscantes (verde status, ciano tráfego de rede, âmbar atividade)
+      // LEDs
       const led1On = ((now + u * 180) % 900) < 550;
       const led2On = ((now + u * 250) % 700) < 350;
-      const led3On = ((now + u * 320) % 1200) < 400;
-
       ctx.fillStyle = led1On ? '#10b981' : '#064e3b';
       ctx.fillRect(44, slotY + 4, 3, 3);
       ctx.fillStyle = led2On ? '#38bdf8' : '#0369a1';
       ctx.fillRect(49, slotY + 4, 3, 3);
-      ctx.fillStyle = led3On ? '#f59e0b' : '#78350f';
-      ctx.fillRect(46, slotY + 8, 4, 2);
     }
 
-    // Identificador Neon do Rack
     ctx.font = "bold 8px 'Courier New', monospace";
     ctx.fillStyle = '#38bdf8';
     ctx.textAlign = 'center';
-    ctx.fillText("🖥️ RACK", 42, 105);
+    ctx.fillText("🖥️ RACK", 42, 226);
 
-    // Bebedouro & Máquina de Café (Parede Esquerda: X=24, Y=220)
+    // 8. Bebedouro & Café (Corredor Central: X=382, Y=232, W=34, H=52)
     ctx.fillStyle = '#334155';
-    ctx.fillRect(24, 220, 36, 56);
+    ctx.fillRect(382, 232, 34, 52);
     ctx.fillStyle = '#0284c7';
-    ctx.fillRect(30, 226, 24, 20); // galão d'água azul
+    ctx.fillRect(388, 236, 22, 18); // galão d'água azul
     ctx.fillStyle = '#ef4444';
-    ctx.fillRect(36, 252, 6, 6); // torneira quente
+    ctx.fillRect(393, 258, 5, 5); // torneira quente
     ctx.fillStyle = '#3b82f6';
-    ctx.fillRect(44, 252, 6, 6); // torneira fria
+    ctx.fillRect(401, 258, 5, 5); // torneira fria
 
-    // Vapor de café
+    // Vapor de café flutuante
     this.steamParticles.forEach(p => {
       ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
       ctx.fillRect(p.x, p.y, p.size, p.size);
     });
 
-    // Quadro Branco Kanban (Parede Direita: X=746, Y=210, W=30, H=74)
-    // Moldura de alumínio
+    // 9. Quadro Branco Kanban (Corredor Central: X=746, Y=232, W=26, H=52)
     ctx.fillStyle = '#475569';
-    ctx.fillRect(744, 208, 32, 78);
-    // Superfície magnética branca
+    ctx.fillRect(744, 230, 28, 56);
     ctx.fillStyle = '#f8fafc';
-    ctx.fillRect(746, 210, 28, 74);
-    // Linha divisória de colunas
-    ctx.strokeStyle = '#cbd5e1';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(760, 210);
-    ctx.lineTo(760, 284);
-    ctx.stroke();
+    ctx.fillRect(746, 232, 24, 52);
 
-    // Post-its coloridos pixel art (Amarelo, Laranja, Azul, Verde, Rosa)
+    // Post-its pixel art no Kanban
     ctx.fillStyle = '#fef08a';
-    ctx.fillRect(748, 214, 10, 8);
+    ctx.fillRect(748, 236, 8, 7);
     ctx.fillStyle = '#fed7aa';
-    ctx.fillRect(748, 226, 10, 8);
+    ctx.fillRect(748, 246, 8, 7);
     ctx.fillStyle = '#bae6fd';
-    ctx.fillRect(762, 214, 10, 8);
+    ctx.fillRect(759, 236, 8, 7);
     ctx.fillStyle = '#bbf7d0';
-    ctx.fillRect(762, 226, 10, 8);
-    ctx.fillStyle = '#fbcfe8';
-    ctx.fillRect(748, 240, 10, 8);
-    ctx.fillStyle = '#e2e8f0';
-    ctx.fillRect(762, 240, 10, 8);
+    ctx.fillRect(759, 246, 8, 7);
 
-    // Canetão magnético na bandeja inferior
-    ctx.fillStyle = '#334155';
-    ctx.fillRect(746, 284, 28, 3);
-    ctx.fillStyle = '#ef4444';
-    ctx.fillRect(750, 283, 8, 2);
-    ctx.fillStyle = '#2563eb';
-    ctx.fillRect(760, 283, 8, 2);
-
-    // Identificador Neon do Kanban
     ctx.font = "bold 8px 'Courier New', monospace";
     ctx.fillStyle = '#38bdf8';
     ctx.textAlign = 'center';
-    ctx.fillText("📋 KANBAN", 760, 204);
+    ctx.fillText("📋 KANBAN", 758, 226);
   }
 
   renderDesk(ctx, desk) {
     const isOccupied = !!desk.agent_id;
     const isTargeted = this.nearestTarget && this.nearestTarget.desk && this.nearestTarget.desk.id === desk.id;
+    const isSudoDesk = desk.id === 'desk-sudo' || desk.room_id === 'room_sudo';
 
-    // Sombra da mesa
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    // 1. Sombra da mesa
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
     ctx.fillRect(desk.x + 3, desk.y + desk.height - 2, desk.width, 8);
 
-    // Tampo da mesa (estilo madeira/ardósia pixel)
-    ctx.fillStyle = isTargeted ? '#3b4363' : '#282d44';
-    ctx.fillRect(desk.x, desk.y, desk.width, desk.height);
+    // 2. Tampo da mesa (Mogno executivo para Sudo, padrão para outras)
+    let deskBg = isTargeted ? '#3b4363' : '#282d44';
+    let deskBorder = isTargeted ? '#38bdf8' : '#3e4668';
 
-    // Borda da mesa
-    ctx.strokeStyle = isTargeted ? '#38bdf8' : '#3e4668';
-    ctx.lineWidth = 2;
+    if (isSudoDesk) {
+      deskBg = isTargeted ? '#4d261e' : '#351913';
+      deskBorder = isTargeted ? '#f59e0b' : '#92400e';
+    }
+
+    ctx.fillStyle = deskBg;
+    ctx.fillRect(desk.x, desk.y, desk.width, desk.height);
+    ctx.strokeStyle = deskBorder;
+    ctx.lineWidth = isSudoDesk ? 2.5 : 2;
     ctx.strokeRect(desk.x, desk.y, desk.width, desk.height);
 
-    // Cadeira vazia se não tiver agente sentado
+    // Detalhe de couro na mesa executiva da Diretoria
+    if (isSudoDesk) {
+      ctx.fillStyle = '#1c1917';
+      ctx.fillRect(desk.x + 12, desk.y + 6, desk.width - 24, desk.height - 12);
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(desk.x + 12, desk.y + 6, desk.width - 24, desk.height - 12);
+    }
+
+    // 3. Cadeira vazia se não tiver agente sentado
     if (!isOccupied) {
-      ctx.fillStyle = '#475569';
+      ctx.fillStyle = isSudoDesk ? '#78350f' : '#475569';
       ctx.fillRect(desk.seat_x - 10, desk.seat_y - 10, 20, 18);
-      ctx.fillStyle = '#1e293b';
+      ctx.fillStyle = isSudoDesk ? '#451a03' : '#1e293b';
       ctx.fillRect(desk.seat_x - 8, desk.seat_y - 8, 16, 14);
     }
 
-    // Monitor do computador
+    // 4. Monitor do computador (duplo para Diretoria, temático por sala)
     const monitorX = desk.x + desk.width / 2 - 14;
-    const monitorY = desk.y + 8;
+    const monitorY = desk.y + 7;
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(monitorX, monitorY, 28, 18);
 
-    // Tela do PC acesa
-    ctx.fillStyle = isOccupied ? '#06b6d4' : '#1e293b';
+    // Cor da tela conforme sala/departamento
+    let screenGlow = '#06b6d4';
+    if (desk.room_id === 'room_sudo') screenGlow = '#f59e0b';
+    else if (desk.room_id === 'room_sec') screenGlow = '#c084fc';
+    else if (desk.room_id === 'room_dev') screenGlow = '#10b981';
+    else if (desk.room_id === 'room_doc') screenGlow = '#38bdf8';
+
+    ctx.fillStyle = isOccupied ? screenGlow : '#1e293b';
     ctx.fillRect(monitorX + 2, monitorY + 2, 24, 14);
 
-    // Linhas de código animadas na tela do PC
+    // Linhas de dados animadas na tela
     if (isOccupied) {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(monitorX + 4, monitorY + 5, 12, 1);
@@ -724,19 +989,20 @@ class OfficeEngine {
       ctx.fillRect(monitorX + 4, monitorY + 11, 8, 1);
     }
 
-    // Teclado
+    // 5. Teclado
     ctx.fillStyle = '#64748b';
     ctx.fillRect(monitorX + 2, monitorY + 22, 24, 6);
 
-    // Caneca de café
-    ctx.fillStyle = '#f59e0b';
-    ctx.fillRect(desk.x + 12, desk.y + 14, 6, 7);
+    // 6. Caneca de café (dourada para diretoria)
+    ctx.fillStyle = isSudoDesk ? '#f59e0b' : '#38bdf8';
+    ctx.fillRect(desk.x + 8, desk.y + 12, 6, 7);
 
-    // Identificador da mesa
+    // 7. Plaqueta / Nome da Mesa
     ctx.font = "9px 'Courier New', monospace";
-    ctx.fillStyle = isTargeted ? '#38bdf8' : '#94a3b8';
+    ctx.fillStyle = isTargeted ? '#38bdf8' : (isSudoDesk ? '#f59e0b' : '#94a3b8');
     ctx.textAlign = 'center';
-    ctx.fillText(desk.name.split(' ')[0] + ' ' + (desk.name.split(' ')[1] || ''), desk.x + desk.width / 2, desk.y + desk.height + 12);
+    const label = isSudoDesk ? '👑 Mesa da Diretoria' : (desk.name || 'Mesa');
+    ctx.fillText(label, desk.x + desk.width / 2, desk.y + desk.height + 12);
   }
 
   renderNPC(ctx, agent) {
@@ -749,27 +1015,52 @@ class OfficeEngine {
     ctx.ellipse(x, y + 10, 11, 5, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Cor baseada no papel
+    // Identificação de Hierarquia / Tier
+    const isSudo = agent.tier === 'sudo' || agent.id === 'agent-sudo' || agent.role_type === 'sudo';
+    const isLeader = agent.tier === 'squad_leader' || agent.role_type === 'supervisor';
+    const isSubagent = agent.tier === 'subagent' || agent.is_temporary;
+
     let roleColor = '#38bdf8';
-    let roleBadge = '✦';
-    if (agent.role_type === 'supervisor') {
-      roleColor = '#f59e0b'; // Dourado
+    let roleBadge = '⚙️';
+    let roleTitle = agent.title || 'Especialista';
+
+    if (isSudo) {
+      roleColor = '#f59e0b'; // Ouro executivo
       roleBadge = '👑';
-    } else if (agent.role_type === 'worker') {
-      roleColor = '#10b981'; // Esmeralda
-      roleBadge = '⚙️';
+    } else if (isLeader) {
+      roleColor = '#a855f7'; // Roxo liderança
+      roleBadge = '⭐';
+    } else if (isSubagent) {
+      roleColor = '#06b6d4'; // Ciano subagente
+      roleBadge = '⚡';
+    }
+
+    // Aura especial do Sudo Agent (Gold Halo permanente e pulsante)
+    if (isSudo) {
+      const auraPulse = 0.4 + Math.sin(performance.now() / 250) * 0.25;
+      ctx.strokeStyle = `rgba(245, 158, 11, ${auraPulse})`;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(x, y - 6, 20, 0, Math.PI * 2);
+      ctx.stroke();
     }
 
     // Corpo do NPC
-    ctx.fillStyle = roleColor;
+    ctx.fillStyle = isSudo ? '#0f172a' : roleColor;
     ctx.fillRect(x - 7, y - 4, 14, 14);
+
+    // Gravata executiva no Sudo Agent
+    if (isSudo) {
+      ctx.fillStyle = '#ef4444'; // Gravata vermelha executiva
+      ctx.fillRect(x - 1, y - 2, 2, 8);
+    }
 
     // Cabeça do NPC
     ctx.fillStyle = '#fed7aa'; // Tom de pele
     ctx.fillRect(x - 6, y - 16, 12, 12);
 
     // Cabelo
-    ctx.fillStyle = agent.role_type === 'supervisor' ? '#451a03' : '#1e1b4b';
+    ctx.fillStyle = isSudo ? '#1c1917' : (isLeader ? '#451a03' : '#1e1b4b');
     ctx.fillRect(x - 7, y - 18, 14, 5);
 
     // Olhos
@@ -777,23 +1068,20 @@ class OfficeEngine {
     ctx.fillRect(x - 4, y - 11, 2, 2);
     ctx.fillRect(x + 2, y - 11, 2, 2);
 
-    // Indicador de Estado Visual (Aura / Balão de Pensamento / QA / Aprovação / Handoff)
+    // Estados Visuais (Pensando, Trabalhando, Diálogo Inter-Squad, etc.)
     if (agent.state === 'thinking') {
-      // Aura dourada pulsante
       ctx.strokeStyle = 'rgba(245, 158, 11, 0.8)';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(x, y - 6, 18, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Balão de pensamento
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(x + 10, y - 30, 24, 14);
       ctx.fillStyle = '#0f172a';
       ctx.font = "bold 9px sans-serif";
       ctx.fillText("💭...", x + 13, y - 20);
     } else if (agent.state === 'working') {
-      // Efeito de digitação rápida
       ctx.fillStyle = '#10b981';
       ctx.font = "10px sans-serif";
       ctx.fillText("⚡", x + 10, y - 20);
@@ -822,28 +1110,23 @@ class OfficeEngine {
       ctx.fillStyle = '#f59e0b';
       ctx.font = "bold 12px sans-serif";
       ctx.fillText("⚠️", x + 10, y - 20);
-    } else if (agent.state === 'handoff') {
-      // Agente carregando pasta
-      ctx.fillStyle = '#f59e0b';
-      ctx.fillRect(x + 6, y, 8, 6);
-      ctx.strokeStyle = '#78350f';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(x + 6, y, 8, 6);
-    } else if (agent.state === 'reporting' || agent.speechBubble) {
-      // Balão de relatório entregue
-      const bubbleText = agent.speechBubble || "📄 Relatório!";
-      ctx.font = "bold 9px sans-serif";
+    }
+
+    // Balão de Diálogo e Relatórios / Tickets
+    if (agent.speechBubble) {
+      const bubbleText = agent.speechBubble;
+      ctx.font = "bold 9px 'Courier New', monospace";
       const textWidth = ctx.measureText(bubbleText).width;
 
-      ctx.fillStyle = '#ffffff';
-      ctx.strokeStyle = '#0f172a';
-      ctx.lineWidth = 1;
-      ctx.fillRect(x - textWidth / 2 - 4, y - 36, textWidth + 8, 16);
-      ctx.strokeRect(x - textWidth / 2 - 4, y - 36, textWidth + 8, 16);
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
+      ctx.strokeStyle = isSudo ? '#f59e0b' : (bubbleText.includes('🤝') ? '#10b981' : '#38bdf8');
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(x - textWidth / 2 - 6, y - 38, textWidth + 12, 18);
+      ctx.strokeRect(x - textWidth / 2 - 6, y - 38, textWidth + 12, 18);
 
-      ctx.fillStyle = '#0f172a';
+      ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'center';
-      ctx.fillText(bubbleText, x, y - 24);
+      ctx.fillText(bubbleText, x, y - 26);
     }
 
     // Ícone flutuante de atividade de arquivo (fs.activity - 1.2s com animação)
@@ -878,12 +1161,12 @@ class OfficeEngine {
     // Nome e Cargo do Agente acima do avatar
     ctx.font = "bold 9px 'Courier New', monospace";
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(`${roleBadge} ${agent.name}`, x, y - 22);
+    ctx.fillStyle = isSudo ? '#f59e0b' : '#ffffff';
+    ctx.fillText(`${roleBadge} ${agent.name}`, x, y - 20);
 
     ctx.font = "8px sans-serif";
     ctx.fillStyle = roleColor;
-    ctx.fillText(agent.title, x, y - 14);
+    ctx.fillText(roleTitle, x, y - 12);
   }
 
   renderPlayer(ctx) {
@@ -1078,6 +1361,65 @@ class OfficeEngine {
 
     window.officeSocket.on('fs.activity', (data) => {
       this.triggerFsActivity(data.agent_id, data.action, data.path);
+    });
+
+    // Eventos da Arquitetura Multinível (Etapa 7: Sudo Agent & Inter-Squad)
+    window.officeSocket.on('squad.dispatched', (data) => {
+      this.triggerRetroNotice(`👑 Sudo despachou: "${data.epic_title}" para ${data.squad_name || data.squad_id}!`, 4.0);
+      const sudoAgent = Array.from(this.agents.values()).find(a => a.tier === 'sudo' || a.id === data.sudo_agent_id);
+      if (sudoAgent) {
+        sudoAgent.speechBubble = "👑 Épico Despachado!";
+        sudoAgent.bubbleTimer = 3.0;
+        sudoAgent.state = 'working';
+      }
+      if (data.leader_id) {
+        const leader = this.agents.get(data.leader_id);
+        if (leader) {
+          leader.speechBubble = `⚡ Épico recebido: ${data.epic_title}`;
+          leader.bubbleTimer = 3.5;
+          leader.state = 'working';
+        }
+      }
+    });
+
+    window.officeSocket.on('agent.cross_room_move', (data) => {
+      this.handleCrossRoomMove(data);
+    });
+
+    window.officeSocket.on('squad.cross_request', (data) => {
+      const ticket = data.ticket_data || data;
+      this.triggerRetroNotice(`🤝 Ticket Inter-Squad aberto: ${ticket.from_squad_id} ➔ ${ticket.to_squad_id}!`, 4.0);
+      if (data.to_leader_id) {
+        const toLeader = this.agents.get(data.to_leader_id);
+        if (toLeader) {
+          toLeader.speechBubble = "🛡️ Analisando Ticket...";
+          toLeader.bubbleTimer = 3.5;
+          toLeader.state = 'reviewing';
+        }
+      }
+    });
+
+    window.officeSocket.on('squad.ticket_resolved', (data) => {
+      const ticket = data.ticket_data || data;
+      this.triggerRetroNotice(`✅ Ticket Inter-Squad resolvido e entregue com sucesso!`, 3.5);
+      const reqLeader = Array.from(this.agents.values()).find(a => a.id === ticket.requesting_leader_id);
+      if (reqLeader) {
+        reqLeader.speechBubble = "✅ Parecer Técnico Recebido!";
+        reqLeader.bubbleTimer = 3.0;
+      }
+    });
+
+    window.officeSocket.on('sudo.final_delivery', (data) => {
+      this.triggerRetroNotice(`🏆 Diretoria: Meta Macro consolidada e entregue com sucesso!`, 5.0);
+      const sudoAgent = Array.from(this.agents.values()).find(a => a.tier === 'sudo' || a.id === data.sudo_agent_id);
+      if (sudoAgent) {
+        sudoAgent.speechBubble = "🏆 Meta Macro Concluída!";
+        sudoAgent.bubbleTimer = 4.5;
+        this.triggerSpawnEffect(sudoAgent.x, sudoAgent.y);
+      }
+      if (window.officeUI && typeof window.officeUI.handleSudoDelivery === 'function') {
+        window.officeUI.handleSudoDelivery(data);
+      }
     });
   }
 }

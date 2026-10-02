@@ -7,10 +7,18 @@ workflows, quality gates, aprovação humana e pacotes de tarefas.
 from enum import Enum
 import time
 from typing import Any, Dict, List, Optional
+import uuid
 from pydantic import BaseModel, Field, field_validator
 
 
 # --- Enums de Agentes e Tarefas ---
+
+class AgentTier(str, Enum):
+    SUDO = "sudo"                 # Nível executivo máximo (Diretor Geral / Orquestrador Supremo)
+    SQUAD_LEADER = "squad_leader" # Gestor de departamento
+    WORKER = "worker"             # Especialista fixo
+    SUBAGENT = "subagent"         # Especialista temporário
+
 
 class AgentRoleType(str, Enum):
     SOLO = "solo"
@@ -165,6 +173,7 @@ class Desk(BaseModel):
     front_y: int
     width: int = 76
     height: int = 48
+    room_id: str = "room_dev"
     agent_id: Optional[str] = None
 
 
@@ -216,12 +225,15 @@ class SpawnSubagentParams(BaseModel):
 class Agent(BaseModel):
     id: str
     name: str
-    title: str                     # Ex: "Tech Lead", "Backend Dev"
+    title: str                     # Ex: "Diretor Geral", "Tech Lead", "Backend Dev"
+    tier: AgentTier = AgentTier.WORKER
     avatar_id: str = "avatar_1"
     role_type: AgentRoleType = AgentRoleType.SOLO
     supervisor_id: Optional[str] = None     # Se for WORKER, aponta para o SUPERVISOR
     subordinate_ids: List[str] = Field(default_factory=list) # Se for SUPERVISOR
+    squad_id: Optional[str] = None          # None se for SUDO
     desk_id: str
+    room_id: str = "room_dev"               # "room_sudo", "room_dev", "room_sec", "room_doc"
     system_prompt: str = "Você é um assistente de IA focado e prestativo."
     model_name: str = ""
     state: AgentState = AgentState.IDLE
@@ -229,13 +241,56 @@ class Agent(BaseModel):
     is_temporary: bool = False
 
 
+class AgentConfig(BaseModel):
+    id: str
+    name: str
+    tier: AgentTier = AgentTier.WORKER
+    squad_id: Optional[str] = None  # None se for SUDO
+    desk_id: str
+    room_id: str = "room_dev"
+    avatar_id: str = "avatar_1"
+    model_name: str = ""
+    system_prompt: str = ""
+    status: str = "idle"
+
+
+class CrossSquadTicket(BaseModel):
+    ticket_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    from_squad_id: str
+    to_squad_id: str
+    requesting_leader_id: str
+    reason_out_of_scope: str        # Por que o próprio squad não pode resolver
+    exact_requirement: str          # O que precisa ser entregue com precisão cirúrgica
+    status: str = "pending"         # "pending" | "in_progress" | "delivered" | "rejected"
+    result_artifact: Optional[str] = None
+    created_at: float = Field(default_factory=time.time)
+    updated_at: float = Field(default_factory=time.time)
+
+
+class DispatchToSquadParams(BaseModel):
+    target_squad_id: str = Field(..., description="ID do squad de destino (ex: 'squad-core-engineering', 'squad-security').")
+    epic_title: str = Field(..., description="Título descritivo do épico de trabalho.")
+    objective: str = Field(..., description="Objetivo macro e entregáveis esperados do squad.")
+    acceptance_criteria: str = Field(..., description="Regras rigorosas para aceitação do trabalho.")
+
+
+class RequestCrossSquadParams(BaseModel):
+    target_squad_id: str = Field(..., description="ID do squad que possui a competência requerida.")
+    reason_why_needed: str = Field(..., description="Justificativa técnica da falta de escopo/competência interna.")
+    what_exact_service: str = Field(..., description="O QUE deve ser feito nos mínimos detalhes.")
+    how_format_response: str = Field(..., description="Formato exato de resposta (ex: schema JSON, arquivo, hash).")
+
+
 class AgentCreateRequest(BaseModel):
     name: str
     title: str
+    tier: Optional[AgentTier] = AgentTier.WORKER
     avatar_id: str = "avatar_1"
     role_type: AgentRoleType = AgentRoleType.SOLO
     supervisor_id: Optional[str] = None
+    squad_id: Optional[str] = None
     desk_id: str
+    room_id: Optional[str] = "room_dev"
     system_prompt: Optional[str] = None
     model_name: Optional[str] = None
 
@@ -243,10 +298,13 @@ class AgentCreateRequest(BaseModel):
 class AgentUpdateRequest(BaseModel):
     name: Optional[str] = None
     title: Optional[str] = None
+    tier: Optional[AgentTier] = None
     avatar_id: Optional[str] = None
     role_type: Optional[AgentRoleType] = None
     supervisor_id: Optional[str] = None
+    squad_id: Optional[str] = None
     desk_id: Optional[str] = None
+    room_id: Optional[str] = None
     system_prompt: Optional[str] = None
     model_name: Optional[str] = None
 
@@ -268,6 +326,7 @@ class WorkspaceData(BaseModel):
     agents: List[Agent] = Field(default_factory=list)
     desks: List[Desk] = Field(default_factory=list)
     conversations: Dict[str, List[dict]] = Field(default_factory=dict)
+    active_tickets: List[CrossSquadTicket] = Field(default_factory=list)
 
 
 # --- Squads e Templates de Agentes ---
@@ -284,10 +343,21 @@ class AgentTemplate(BaseModel):
 
 class Squad(BaseModel):
     id: str
-    name: str
+    name: str                       # Ex: "Squad_Core_Engineering"
+    room_id: str = "room_dev"       # Identificador da sala física no mapa
+    leader_id: str = ""             # ID do líder de squad
+    member_ids: List[str] = Field(default_factory=list)
+    agent_ids: List[str] = Field(default_factory=list) # Compatibilidade legada
+    domain_tags: List[str] = Field(default_factory=list) # Ex: ["python", "api", "database", "fastapi"]
+    color_theme: str = "#38bdf8"    # Cor distintiva do crachá/balão (hex)
     description: str = ""
-    agent_ids: List[str] = Field(default_factory=list)
-    created_at: float
+    created_at: float = Field(default_factory=time.time)
+
+    def model_post_init(self, __context: Any) -> None:
+        if not self.member_ids and self.agent_ids:
+            self.member_ids = list(self.agent_ids)
+        elif not self.agent_ids and self.member_ids:
+            self.agent_ids = list(self.member_ids)
 
 
 class SquadExport(BaseModel):

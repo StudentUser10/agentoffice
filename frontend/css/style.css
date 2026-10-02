@@ -1541,4 +1541,321 @@ body {
   padding: 2px 5px;
 }
 
+/* --- Etapa 7: Estilos da Sala da Diretoria (Sudo) & Hierarquia Multinível --- */
+
+.sudo-banner {
+  display: flex;
+  gap: 14px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 8px;
+  padding: 12px 16px;
+  align-items: center;
+}
+
+.sudo-banner-icon {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.sudo-banner-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fbbf24;
+  margin-bottom: 3px;
+}
+
+.sudo-banner-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.sudo-progress-box {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 6px;
+  padding: 12px 16px;
+}
+
+.sudo-progress-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fbbf24;
+  margin-bottom: 10px;
+}
+
+.sudo-steps-indicator {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.sudo-step {
+  font-size: 10px;
+  font-family: var(--font-pixel);
+  text-align: center;
+  padding: 6px 4px;
+  background: #111422;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-muted);
+}
+
+.sudo-step.active {
+  border-color: #f59e0b;
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.15);
+  animation: pulse-border 1.5s infinite;
+}
+
+.sudo-step.done {
+  border-color: #10b981;
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.sudo-delivery-container {
+  background: #090c15;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.15);
+}
+
+.sudo-delivery-container .delivery-header {
+  background: rgba(245, 158, 11, 0.15);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 8px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fbbf24;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sudo-delivery-container .delivery-content {
+  padding: 14px;
+  font-size: 12px;
+  color: #e2e8f0;
+  line-height: 1.5;
+  max-height: 220px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-family: var(--font-pixel);
+}
+
+/* Tabs do Organograma */
+.hierarchy-tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.hierarchy-tab-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.hierarchy-tab-btn.active {
+  color: #c084fc;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+/* Organograma Corporativo Tree */
+.organogram-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+}
+
+.organogram-tier-sudo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.organogram-card {
+  background: #141828;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 16px;
+  min-width: 180px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+.organogram-card.sudo {
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), #141828);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.2);
+  min-width: 260px;
+}
+
+.organogram-card.leader {
+  border-color: #a855f7;
+  background: rgba(168, 85, 247, 0.08);
+}
+
+.organogram-card-badge {
+  font-size: 9px;
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.organogram-card.sudo .organogram-card-badge {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+.organogram-card.leader .organogram-card-badge {
+  background: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+}
+
+.organogram-card-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.organogram-card-title {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.organogram-squads-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.squad-column {
+  background: rgba(15, 20, 32, 0.6);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.squad-column-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 6px;
+}
+
+.squad-members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.member-chip {
+  background: #111422;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 11px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.member-chip.subagent {
+  border-color: rgba(6, 182, 212, 0.3);
+  color: #38bdf8;
+}
+
+/* Tickets Inter-Squad */
+.ticket-card {
+  background: #121626;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  transition: border-color 0.2s;
+}
+
+.ticket-card:hover {
+  border-color: #a855f7;
+}
+
+.ticket-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ticket-route {
+  font-size: 12px;
+  font-weight: 700;
+  color: #c084fc;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ticket-status-pill {
+  font-size: 9px;
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.ticket-status-pill.pending {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.ticket-status-pill.delivered {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.ticket-req-text {
+  font-size: 11px;
+  color: #cbd5e1;
+  margin-bottom: 8px;
+}
+
+.ticket-artifact-preview {
+  background: #090c14;
+  border-left: 3px solid #10b981;
+  padding: 6px 10px;
+  font-size: 10px;
+  color: #94a3b8;
+  font-family: var(--font-pixel);
+  white-space: pre-wrap;
+  max-height: 90px;
+  overflow-y: auto;
+}
+
 
