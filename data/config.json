@@ -1,0 +1,15 @@
+{
+  "provider": "ollama",
+  "base_url": "http://localhost:11434",
+  "model": "llama3:latest",
+  "api_keys": {
+    "ollama": "sk-temp-testing-key"
+  },
+  "workspace_dir": "C:\\Users\\jeffb\\AppData\\Local\\Temp\\tmpljkogxgv",
+  "ui_preferences": {
+    "theme": "retro-dark",
+    "sound_enabled": true,
+    "pixel_scale": 2
+  },
+  "configured": true
+}

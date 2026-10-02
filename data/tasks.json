@@ -1,0 +1,75 @@
+{
+  "tasks": [
+    {
+      "id": "task-dbg-appr",
+      "title": "dbg",
+      "objective": "dbg",
+      "workflow_id": "workflow-standard-engineering",
+      "squad_id": null,
+      "current_step_index": 1,
+      "assigned_agent_id": "agent-a82659",
+      "state": "FAILED",
+      "artifacts": [],
+      "summary": "",
+      "decisions": [
+        "Proposta 'test' APROVADA pelo usuário. Arquivo 'hello.txt' aplicado. Notas: ok"
+      ],
+      "evidence": [],
+      "pending_items": [],
+      "events": [
+        {
+          "id": "evt-a6bbad68",
+          "task_id": "task-dbg-appr",
+          "event_type": "task.approved",
+          "message": "Proposta aprovada pelo usuário: test",
+          "timestamp": 1790922903.6629455,
+          "payload": {
+            "approval_id": "appr-dbg-1",
+            "affected_file": "hello.txt",
+            "notes": "ok"
+          }
+        },
+        {
+          "id": "evt-a6458a3e",
+          "task_id": "task-dbg-appr",
+          "event_type": "task.updated",
+          "message": "Estado alterado de WAITING_APPROVAL para IN_PROGRESS. Proposta aprovada. Continuando workflow na etapa 'Execução & Proposta de Código'.",
+          "timestamp": 1790922903.662982,
+          "payload": {
+            "old_state": "WAITING_APPROVAL",
+            "new_state": "IN_PROGRESS"
+          }
+        },
+        {
+          "id": "evt-c4025f8d",
+          "task_id": "task-dbg-appr",
+          "event_type": "task.updated",
+          "message": "Estado alterado de IN_PROGRESS para FAILED. Execução interrompida por reinício do servidor. Recuperável pelo usuário.",
+          "timestamp": 1790923004.080689,
+          "payload": {
+            "old_state": "IN_PROGRESS",
+            "new_state": "FAILED"
+          }
+        }
+      ],
+      "revision_count": 0,
+      "approvals": [
+        {
+          "id": "appr-dbg-1",
+          "task_id": "task-dbg-appr",
+          "step_id": "step-1",
+          "summary": "test",
+          "proposed_diff": null,
+          "proposed_content": "hello",
+          "affected_file": "hello.txt",
+          "status": "approved",
+          "feedback": "ok",
+          "created_at": 1790922903.6293876,
+          "decided_at": 1790922903.662928
+        }
+      ],
+      "created_at": 1790922903.6294043,
+      "updated_at": 1790923004.080689
+    }
+  ]
+}

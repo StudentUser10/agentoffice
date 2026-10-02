@@ -1,0 +1,55 @@
+{
+  "workflows": [
+    {
+      "id": "workflow-standard-engineering",
+      "name": "Workflow Padrão de Engenharia",
+      "description": "Ciclo completo de engenharia: Planejamento, Execução, Revisão por QA e Relatório Final.",
+      "steps": [
+        {
+          "id": "step-planning",
+          "name": "Planejamento Arquitetural",
+          "required_role": "supervisor",
+          "action_type": "generate",
+          "instructions": "Analise a solicitação do usuário, avalie o escopo e gere o plano de arquitetura e execução detalhado.",
+          "review_criteria": null,
+          "requires_human_approval": false,
+          "max_revisions": 2
+        },
+        {
+          "id": "step-execution",
+          "name": "Execução & Proposta de Código",
+          "required_role": "worker",
+          "action_type": "prepare_change",
+          "instructions": "Implemente a solução conforme o plano definido e prepare os artefatos de código e propostas de alteração.",
+          "review_criteria": null,
+          "requires_human_approval": true,
+          "max_revisions": 2
+        },
+        {
+          "id": "step-qa-review",
+          "name": "Revisão de Qualidade & Testes",
+          "required_role": "worker",
+          "action_type": "review",
+          "instructions": "Inspecione minuciosamente os artefatos gerados, verifique a segurança, boas práticas e ausência de regressões.",
+          "review_criteria": [
+            "Código limpo, seguro e com tipagem",
+            "Sem vulnerabilidades ou escape de diretório",
+            "Atende aos objetivos da tarefa"
+          ],
+          "requires_human_approval": false,
+          "max_revisions": 2
+        },
+        {
+          "id": "step-final-report",
+          "name": "Relatório Final & Conclusão",
+          "required_role": "supervisor",
+          "action_type": "generate",
+          "instructions": "Consolide a entrega, resuma as decisões tomadas, evidências de testes e finalize o relatório do workflow.",
+          "review_criteria": null,
+          "requires_human_approval": false,
+          "max_revisions": 2
+        }
+      ]
+    }
+  ]
+}

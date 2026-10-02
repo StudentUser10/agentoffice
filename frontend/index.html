@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgentOffice 2D — Escritório Visual de Agentes IA</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="logo-container">
+      <div class="pixel-logo">🏢</div>
+      <div>
+        <div class="app-title">
+          AgentOffice 2D
+          <span class="badge-tag">v0.2 Workflows</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="header-status">
+      <button class="btn-icon header-badge-btn" id="openKanbanBtn" type="button" title="Abrir Quadro de Tarefas Kanban">
+        📋 Quadro Kanban <span class="badge-count" id="kanbanActiveBadge" style="display: none;">0</span>
+      </button>
+      <button class="btn-icon" id="openDiagnosticsBtn" type="button" title="Painel de Diagnóstico do Sistema">
+        🖥️ Diagnóstico
+      </button>
+      <div class="status-pill" id="providerStatusPill">
+        <span class="status-dot" id="providerStatusDot"></span>
+        <span id="providerStatusText">Conectando...</span>
+      </div>
+      <button class="btn-icon" id="openConfigBtn" type="button">
+        ⚙️ Configurações
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Game & Office Layout -->
+  <main class="main-layout">
+    
+    <!-- 2D Canvas Viewport Card -->
+    <div class="game-viewport-card">
+      <div class="viewport-topbar">
+        <div class="viewport-title">
+          <span>🎮</span> ESCRITÓRIO TOP-DOWN 2D
+        </div>
+        <div class="hud-controls-badge">
+          [W,A,S,D] Mover • [E] Interagir • [Clique] Selecionar Mesa
+        </div>
+      </div>
+
+      <div class="canvas-wrapper">
+        <canvas id="officeCanvas" width="800" height="520"></canvas>
+      </div>
+    </div>
+
+    <!-- Office Activity Log Panel -->
+    <div class="office-activity-panel">
+      <div class="activity-header">
+        <div class="activity-title">
+          <span>📋</span> ATIVIDADES DO ESCRITÓRIO & DELEGAÇÕES
+        </div>
+        <button class="btn-action" id="clearLogsBtn" type="button" style="padding: 4px 8px; font-size: 11px;">
+          Limpar
+        </button>
+      </div>
+      <div class="activity-feed" id="activityFeed">
+        <div class="log-entry notice">
+          <span class="log-time">[SISTEMA]</span> Bem-vindo ao AgentOffice 2D! Use W,A,S,D para andar e aproxime-se de uma mesa para interagir com [E].
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Janela Lateral de Chat com Agente (Drawer) -->
+  <div class="chat-drawer" id="chatDrawer">
+    <div class="chat-header">
+      <div class="chat-agent-info">
+        <div class="chat-agent-name" id="chatAgentName">Agente</div>
+        <div class="chat-agent-role" id="chatAgentRole">Cargo</div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn-action" id="editCurrentAgentBtn" type="button" title="Editar Perfil do Agente">
+          ✏️ Editar
+        </button>
+        <button class="btn-close" id="closeChatBtn" type="button" title="Fechar">&times;</button>
+      </div>
+    </div>
+
+    <div class="chat-messages" id="chatMessages"></div>
+
+    <div class="chat-input-bar">
+      <input type="text" class="chat-input" id="chatInput" placeholder="Envie uma tarefa ou objetivo... [Enter]">
+      <button class="btn-primary" id="sendChatBtn" type="button">Enviar</button>
+    </div>
+  </div>
+
+  <!-- Modal CRUD de Agentes (Contratar / Editar) -->
+  <div class="modal-overlay" id="agentModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon">👤</div>
+          <div>
+            <div class="modal-title" id="agentModalTitle">Configurar Agente</div>
+            <div class="modal-subtitle">Defina o papel hierárquico, mesa e personalidade do agente</div>
+          </div>
+        </div>
+        <button class="btn-close" id="closeAgentModalBtn" type="button">&times;</button>
+      </div>
+
+      <form id="agentForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="agentNameInput">Nome do Agente</label>
+            <input type="text" class="form-input" id="agentNameInput" placeholder="Ex: Roberto Silva" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="agentTitleInput">Cargo / Função</label>
+            <input type="text" class="form-input" id="agentTitleInput" placeholder="Ex: Tech Lead, Backend Dev, QA Engineer" required>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label" for="agentRoleSelect">Papel Hierárquico</label>
+              <select class="form-select" id="agentRoleSelect">
+                <option value="solo">✦ Solo (Autônomo)</option>
+                <option value="supervisor">👑 Supervisor (Tech Lead)</option>
+                <option value="worker">⚙️ Worker (Subordinado)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="agentDeskSelect">Mesa de Trabalho</label>
+              <select class="form-select" id="agentDeskSelect"></select>
+            </div>
+          </div>
+
+          <!-- Supervisor Selection (Visível apenas se for Worker) -->
+          <div class="form-group" id="supervisorGroup" style="display: none;">
+            <label class="form-label" for="agentSupervisorSelect">
+              Supervisor Responsável
+              <span class="label-hint">A quem este agente reportará</span>
+            </label>
+            <select class="form-select" id="agentSupervisorSelect">
+              <option value="">-- Selecione o Supervisor --</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="agentPromptInput">
+              System Prompt (Instruções e Especialidade)
+            </label>
+            <textarea class="form-textarea" id="agentPromptInput" rows="3" placeholder="Instruções para o comportamento e área de atuação do agente..."></textarea>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label" for="agentAvatarSelect">Avatar Visual</label>
+              <select class="form-select" id="agentAvatarSelect">
+                <option value="avatar_1">Avatar 1 (Estilo Clássico)</option>
+                <option value="avatar_2">Avatar 2 (Casual Tech)</option>
+                <option value="avatar_3">Avatar 3 (Executivo)</option>
+                <option value="avatar_4">Avatar 4 (Cientista)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="agentModelInput">
+                Modelo Específico
+                <span class="label-hint">(Opcional)</span>
+              </label>
+              <input type="text" class="form-input" id="agentModelInput" placeholder="Deixe vazio para usar o padrão">
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-danger" id="deleteAgentBtn" type="button" style="display: none;">
+            Dispensar Agente
+          </button>
+          <div style="display: flex; gap: 8px; margin-left: auto;">
+            <button class="btn-primary" type="submit">Salvar Agente</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de Configuração do Sistema (Etapa 1 Preservada) -->
+  <div class="modal-overlay" id="configModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon">⚙️</div>
+          <div>
+            <div class="modal-title">Configuração do Sistema</div>
+            <div class="modal-subtitle">Provedores de IA e diretório seguro de trabalho</div>
+          </div>
+        </div>
+        <button class="btn-close" id="closeConfigBtn" title="Fechar">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="alert-box" id="modalAlert"></div>
+
+        <div class="form-group">
+          <label class="form-label" for="providerSelect">Provedor de IA (Gateway Universal)</label>
+          <select class="form-select" id="providerSelect">
+            <optgroup label="Local / Offline (Zero-Cost)">
+              <option value="ollama">Ollama (Local Nativo / Auto-Detecção)</option>
+              <option value="openai_compatible">vLLM / LM Studio / LocalAI / KoboldCPP</option>
+            </optgroup>
+            <optgroup label="Cloud Frontier (APIs Diretas)">
+              <option value="openai">OpenAI (GPT-4o, GPT-4o-mini, o1, o3-mini)</option>
+              <option value="anthropic">Anthropic Claude (3.5 Sonnet, 3.5 Haiku, Opus)</option>
+              <option value="gemini">Google Gemini (1.5 Flash, 1.5 Pro, 2.0 Flash)</option>
+            </optgroup>
+            <optgroup label="Alta Velocidade & Inferência Especializada">
+              <option value="groq">Groq (Llama 3.3, Mixtral - Ultra Rápido)</option>
+              <option value="deepseek">DeepSeek API (V3, R1 Raciocínio)</option>
+              <option value="mistral">Mistral AI (Large, Codestral, Pixtral)</option>
+              <option value="together">Together AI / Fireworks / Perplexity</option>
+            </optgroup>
+            <optgroup label="Gateways & Endpoints Customizados">
+              <option value="openrouter">OpenRouter (Multi-Model Gateway)</option>
+              <option value="custom">Endpoint Corporativo / Customizado Arbitrário</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="form-group" id="urlGroup">
+          <label class="form-label" for="baseUrlInput">URL Base</label>
+          <div class="input-with-button">
+            <input type="text" class="form-input" id="baseUrlInput" value="http://localhost:11434">
+            <button class="btn-action" id="testConnBtn" type="button">⚡ Testar</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="modelInput">Modelo Padrão</label>
+          <div class="input-with-button">
+            <input type="text" class="form-input" id="modelInput" value="llama3:latest">
+            <button class="btn-action" id="detectModelsBtn" type="button">🔍 Detectar</button>
+          </div>
+          <select class="form-select" id="modelDropdown" style="display: none; margin-top: 6px;"></select>
+        </div>
+
+        <div class="form-group" id="apiKeyGroup">
+          <label class="form-label" for="apiKeyInput">
+            Chave de API
+            <span class="label-hint" id="apiKeyStatus">Não configurada</span>
+          </label>
+          <input type="password" class="form-input" id="apiKeyInput" placeholder="Deixe vazio para manter a atual">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="workspaceDirInput">Pasta de Trabalho (Workspace)</label>
+          <div class="input-with-button">
+            <input type="text" class="form-input" id="workspaceDirInput">
+            <button class="btn-action" id="selectDirBtn" type="button">📁 Selecionar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-primary" id="saveConfigBtn" type="button">Salvar Configurações</button>
+      </div>
+    </div>
+  <!-- Modal do Quadro Kanban (6 Colunas) -->
+  <div class="modal-overlay" id="kanbanModal">
+    <div class="modal-card kanban-modal-card">
+      <div class="kanban-topbar">
+        <div class="modal-title-group">
+          <div class="modal-icon">📋</div>
+          <div>
+            <div class="modal-title">Quadro de Tarefas & Workflows (Kanban)</div>
+            <div class="modal-subtitle">Acompanhe etapas, handoffs, quality gates e aprovações em tempo real</div>
+          </div>
+        </div>
+        <div class="kanban-toolbar-controls">
+          <input type="text" class="kanban-search-input" id="kanbanSearchInput" placeholder="🔍 Filtrar tarefas por título, id ou agente...">
+          <button class="btn-primary" id="openCreateTaskBtn" type="button">+ Nova Tarefa</button>
+          <button class="btn-action" id="refreshKanbanBtn" type="button" title="Atualizar dados do servidor">🔄 Atualizar</button>
+          <button class="btn-close" id="closeKanbanBtn" type="button">&times;</button>
+        </div>
+      </div>
+      <div class="kanban-board-grid" id="kanbanBoardContainer"></div>
+    </div>
+  </div>
+
+  <!-- Modal de Criação de Tarefa -->
+  <div class="modal-overlay" id="taskCreateModal">
+    <div class="modal-card" style="max-width: 540px;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon">✨</div>
+          <div>
+            <div class="modal-title">Criar Nova Tarefa</div>
+            <div class="modal-subtitle">Configure o objetivo e selecione o workflow de execução</div>
+          </div>
+        </div>
+        <button class="btn-close" id="closeTaskCreateBtn" type="button">&times;</button>
+      </div>
+      <form id="taskCreateForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="taskTitleInput">Título da Tarefa</label>
+            <input type="text" class="form-input" id="taskTitleInput" placeholder="Ex: Implementar módulo de autenticação" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="taskObjectiveInput">Objetivo e Instruções Detalhadas</label>
+            <textarea class="form-input" id="taskObjectiveInput" rows="4" placeholder="Descreva os requisitos, restrições e resultado esperado..." required style="resize: vertical;"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="taskWorkflowSelect">Workflow de Execução</label>
+            <select class="form-select" id="taskWorkflowSelect" required></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="taskSquadSelect">Squad Responsável (Opcional)</label>
+            <select class="form-select" id="taskSquadSelect"></select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-primary" type="submit">Criar e Enfileirar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de Detalhes da Tarefa e Aprovação de Diff -->
+  <div class="modal-overlay" id="taskDetailModal">
+    <div class="modal-card task-detail-card">
+      <div class="modal-header" style="border-bottom: none; padding-bottom: 0;">
+        <div></div>
+        <button class="btn-close" id="closeTaskDetailBtn" type="button">&times;</button>
+      </div>
+      <div class="modal-body" id="taskDetailContent" style="padding-top: 0; overflow-y: auto;"></div>
+    </div>
+  <!-- Modal de Diagnóstico do Sistema (Rack de Servidores) -->
+  <div class="modal-overlay" id="diagnosticsModal">
+    <div class="modal-card diagnostics-modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon">🖥️</div>
+          <div>
+            <div class="modal-title">Diagnóstico do Sistema & Recursos</div>
+            <div class="modal-subtitle">Integridade do LLM local, Workspace Sandbox e persistência de dados</div>
+          </div>
+        </div>
+        <button class="btn-close" id="closeDiagnosticsBtn" type="button">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="diag-header-bar">
+          <div class="diag-overall-pill">
+            <span class="status-dot" id="diagStatusDot"></span>
+            <span id="diagStatusText">Verificando sistema...</span>
+          </div>
+          <div class="diag-actions-bar">
+            <span class="diag-timestamp-text" id="diagTimestamp">Última checagem: aguardando</span>
+            <button class="btn-primary btn-sm" id="runDiagnosticsBtn" type="button">
+              <span>🔄</span> Executar Diagnóstico Agora
+            </button>
+          </div>
+        </div>
+
+        <div class="diag-cards-grid" id="diagItemsContainer">
+          <div class="kanban-empty-hint">Carregando métricas de diagnóstico...</div>
+        </div>
+
+        <div class="diag-system-footer">
+          <div class="detail-section-title" style="margin-bottom: 8px;">⚙️ Ambiente de Execução</div>
+          <div class="sys-info-grid" id="diagSystemInfo"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Scripts Modulares -->
+  <script src="/static/js/socket.js"></script>
+  <script src="/static/js/modals.js"></script>
+  <script src="/static/js/kanban.js"></script>
+  <script src="/static/js/diagnostics.js"></script>
+  <script src="/static/js/engine.js"></script>
+  <script src="/static/js/ui.js"></script>
+
+  <script>
+    // Inicialização da Aplicação
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Inicializar Motor Canvas e UI
+      window.officeEngine = new OfficeEngine('officeCanvas');
+      window.officeUI = new OfficeUI();
+      window.officeEngine.start();
+
+      // 2. Conectar WebSocket
+      window.officeSocket.connect();
+
+      // 3. Carregar Configurações e Workspace iniciais
+      await loadInitialSystemConfig();
+      await loadInitialWorkspace();
+    });
+
+    // Configurações do Sistema (Modal Wizard)
+    const configModal = document.getElementById('configModal');
+    const openConfigBtn = document.getElementById('openConfigBtn');
+    const closeConfigBtn = document.getElementById('closeConfigBtn');
+    const providerSelect = document.getElementById('providerSelect');
+    const baseUrlInput = document.getElementById('baseUrlInput');
+    const modelInput = document.getElementById('modelInput');
+    const modelDropdown = document.getElementById('modelDropdown');
+    const apiKeyGroup = document.getElementById('apiKeyGroup');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const apiKeyStatus = document.getElementById('apiKeyStatus');
+    const workspaceDirInput = document.getElementById('workspaceDirInput');
+    const testConnBtn = document.getElementById('testConnBtn');
+    const detectModelsBtn = document.getElementById('detectModelsBtn');
+    const selectDirBtn = document.getElementById('selectDirBtn');
+    const saveConfigBtn = document.getElementById('saveConfigBtn');
+    const modalAlert = document.getElementById('modalAlert');
+    const providerStatusDot = document.getElementById('providerStatusDot');
+    const providerStatusText = document.getElementById('providerStatusText');
+
+    let currentSystemConfig = null;
+
+    openConfigBtn.addEventListener('click', () => configModal.classList.add('active'));
+    closeConfigBtn.addEventListener('click', () => configModal.classList.remove('active'));
+
+    const PROVIDER_METADATA = {
+      ollama: { url: 'http://localhost:11434', model: 'llama3:latest', keyRequired: false, placeholder: 'Ollama local não requer chave' },
+      openai_compatible: { url: 'http://localhost:1234/v1', model: 'default', keyRequired: false, placeholder: 'Chave de API (opcional)' },
+      openai: { url: 'https://api.openai.com/v1', model: 'gpt-4o-mini', keyRequired: true, placeholder: 'sk-proj-...' },
+      anthropic: { url: 'https://api.anthropic.com', model: 'claude-3-5-sonnet-20241022', keyRequired: true, placeholder: 'sk-ant-...' },
+      gemini: { url: 'https://generativelanguage.googleapis.com', model: 'gemini-1.5-flash', keyRequired: true, placeholder: 'AIzaSy...' },
+      groq: { url: 'https://api.groq.com/openai/v1', model: 'llama-3.3-70b-versatile', keyRequired: true, placeholder: 'gsk_...' },
+      deepseek: { url: 'https://api.deepseek.com', model: 'deepseek-chat', keyRequired: true, placeholder: 'sk-...' },
+      mistral: { url: 'https://api.mistral.ai/v1', model: 'mistral-large-latest', keyRequired: true, placeholder: 'Chave Mistral AI' },
+      together: { url: 'https://api.together.xyz/v1', model: 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo', keyRequired: true, placeholder: 'Chave Together / Fireworks' },
+      openrouter: { url: 'https://openrouter.ai/api/v1', model: 'meta-llama/llama-3.3-70b-instruct', keyRequired: true, placeholder: 'sk-or-...' },
+      custom: { url: 'http://localhost:8000/v1', model: 'default', keyRequired: false, placeholder: 'Bearer token ou chave customizada' },
+    };
+
+    providerSelect.addEventListener('change', () => {
+      const p = providerSelect.value;
+      const meta = PROVIDER_METADATA[p] || PROVIDER_METADATA.custom;
+      
+      // Atualiza URL se estiver vazia ou for uma URL padrão conhecida
+      const currentUrl = baseUrlInput.value.trim();
+      const isKnownDefault = Object.values(PROVIDER_METADATA).some(m => m.url === currentUrl);
+      if (!currentUrl || isKnownDefault) {
+        baseUrlInput.value = meta.url;
+      }
+
+      // Atualiza modelo sugerido se for modelo padrão conhecido
+      const currentModel = modelInput.value.trim();
+      const isKnownModel = Object.values(PROVIDER_METADATA).some(m => m.model === currentModel);
+      if (!currentModel || isKnownModel) {
+        modelInput.value = meta.model;
+      }
+
+      apiKeyInput.placeholder = meta.placeholder;
+      if (meta.keyRequired) {
+        apiKeyGroup.style.display = 'block';
+        if (apiKeyStatus) apiKeyStatus.textContent = 'Obrigatória';
+      } else {
+        apiKeyGroup.style.display = 'block'; // Permite inserir chave mesmo para proxies locais autenticados
+        if (apiKeyStatus) apiKeyStatus.textContent = 'Opcional';
+      }
+    });
+
+    testConnBtn.addEventListener('click', async () => {
+      modalAlert.className = 'alert-box';
+      testConnBtn.disabled = true;
+      testConnBtn.textContent = '...';
+      try {
+        const res = await fetch('/api/config/test-connection', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            provider: providerSelect.value,
+            base_url: baseUrlInput.value.trim(),
+            api_key: apiKeyInput.value.trim() || undefined
+          })
+        });
+        const data = await res.json();
+        modalAlert.className = `alert-box visible ${data.success ? 'success' : 'warning'}`;
+        modalAlert.innerHTML = data.message + (data.details ? `<br><small>${data.details}</small>` : '');
+
+        // Se o teste retornou modelos disponíveis, popula o dropdown imediatamente
+        if (data.success && data.models && data.models.length > 0) {
+          modelDropdown.innerHTML = '<option value="">-- Modelos Disponíveis no Provedor --</option>';
+          data.models.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m;
+            opt.textContent = m;
+            modelDropdown.appendChild(opt);
+          });
+          modelDropdown.style.display = 'block';
+        }
+      } catch (e) {
+        modalAlert.className = 'alert-box visible error';
+        modalAlert.textContent = e.message;
+      } finally {
+        testConnBtn.disabled = false;
+        testConnBtn.textContent = '⚡ Testar';
+      }
+    });
+
+    detectModelsBtn.addEventListener('click', async () => {
+      detectModelsBtn.disabled = true;
+      try {
+        const res = await fetch('/api/config/detect-models');
+        const data = await res.json();
+        if (data.available && data.models.length > 0) {
+          modelDropdown.innerHTML = '<option value="">-- Modelos Detectados --</option>';
+          data.models.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m;
+            opt.textContent = m;
+            modelDropdown.appendChild(opt);
+          });
+          modelDropdown.style.display = 'block';
+          modalAlert.className = 'alert-box visible success';
+          modalAlert.textContent = data.message;
+        } else {
+          modalAlert.className = 'alert-box visible warning';
+          modalAlert.textContent = data.message;
+        }
+      } catch (e) {
+        modalAlert.className = 'alert-box visible error';
+        modalAlert.textContent = e.message;
+      } finally {
+        detectModelsBtn.disabled = false;
+      }
+    });
+
+    modelDropdown.addEventListener('change', () => {
+      if (modelDropdown.value) modelInput.value = modelDropdown.value;
+    });
+
+    selectDirBtn.addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/config/select-directory', { method: 'POST' });
+        const data = await res.json();
+        if (data.selected && data.path) workspaceDirInput.value = data.path;
+      } catch (e) {}
+    });
+
+    saveConfigBtn.addEventListener('click', async () => {
+      try {
+        const payload = {
+          provider: providerSelect.value,
+          base_url: baseUrlInput.value.trim(),
+          model: modelInput.value.trim(),
+          workspace_dir: workspaceDirInput.value.trim() || undefined,
+          configured: true
+        };
+        if (apiKeyInput.value.trim()) payload.api_key = apiKeyInput.value.trim();
+
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const updated = await res.json();
+        currentSystemConfig = updated;
+        configModal.classList.remove('active');
+        updateHeaderBadge(updated);
+      } catch (e) {
+        alert(e.message);
+      }
+    });
+
+    async function loadInitialSystemConfig() {
+      try {
+        const res = await fetch('/api/config');
+        if (res.ok) {
+          const cfg = await res.json();
+          currentSystemConfig = cfg;
+          providerSelect.value = cfg.provider;
+          baseUrlInput.value = cfg.base_url;
+          modelInput.value = cfg.model;
+          workspaceDirInput.value = cfg.workspace_dir;
+          providerSelect.dispatchEvent(new Event('change'));
+          updateHeaderBadge(cfg);
+
+          if (!cfg.configured) {
+            configModal.classList.add('active');
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function loadInitialWorkspace() {
+      try {
+        const res = await fetch('/api/workspace');
+        if (res.ok) {
+          const ws = await res.json();
+          window.officeUI.currentWorkspace = ws;
+          window.officeEngine.setWorkspace(ws);
+        }
+      } catch (e) {}
+    }
+
+    function updateHeaderBadge(cfg) {
+      if (cfg.configured) {
+        providerStatusDot.className = 'status-dot active';
+        providerStatusText.textContent = `${cfg.provider.toUpperCase()} (${cfg.model || 'Padrão'})`;
+      } else {
+        providerStatusDot.className = 'status-dot';
+        providerStatusText.textContent = 'Configuração Pendente';
+      }
+    }
+  </script>
+</body>
+</html>
