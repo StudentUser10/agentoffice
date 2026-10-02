@@ -237,8 +237,12 @@ class OfficeEngine {
       const dt = Math.min((currentTime - this.lastTime) / 1000, 0.1);
       this.lastTime = currentTime;
 
-      this.update(dt);
-      this.render();
+      try {
+        this.update(dt);
+        this.render();
+      } catch (err) {
+        console.error('[OfficeEngine] Erro no loop de renderização:', err);
+      }
 
       requestAnimationFrame(loop);
     };
@@ -620,7 +624,7 @@ class OfficeEngine {
 
   renderDesk(ctx, desk) {
     const isOccupied = !!desk.agent_id;
-    const isTargeted = this.nearestTarget && this.nearestTarget.desk.id === desk.id;
+    const isTargeted = this.nearestTarget && this.nearestTarget.desk && this.nearestTarget.desk.id === desk.id;
 
     // Sombra da mesa
     ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
