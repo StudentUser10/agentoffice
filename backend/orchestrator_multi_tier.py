@@ -72,8 +72,9 @@ Você está situado na Sala da Diretoria (Executive Suite) e comanda os líderes
 REGRAS ESTRITAS DE GOVERNANÇA EXECUTIVA:
 1. Você é estritamente proibido de mexer diretamente em arquivos de código ou escrever scripts pontuais.
 2. Sua função exclusiva é decomposição estratégica, análise de competências e despacho para os squads através de `dispatch_to_squad`.
-3. Para cada frente de trabalho, você deve definir: (a) target_squad_id, (b) epic_title, (c) objective macro e (d) acceptance_criteria rigorosos.
-4. Ao final, consolide a entrega de todos os departamentos em um parecer executivo ao usuário.
+3. REGRA MANDATÓRIA (PASTA PUBLIC): Ao delegar a criação de algo novo (novo projeto, site, jogo, tela, aplicativo, serviço, script ou protótipo), exija categoricamente que os agentes criem uma pasta dedicada dentro de `public/` (exemplo: `public/<nome-do-projeto>/`) e organizem todos os arquivos criados dentro dela.
+4. Para cada frente de trabalho, você deve definir: (a) target_squad_id, (b) epic_title, (c) objective macro e (d) acceptance_criteria rigorosos.
+5. Ao final, consolide a entrega de todos os departamentos em um parecer executivo ao usuário.
 """
 
 SQUAD_LEADER_DIRECTIVE = """
@@ -81,9 +82,10 @@ Você é o Líder de Squad (Gestor Departamental) no AgentOffice 2D.
 Você comanda os especialistas do seu departamento e possui autonomia técnica total sobre sua sala.
 Suas atribuições:
 1. Planejar a execução do épico recebido da Diretoria com foco em qualidade e rigor.
-2. Utilizar as ferramentas do sandbox para provisionar diretórios e arquivos necessários.
-3. Se a demanda exigir foco cirúrgico especializado, você pode contratar novos agentes chamando `spawn_subagent`.
-4. COMUNICAÇÃO LATERAL (INTER-SQUAD): Se o entregável depender de competências fora do escopo do seu time (ex: validação de vulnerabilidades de segurança, auditoria de hashes ou documentação técnica), você DEVE solicitar assistência direta a outro líder via `request_cross_squad_help`.
+2. REGRA MANDATÓRIA (PASTA PUBLIC): Sempre que você ou os especialistas do seu departamento forem criar algo novo (uma nova aplicação, jogo, página, script, API ou ferramenta), você DEVE criar uma pasta dedicada dentro de `public/` (exemplo: `public/<nome-do-projeto>/`) e organizar todos os arquivos criados dentro dela.
+3. Utilizar as ferramentas do sandbox para provisionar diretórios e arquivos necessários.
+4. Se a demanda exigir foco cirúrgico especializado, você pode contratar novos agentes chamando `spawn_subagent`.
+5. COMUNICAÇÃO LATERAL (INTER-SQUAD): Se o entregável depender de competências fora do escopo do seu time (ex: validação de vulnerabilidades de segurança, auditoria de hashes ou documentação técnica), você DEVE solicitar assistência direta a outro líder via `request_cross_squad_help`.
 """
 
 
@@ -745,8 +747,8 @@ class MultiTierOrchestrator:
         squad: Optional[Squad] = None
     ) -> List[Dict[str, str]]:
         """
-        Gera dinamicamente a estrutura de arquivos e código-fonte com LLM
-        com base na demanda real do usuário, aplicando as Claude Skills autorizadas pela diretoria.
+        Gera dinamicamente a estrutura de arquivos e código-fonte com LLM.
+        Sempre que for criar algo novo, cria uma pasta dedicada dentro de public/.
         """
         config = storage.load_config()
         llm = LLMClient(config)
@@ -760,21 +762,22 @@ class MultiTierOrchestrator:
         system_prompt = (
             "Você é Dex (@dev), o Engenheiro de Software Sênior do AIOX Core, trabalhando sob a liderança técnica de Aria (@architect).\n"
             "Sua responsabilidade é projetar e implementar o código-fonte COMPLETO, FUNCIONAL e CIRÚRGICO para a demanda do usuário.\n\n"
-            "REGRAS ESTRITAS DE ENGENHARIA DE SOFTWARE:\n"
-            "1. Os arquivos gerados devem atender EXATAMENTE ao que o usuário pediu na demanda.\n"
-            "2. PROIBIDO gerar arquivos genéricos ou repetitivos (como database.py e users.py) a menos que a meta seja especificamente sobre usuários e banco.\n"
-            "3. Se a demanda for sobre um sistema de tarefas/kanban, crie src/models/task.py, src/routers/tasks.py, etc.\n"
-            "4. Se a demanda for frontend, crie src/index.html, src/styles.css, src/app.js, etc.\n"
-            "5. Se a demanda for utilitários/scripts/crawlers/jogos, crie os módulos de serviço específicos.\n"
+            "REGRAS MANDATÓRIAS DE ENGENHARIA DE SOFTWARE:\n"
+            "1. REGRA MANDATÓRIA (PASTA PUBLIC): SEMPRE que for criar algo novo (projeto, aplicativo, jogo, tela, API, microsserviço, protótipo ou funcionalidade), você DEVE criar uma pasta dedicada dentro de 'public/' (exemplo: 'public/<nome-do-projeto>/').\n"
+            "   Todos os arquivos da nova entrega DEVEM ser criados dentro dessa pasta em 'public/' (ex: 'public/<nome-do-projeto>/index.html', 'public/<nome-do-projeto>/app.js', 'public/<nome-do-projeto>/style.css', 'public/<nome-do-projeto>/server.py', etc.).\n"
+            "2. Os arquivos gerados devem atender EXATAMENTE ao que o usuário pediu na demanda.\n"
+            "3. NUNCA crie arquivos soltos na raiz ou fora de 'public/<nome-do-projeto>/'. Toda nova entrega pertence a uma pasta dentro de 'public/'.\n"
+            "4. Se a demanda for frontend/web/jogo/dashboard, crie public/<nome-do-projeto>/index.html, style.css, app.js com visual moderno e interativo.\n"
+            "5. Se a demanda envolver backend/serviços/Python, coloque os scripts dentro da mesma pasta do projeto (ex: public/<nome-do-projeto>/main.py, service.py).\n"
             "6. Todo arquivo Python deve ter sintaxe 100% válida para passar na análise de AST.\n"
             "7. Responda estritamente em JSON com o formato:\n"
             "{\n"
             '  "files": [\n'
             '    {\n'
-            '      "path": "caminho/do/arquivo.ext",\n'
+            '      "path": "public/<nome-do-projeto>/arquivo.ext",\n'
             '      "content": "conteúdo de código completo e funcional"\n'
             '    }\n'
-            "  ]\n"
+            '  ]\n'
             "}\n\n"
             f"{memory_context}"
         )
@@ -788,8 +791,29 @@ class MultiTierOrchestrator:
             f"Título: {epic_title}\n"
             f"Objetivo: {objective}\n"
             f"Critérios: {acceptance_criteria}\n\n"
-            "Gere os arquivos necessários em JSON:"
+            "Gere os arquivos necessários em JSON com todos os caminhos organizados dentro de uma pasta em 'public/<nome-do-projeto>/':"
         )
+
+        clean_project_name = re.sub(r'[^a-zA-Z0-9_-]', '_', epic_title.lower()).strip('_') or "novo_projeto"
+
+        def _ensure_in_public_folder(file_list: List[Dict[str, str]]) -> List[Dict[str, str]]:
+            """Garante com 100% de certeza que todo arquivo novo fique em uma pasta dedicada em public/."""
+            processed = []
+            for item in file_list:
+                raw_p = item.get("path", "").replace("\\", "/").strip().lstrip("/")
+                if not raw_p:
+                    continue
+                if not raw_p.startswith("public/"):
+                    new_p = f"public/{clean_project_name}/{raw_p}"
+                else:
+                    parts = raw_p.split("/")
+                    # Se for public/arquivo.ext direto na raiz de public, encapsular na pasta do projeto
+                    if len(parts) == 2:
+                        new_p = f"public/{clean_project_name}/{parts[1]}"
+                    else:
+                        new_p = raw_p
+                processed.append({"path": new_p, "content": item.get("content", "")})
+            return processed
 
         try:
             raw_res = await llm.generate_response(
@@ -807,7 +831,7 @@ class MultiTierOrchestrator:
                     files = parsed.get("files", [])
                     valid_files = [f for f in files if isinstance(f, dict) and f.get("path") and f.get("content")]
                     if valid_files:
-                        return valid_files
+                        return _ensure_in_public_folder(valid_files)
                 except Exception as parse_err:
                     logger.debug(f"Tentativa estrita falhou ({parse_err}), tentando regex de arquivos...")
                     # Extrator de contingência por regex para blocos de arquivo no JSON
@@ -815,98 +839,125 @@ class MultiTierOrchestrator:
                     if path_matches:
                         valid_files = [{"path": p, "content": c.replace('\\n', '\n').replace('\\"', '"')} for p, c in path_matches if p and c]
                         if valid_files:
-                            return valid_files
+                            return _ensure_in_public_folder(valid_files)
         except Exception as e:
             logger.warning(f"Fallback na geração dinâmica de arquivos pelo LLM: {e}")
 
-        # Fallback semântico inteligente baseado na demanda
+        # Fallback semântico inteligente baseado na demanda (sempre dentro de uma pasta na public)
         lower = (user_prompt + " " + epic_title + " " + objective).lower()
         files = []
 
         if "jogo" in lower or "canvas" in lower or "game" in lower:
+            folder = f"public/{clean_project_name}"
             files.append({
-                "path": "src/game.py",
-                "content": "# src/game.py - Game Logic Engine\nimport random\n\nclass GameEngine:\n    def __init__(self):\n        self.score = 0\n        self.state = 'ready'\n\n    def start(self):\n        self.state = 'running'\n        return {'status': 'started', 'score': self.score}\n\n    def update(self, action: str):\n        if self.state != 'running':\n            return {'status': 'game_over'}\n        self.score += 10\n        return {'status': 'playing', 'score': self.score}\n"
+                "path": f"{folder}/index.html",
+                "content": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <title>Arcade Game</title>\n  <link rel=\"stylesheet\" href=\"style.css\" />\n</head>\n<body>\n  <div class=\"arcade-container\">\n    <h1>🕹️ Arcade Retro Game</h1>\n    <div class=\"scoreboard\">Pontos: <span id=\"score\">0</span></div>\n    <canvas id=\"gameCanvas\" width=\"400\" height=\"400\"></canvas>\n    <p>Use o mouse ou setas para jogar!</p>\n  </div>\n  <script src=\"game.js\"></script>\n</body>\n</html>\n"
             })
             files.append({
-                "path": "src/models/game_state.py",
-                "content": "# src/models/game_state.py\nfrom pydantic import BaseModel\n\nclass GameState(BaseModel):\n    score: int\n    state: str\n    player_id: str\n"
+                "path": f"{folder}/style.css",
+                "content": "body { background: #0f172a; color: #38bdf8; font-family: monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }\n.arcade-container { text-align: center; background: #1e293b; padding: 20px; border-radius: 12px; border: 2px solid #38bdf8; box-shadow: 0 0 20px rgba(56, 189, 248, 0.4); }\ncanvas { background: #020617; border: 2px solid #64748b; border-radius: 8px; margin-top: 10px; display: block; }\n.scoreboard { font-size: 1.2rem; margin-bottom: 10px; color: #4ade80; }\n"
+            })
+            files.append({
+                "path": f"{folder}/game.js",
+                "content": "const canvas = document.getElementById('gameCanvas');\nconst ctx = canvas.getContext('2d');\nlet score = 0;\nlet x = 200, y = 200, dx = 3, dy = 3, radius = 12;\n\nfunction draw() {\n  ctx.clearRect(0, 0, canvas.width, canvas.height);\n  ctx.beginPath();\n  ctx.arc(x, y, radius, 0, Math.PI * 2);\n  ctx.fillStyle = '#38bdf8';\n  ctx.fill();\n  ctx.closePath();\n\n  if (x + dx > canvas.width - radius || x + dx < radius) dx = -dx;\n  if (y + dy > canvas.height - radius || y + dy < radius) dy = -dy;\n  x += dx; y += dy;\n  score += 1;\n  document.getElementById('score').innerText = score;\n  requestAnimationFrame(draw);\n}\nrequestAnimationFrame(draw);\n"
+            })
+            files.append({
+                "path": f"{folder}/game_engine.py",
+                "content": f"# {folder}/game_engine.py - Backend Game Logic\nclass GameLogic:\n    def __init__(self):\n        self.score = 0\n    def update(self):\n        self.score += 10\n        return {{'status': 'playing', 'score': self.score}}\n"
             })
         elif "site" in lower or "html" in lower or "web" in lower or "frontend" in lower or "showcase" in lower or "landing" in lower:
+            folder = f"public/{clean_project_name}"
             files.append({
-                "path": "public/index.html",
-                "content": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <title>AgentOffice 2D — Showcase</title>\n  <link rel=\"stylesheet\" href=\"style.css\" />\n</head>\n<body>\n  <header class=\"hero\">\n    <h1>AgentOffice 2D</h1>\n    <p>Escritório Virtual em Pixel Art com Inteligência Artificial Multinível</p>\n    <a href=\"#features\" class=\"btn-cta\">Conhecer os Agentes</a>\n  </header>\n  <main class=\"container\" id=\"features\">\n    <section class=\"card\">\n      <h2>Pax (@aiox-master)</h2>\n      <p>Sudo Agent Supremo orquestrando squads departamentais em salas isoladas.</p>\n    </section>\n    <section class=\"card\">\n      <h2>Aria & Dex (@dev)</h2>\n      <p>Arquitetura de microsserviços e codificação autônoma no sandbox seguro.</p>\n    </section>\n    <section class=\"card\">\n      <h2>Quinn (@qa) & Cipher (@sec)</h2>\n      <p>Quality Gate automatizado, AST parser e auditoria contínua de vulnerabilidades.</p>\n    </section>\n  </main>\n  <script src=\"app.js\"></script>\n</body>\n</html>\n"
+                "path": f"{folder}/index.html",
+                "content": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <title>AgentOffice Showcase</title>\n  <link rel=\"stylesheet\" href=\"style.css\" />\n</head>\n<body>\n  <header class=\"hero\">\n    <h1>AgentOffice 2D</h1>\n    <p>Escritório Virtual em Pixel Art com Inteligência Artificial Multinível</p>\n    <a href=\"#features\" class=\"btn-cta\">Conhecer os Agentes</a>\n  </header>\n  <main class=\"container\" id=\"features\">\n    <section class=\"card\">\n      <h2>Pax (@aiox-master)</h2>\n      <p>Sudo Agent Supremo orquestrando squads departamentais em salas isoladas.</p>\n    </section>\n    <section class=\"card\">\n      <h2>Aria & Dex (@dev)</h2>\n      <p>Arquitetura de microsserviços e codificação autônoma no sandbox seguro.</p>\n    </section>\n    <section class=\"card\">\n      <h2>Quinn (@qa) & Cipher (@sec)</h2>\n      <p>Quality Gate automatizado, AST parser e auditoria contínua de vulnerabilidades.</p>\n    </section>\n  </main>\n  <script src=\"app.js\"></script>\n</body>\n</html>\n"
             })
             files.append({
-                "path": "public/style.css",
-                "content": "/* AgentOffice Showcase Stylesheet */\n:root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --accent: #6366f1; }\nbody { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); }\n.hero { text-align: center; padding: 4rem 1rem; background: linear-gradient(180deg, #1e1b4b, var(--bg)); }\n.hero h1 { font-size: 2.8rem; margin-bottom: 0.5rem; }\n.btn-cta { display: inline-block; margin-top: 1.5rem; padding: 0.8rem 1.8rem; background: var(--accent); color: #fff; text-decoration: none; border-radius: 8px; font-weight: bold; }\n.container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }\n.card { background: var(--card); padding: 1.5rem; border-radius: 12px; border: 1px solid #334155; }\n"
+                "path": f"{folder}/style.css",
+                "content": "/* Stylesheet */\n:root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --accent: #6366f1; }\nbody { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); }\n.hero { text-align: center; padding: 4rem 1rem; background: linear-gradient(180deg, #1e1b4b, var(--bg)); }\n.hero h1 { font-size: 2.8rem; margin-bottom: 0.5rem; color: #38bdf8; }\n.btn-cta { display: inline-block; margin-top: 1.5rem; padding: 0.8rem 1.8rem; background: var(--accent); color: #fff; text-decoration: none; border-radius: 8px; font-weight: bold; }\n.container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }\n.card { background: var(--card); padding: 1.5rem; border-radius: 12px; border: 1px solid #334155; }\n"
             })
             files.append({
-                "path": "public/app.js",
-                "content": "// AgentOffice Showcase Client Script\ndocument.addEventListener('DOMContentLoaded', () => {\n  console.log('AgentOffice Showcase carregado com sucesso!');\n});\n"
+                "path": f"{folder}/app.js",
+                "content": "// Client Script\ndocument.addEventListener('DOMContentLoaded', () => {\n  console.log('Aplicação carregada com sucesso!');\n});\n"
             })
         elif "produto" in lower or "ecommerce" in lower or "loja" in lower or "carrinho" in lower:
+            folder = f"public/{clean_project_name}"
             files.append({
-                "path": "src/models/product.py",
-                "content": "# src/models/product.py\nfrom pydantic import BaseModel, Field\nfrom typing import Optional\n\nclass Product(BaseModel):\n    id: int\n    name: str\n    price: float\n    stock: int = Field(default=0, ge=0)\n    description: Optional[str] = None\n"
+                "path": f"{folder}/index.html",
+                "content": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <title>Loja Virtual & Catálogo</title>\n  <link rel=\"stylesheet\" href=\"style.css\" />\n</head>\n<body>\n  <header><h1>🛒 Catálogo de Produtos</h1></header>\n  <div id=\"product-list\" class=\"grid\"></div>\n  <script src=\"store.js\"></script>\n</body>\n</html>\n"
             })
             files.append({
-                "path": "src/routers/catalog.py",
-                "content": "# src/routers/catalog.py\nfrom fastapi import APIRouter, HTTPException\nfrom typing import List\nfrom src.models.product import Product\n\nrouter = APIRouter(prefix='/products', tags=['Catalog'])\n\n@router.get('/', response_model=List[Product])\nasync def list_products():\n    return [\n        Product(id=1, name='Notebook Pro', price=4999.0, stock=10),\n        Product(id=2, name='Teclado Mecanico', price=299.0, stock=25)\n    ]\n"
+                "path": f"{folder}/style.css",
+                "content": "body { background: #0f172a; color: #f8fafc; font-family: sans-serif; padding: 2rem; }\n.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }\n.card { background: #1e293b; padding: 1rem; border-radius: 8px; border: 1px solid #334155; }\n"
             })
             files.append({
-                "path": "src/services/inventory.py",
-                "content": "# src/services/inventory.py\nclass InventoryService:\n    @staticmethod\n    def check_availability(product_id: int, quantity: int) -> bool:\n        return quantity > 0\n"
+                "path": f"{folder}/store.js",
+                "content": "const products = [{ id: 1, name: 'Notebook Pro', price: 4999 }, { id: 2, name: 'Mouse Gamer', price: 199 }];\nconst list = document.getElementById('product-list');\nproducts.forEach(p => {\n  const el = document.createElement('div');\n  el.className = 'card';\n  el.innerHTML = `<h3>${p.name}</h3><p>R$ ${p.price}</p>`;\n  list.appendChild(el);\n});\n"
+            })
+            files.append({
+                "path": f"{folder}/product_api.py",
+                "content": f"# {folder}/product_api.py\nfrom pydantic import BaseModel\n\nclass Product(BaseModel):\n    id: int\n    name: str\n    price: float\n"
             })
         elif "tarefa" in lower or "task" in lower or "todo" in lower:
+            folder = f"public/{clean_project_name}"
             files.append({
-                "path": "src/models/task_item.py",
-                "content": "# src/models/task_item.py\nfrom pydantic import BaseModel\nfrom typing import Optional\nimport time\n\nclass TaskItem(BaseModel):\n    id: str\n    title: str\n    completed: bool = False\n    created_at: float = time.time()\n"
+                "path": f"{folder}/index.html",
+                "content": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <title>Gerenciador de Tarefas</title>\n  <link rel=\"stylesheet\" href=\"style.css\" />\n</head>\n<body>\n  <div class=\"container\">\n    <h1>📝 Lista de Tarefas</h1>\n    <div class=\"input-group\"><input id=\"taskInput\" placeholder=\"Nova tarefa...\"><button onclick=\"addTask()\">Adicionar</button></div>\n    <ul id=\"taskList\"></ul>\n  </div>\n  <script src=\"tasks.js\"></script>\n</body>\n</html>\n"
             })
             files.append({
-                "path": "src/routers/tasks_router.py",
-                "content": "# src/routers/tasks_router.py\nfrom fastapi import APIRouter\nfrom typing import List\nfrom src.models.task_item import TaskItem\n\nrouter = APIRouter(prefix='/tasks', tags=['Tasks'])\n\n@router.get('/')\nasync def get_tasks() -> List[dict]:\n    return [{'id': 'task-1', 'title': 'Implementar feature', 'completed': False}]\n"
+                "path": f"{folder}/style.css",
+                "content": "body { background: #0f172a; color: #f8fafc; font-family: sans-serif; display: flex; justify-content: center; padding: 2rem; }\n.container { width: 100%; max-width: 500px; background: #1e293b; padding: 20px; border-radius: 10px; }\ninput { padding: 8px; width: 70%; background: #0f172a; color: #fff; border: 1px solid #475569; border-radius: 4px; }\nbutton { padding: 8px 12px; background: #38bdf8; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }\nul { list-style: none; padding: 0; margin-top: 15px; }\nli { background: #334155; margin: 5px 0; padding: 8px; border-radius: 4px; }\n"
+            })
+            files.append({
+                "path": f"{folder}/tasks.js",
+                "content": "function addTask() {\n  const input = document.getElementById('taskInput');\n  if (!input.value.trim()) return;\n  const li = document.createElement('li');\n  li.innerText = input.value;\n  document.getElementById('taskList').appendChild(li);\n  input.value = '';\n}\n"
+            })
+            files.append({
+                "path": f"{folder}/task_service.py",
+                "content": f"# {folder}/task_service.py\nfrom pydantic import BaseModel\n\nclass TaskItem(BaseModel):\n    id: str\n    title: str\n    completed: bool = False\n"
             })
         elif "seguran" in lower or "vulnerab" in lower or "audit" in lower or "owasp" in lower or "crypto" in lower:
+            folder = f"public/{clean_project_name}"
             files.append({
-                "path": "src/security/sanitizer.py",
-                "content": "# src/security/sanitizer.py - Sanitizacao de Entradas\nimport html\nimport re\n\ndef sanitize_input(user_input: str) -> str:\n    if not user_input:\n        return ''\n    cleaned = html.escape(user_input.strip())\n    cleaned = re.sub(r'[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]', '', cleaned)\n    return cleaned\n"
+                "path": f"{folder}/sanitizer.py",
+                "content": f"# {folder}/sanitizer.py - Sanitizacao de Entradas\nimport html\nimport re\n\ndef sanitize_input(user_input: str) -> str:\n    if not user_input:\n        return ''\n    cleaned = html.escape(user_input.strip())\n    cleaned = re.sub(r'[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]', '', cleaned)\n    return cleaned\n"
             })
             files.append({
-                "path": "src/security/rate_limiter.py",
-                "content": "# src/security/rate_limiter.py - Protecao contra DoS/Brute Force\nimport time\n\nclass RateLimiter:\n    def __init__(self, max_requests: int = 60, window_seconds: int = 60):\n        self.max_requests = max_requests\n        self.window = window_seconds\n        self.requests = {}\n\n    def is_allowed(self, client_ip: str) -> bool:\n        now = time.time()\n        hits = self.requests.get(client_ip, [])\n        hits = [t for t in hits if now - t < self.window]\n        if len(hits) >= self.max_requests:\n            return False\n        hits.append(now)\n        self.requests[client_ip] = hits\n        return True\n"
+                "path": f"{folder}/rate_limiter.py",
+                "content": f"# {folder}/rate_limiter.py - Protecao contra DoS/Brute Force\nimport time\n\nclass RateLimiter:\n    def __init__(self, max_requests: int = 60, window_seconds: int = 60):\n        self.max_requests = max_requests\n        self.window = window_seconds\n        self.requests = {{}}\n\n    def is_allowed(self, client_ip: str) -> bool:\n        now = time.time()\n        hits = self.requests.get(client_ip, [])\n        hits = [t for t in hits if now - t < self.window]\n        if len(hits) >= self.max_requests:\n            return False\n        hits.append(now)\n        self.requests[client_ip] = hits\n        return True\n"
             })
         elif "documenta" in lower or "doc" in lower or "openapi" in lower:
+            folder = f"public/{clean_project_name}"
             files.append({
-                "path": "docs/architecture.md",
-                "content": f"# Documentação de Arquitetura\n\n## Épico: {epic_title}\n\n### Visão Geral\n{objective}\n\n### Diretrizes Técnicas\n- Padrão RESTful tipado com Pydantic\n- Persistência desacoplada\n- Isolamento de execução em sandbox\n"
+                "path": f"{folder}/architecture.md",
+                "content": f"# Documentação de Arquitetura\n\n## Épico: {epic_title}\n\n### Visão Geral\n{objective}\n\n### Diretrizes Técnicas\n- Organizado na pasta pública '{folder}'\n- Isolamento de execução em sandbox\n"
             })
             files.append({
-                "path": "docs/api_spec.md",
-                "content": "# Especificação OpenAPI & Endpoints\n\n## Endpoints Disponíveis\n- `GET /health` - Healthcheck do serviço\n- `GET /api/v1/resource` - Listagem de recursos\n- `POST /api/v1/resource` - Criação de recurso\n"
+                "path": f"{folder}/api_spec.md",
+                "content": f"# Especificação OpenAPI & Endpoints — {folder}\n\n## Endpoints Disponíveis\n- `GET /public/{clean_project_name}/index.html`\n"
             })
         elif "usuario" in lower or "user" in lower or "auth" in lower or "login" in lower:
+            folder = f"public/{clean_project_name}"
             files.append({
-                "path": "src/database.py",
-                "content": "# src/database.py - Conexao SQLite Corporativa\nfrom sqlalchemy import create_engine\nfrom sqlalchemy.orm import declarative_base, sessionmaker\n\nSQLALCHEMY_DATABASE_URL = 'sqlite:///./app_users.db'\nengine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={'check_same_thread': False})\nSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)\nBase = declarative_base()\n"
+                "path": f"{folder}/database.py",
+                "content": f"# {folder}/database.py - Conexao SQLite Corporativa\nfrom sqlalchemy import create_engine\nfrom sqlalchemy.orm import declarative_base, sessionmaker\n\nSQLALCHEMY_DATABASE_URL = 'sqlite:///./{clean_project_name}.db'\nengine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={{'check_same_thread': False}})\nSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)\nBase = declarative_base()\n"
             })
             files.append({
-                "path": "src/routers/users.py",
-                "content": "# src/routers/users.py - Rotas de Usuarios Seguras\nfrom fastapi import APIRouter\nfrom pydantic import BaseModel, EmailStr\n\nrouter = APIRouter(prefix='/users', tags=['Users'])\n\nclass UserCreate(BaseModel):\n    username: str\n    email: str\n\n@router.get('/')\nasync def list_users():\n    return [{'id': 1, 'username': 'admin', 'email': 'admin@agentoffice.internal'}]\n\n@router.post('/')\nasync def create_user(user: UserCreate):\n    return {'status': 'created', 'user': user.model_dump()}\n"
+                "path": f"{folder}/users_router.py",
+                "content": f"# {folder}/users_router.py\nfrom fastapi import APIRouter\nfrom pydantic import BaseModel\n\nrouter = APIRouter(prefix='/{clean_project_name}', tags=['{clean_project_name}'])\n\nclass UserCreate(BaseModel):\n    username: str\n    email: str\n\n@router.get('/')\nasync def list_users():\n    return [{{'id': 1, 'username': 'admin', 'email': 'admin@agentoffice.internal'}}]\n"
             })
         else:
             # Fallback dinâmico para serviços gerais
-            clean_name = re.sub(r'[^a-zA-Z0-9_]', '_', epic_title.lower()).strip('_') or "core_service"
+            folder = f"public/{clean_project_name}"
             files.append({
-                "path": f"src/{clean_name}.py",
-                "content": f"# src/{clean_name}.py - Implementacao de {epic_title}\nimport logging\n\nlogger = logging.getLogger('{clean_name}')\n\nclass {clean_name.title().replace('_', '')}Manager:\n    def __init__(self):\n        self.is_active = True\n\n    def execute(self, payload: dict) -> dict:\n        logger.info('Executando operacao solicitada...')\n        return {{'status': 'success', 'data': payload}}\n"
+                "path": f"{folder}/index.html",
+                "content": f"<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <title>{epic_title}</title>\n  <style>body {{ font-family: sans-serif; background: #0f172a; color: #f8fafc; padding: 2rem; }} h1 {{ color: #38bdf8; }}</style>\n</head>\n<body>\n  <h1>🚀 {epic_title}</h1>\n  <p>Aplicação criada e organizada na pasta <code>{folder}</code>.</p>\n</body>\n</html>\n"
             })
             files.append({
-                "path": f"src/routers/{clean_name}_router.py",
-                "content": f"# src/routers/{clean_name}_router.py\nfrom fastapi import APIRouter\nfrom pydantic import BaseModel\n\nrouter = APIRouter(prefix='/{clean_name}', tags=['{epic_title}'])\n\nclass RequestModel(BaseModel):\n    query: str\n\n@router.post('/')\nasync def handle_request(req: RequestModel):\n    return {{'status': 'processed', 'query': req.query}}\n"
+                "path": f"{folder}/{clean_project_name}.py",
+                "content": f"# {folder}/{clean_project_name}.py - Implementacao de {epic_title}\nimport logging\n\nlogger = logging.getLogger('{clean_project_name}')\n\nclass {clean_project_name.title().replace('_', '')}Manager:\n    def __init__(self):\n        self.is_active = True\n\n    def execute(self, payload: dict) -> dict:\n        logger.info('Executando operacao solicitada...')\n        return {{'status': 'success', 'data': payload}}\n"
             })
 
-        return files
+        return _ensure_in_public_folder(files)
 
     async def _execute_squad_epic(
         self,
@@ -1018,6 +1069,29 @@ class MultiTierOrchestrator:
             await hub.broadcast_system_notice(
                 f"⚙️ [AIOX:DEV] Dex (@dev) codificou {len(created_files)} arquivo(s) no sandbox: {files_summary_short}"
             )
+
+            # Notificar pastas de projetos criadas em public/ com link direto no navegador
+            public_subfolders = set()
+            for f_p in created_files:
+                norm_p = f_p.replace("\\", "/").strip().lstrip("/")
+                if norm_p.startswith("public/"):
+                    parts = norm_p.split("/")
+                    if len(parts) >= 3:
+                        public_subfolders.add(parts[1])
+
+            for subf in sorted(public_subfolders):
+                has_index = any(
+                    f_p.replace("\\", "/").endswith(f"public/{subf}/index.html")
+                    for f_p in created_files
+                )
+                if has_index:
+                    await hub.broadcast_system_notice(
+                        f"📁 [AIOX:PUBLIC] Nova aplicação criada em 'public/{subf}/' | 🌐 Acesse: http://127.0.0.1:8000/public/{subf}/"
+                    )
+                else:
+                    await hub.broadcast_system_notice(
+                        f"📁 [AIOX:PUBLIC] Nova pasta de projeto criada em 'public/{subf}/'."
+                    )
             if dev_agent:
                 await hub.broadcast_agent_status(dev_agent.id, AgentState.IDLE)
 

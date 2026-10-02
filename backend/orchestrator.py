@@ -64,6 +64,11 @@ Você DEVE definir detalhadamente:
 (4) a CONDIÇÃO DE CONCLUSÃO (exit condition).
 Subagentes criados sem esse rigor falharão.
 
+REGRA MANDATÓRIA PARA NOVAS CRIAÇÕES (PASTA PUBLIC):
+Sempre que você ou um subagente for criar algo novo (um novo projeto, aplicativo, landing page, jogo, ferramenta, script, API ou serviço), você DEVE criar uma pasta dedicada dentro de `public/` (exemplo: `public/<nome-do-projeto>/`).
+Todos os novos arquivos e recursos devem ser criados e organizados DENTRO dessa pasta em `public/`.
+Nunca crie arquivos soltos fora de uma pasta em `public/` para novas criações.
+
 FERRAMENTAS DISPONÍVEIS:
 1. `fs_list_directory`: Lista arquivos e pastas de um diretório no sandbox. Parâmetro: `path` (string, default: ".")
 2. `fs_tree_view`: Mapeia a árvore completa de pastas e arquivos no sandbox. Parâmetros: `path` (string, default: "."), `max_depth` (int, default: 4)
@@ -73,20 +78,20 @@ FERRAMENTAS DISPONÍVEIS:
 6. `fs_read_file`: Lê conteúdo de um arquivo com fatiamento opcional. Parâmetros: `path` (string), `max_lines` (int, default: 500), `start_line` (int, default: 1), `show_line_numbers` (bool, default: false)
 7. `fs_write_file`: Cria ou sobrescreve arquivos de texto de forma atômica no sandbox. Parâmetros: `path` (string), `content` (string), `mode` ("overwrite" ou "append")
 8. `fs_edit_file`: Edição cirúrgica substituindo um trecho específico de texto/código por outro. Parâmetros: `path` (string), `target_text` (string exata existente), `replacement_text` (string nova), `allow_multiple` (bool, default: false)
-9. `fs_create_directory`: Cria pastas e subpastas no sandbox. Parâmetro: `path` (string, ex: "src/routers")
+9. `fs_create_directory`: Cria pastas e subpastas no sandbox. Parâmetro: `path` (string, ex: "public/meu-app")
 10. `fs_rename_or_move`: Renomeia ou move arquivos e pastas com segurança. Parâmetros: `source_path` (string), `target_path` (string)
 11. `fs_copy`: Copia arquivos ou pastas no sandbox. Parâmetros: `source_path` (string), `target_path` (string)
 12. `fs_delete_path`: Remove arquivos ou pastas no sandbox. Parâmetros: `path` (string), `recursive` (bool, default: false)
 13. `spawn_subagent`: Contrata e aloca um subagente especialista em uma mesa vaga para uma missão cirúrgica.
    - Parâmetros:
-     - `name`: string (ex: "SQL_Architect", "CSS_Polisher")
-     - `role_title`: string (ex: "Engenheiro de Banco de Dados")
+     - `name`: string (ex: "SQL_Architect", "Web_Developer")
+     - `role_title`: string (ex: "Engenheiro Frontend", "Desenvolvedor de Banco")
      - `avatar_id`: string (ex: "avatar_1", "avatar_2", "avatar_3", "avatar_4")
-     - `what_exact_task`: string (escopo exato e arquivos a criar/editar)
+     - `what_exact_task`: string (escopo exato e arquivos a criar dentro de public/<projeto>/)
      - `what_out_of_scope`: string (o que o subagente NÃO tem permissão de fazer)
      - `when_triggers`: string (gatilhos e dependências)
      - `how_instructions`: string (passo a passo técnico rigoroso e convenções)
-     - `allowed_tools`: list[string] (ferramentas autorizadas, ex: ["fs_write_file", "fs_read_file", "fs_edit_file"])
+     - `allowed_tools`: list[string] (ferramentas autorizadas, ex: ["fs_write_file", "fs_read_file", "fs_create_directory"])
      - `exit_condition`: string (critério objetivo para considerar o trabalho concluído)
 
 COMO INVOCAR FERRAMENTAS:
@@ -100,7 +105,7 @@ Para executar uma ferramenta, emita um bloco JSON com `tool` e `parameters`:
 Ou uma lista de ferramentas a executar:
 ```json
 [
-  {"tool": "fs_create_directory", "parameters": {"path": "src/routers"}},
+  {"tool": "fs_create_directory", "parameters": {"path": "public/meu-app"}},
   {"tool": "spawn_subagent", "parameters": { ... }}
 ]
 ```
@@ -114,12 +119,15 @@ FERRAMENTAS DE SISTEMA DE ARQUIVOS DISPONÍVEIS NO SANDBOX:
 4. `fs_search_content`: Busca texto/código (grep). `{"query": "def ", "path": "."}`
 5. `fs_file_info`: Metadados do arquivo/pasta. `{"path": "caminho/arquivo.ext"}`
 6. `fs_read_file`: Lê arquivo. `{"path": "caminho/arquivo.ext", "start_line": 1, "max_lines": 500}`
-7. `fs_write_file`: Grava arquivo completo. `{"path": "caminho/arquivo.ext", "content": "conteúdo", "mode": "overwrite"}`
-8. `fs_edit_file`: Edição cirúrgica de trecho. `{"path": "caminho/arquivo.ext", "target_text": "antigo", "replacement_text": "novo"}`
-9. `fs_create_directory`: Cria pastas. `{"path": "caminho/da/pasta"}`
+7. `fs_write_file`: Grava arquivo completo. `{"path": "public/meu-app/arquivo.ext", "content": "conteúdo", "mode": "overwrite"}`
+8. `fs_edit_file`: Edição cirúrgica de trecho. `{"path": "public/meu-app/arquivo.ext", "target_text": "antigo", "replacement_text": "novo"}`
+9. `fs_create_directory`: Cria pastas. `{"path": "public/meu-app"}`
 10. `fs_rename_or_move`: Renomeia ou move. `{"source_path": "origem", "target_path": "destino"}`
 11. `fs_copy`: Copia arquivo ou pasta. `{"source_path": "origem", "target_path": "destino"}`
 12. `fs_delete_path`: Exclui arquivo/pasta. `{"path": "caminho/arquivo.ext", "recursive": false}`
+
+REGRA MANDATÓRIA PARA NOVAS CRIAÇÕES (PASTA PUBLIC):
+Sempre que for criar algo novo (projeto, app, página, script ou ferramenta), crie uma pasta dedicada dentro de `public/` (ex: `public/<nome-do-projeto>/`) e coloque todos os arquivos criados dentro dela!
 
 Para executar uma ferramenta, emita o bloco JSON:
 ```json
@@ -732,7 +740,7 @@ class Orchestrator:
         prompt = (
             f"Sua missão é: {mission.what_exact_task if mission else 'Executar a tarefa solicitada.'}\n\n"
             f"Instruções técnicas (COMO): {mission.how_instructions if mission else 'Implemente o código conforme padrões.'}\n\n"
-            "Se precisar criar ou gravar arquivos, emita a ferramenta `fs_write_file` ou `fs_create_directory` no formato JSON."
+            "Se precisar criar ou gravar arquivos para algo novo, lembre-se da regra mandatória: crie uma pasta dedicada dentro de `public/` (ex: `public/<nome-do-projeto>/`) e use a ferramenta `fs_write_file` ou `fs_create_directory` no formato JSON."
         )
 
         system_prompt = subagent.system_prompt + "\n\n" + SUBAGENT_TOOL_DIRECTIVE
@@ -934,23 +942,23 @@ class Orchestrator:
             f"Subordinados existentes sob sua liderança:\n{workers_desc}\n\n"
             "Instruções:\n"
             "1. Analise o objetivo do usuário com profundidade técnica.\n"
-            "2. Se for necessário criar pastas ou arquivos antes, chame as ferramentas de sistema de arquivos adequadas.\n"
+            "2. REGRA MANDATÓRIA (PASTA PUBLIC): Sempre que for criar algo novo (projeto, app, página, script ou ferramenta), você DEVE criar uma pasta dedicada dentro de `public/` (exemplo: `public/<nome-do-projeto>/`) e organizar os arquivos nela.\n"
             "3. Se o usuário pedir para contratar/spawnar um especialista ou se o trabalho exigir foco dedicado, chame `spawn_subagent` com todos os campos obrigatórios.\n"
             "4. Responda em formato estruturado JSON com:\n"
             "{\n"
             '  "plan_summary": "Resumo executivo do plano",\n'
             '  "tool_calls": [\n'
-            '    {"tool": "fs_create_directory", "parameters": {"path": "src/routers"}},\n'
+            '    {"tool": "fs_create_directory", "parameters": {"path": "public/meu-app"}},\n'
             '    {"tool": "spawn_subagent", "parameters": {\n'
-            '       "name": "DB_Architect",\n'
-            '       "role_title": "Database Engineer",\n'
+            '       "name": "Web_Specialist",\n'
+            '       "role_title": "Frontend & Fullstack Engineer",\n'
             '       "avatar_id": "avatar_1",\n'
-            '       "what_exact_task": "Criar src/database.py com engine SQLAlchemy assíncrono.",\n'
-            '       "what_out_of_scope": "Não criar rotas nem modelos de negócio.",\n'
-            '       "when_triggers": "Executar após a pasta src ser criada.",\n'
-            '       "how_instructions": "Utilizar SQLAlchemy 2.0, definir async_sessionmaker e get_db.",\n'
-            '       "allowed_tools": ["fs_write_file", "fs_read_file"],\n'
-            '       "exit_condition": "Arquivo src/database.py criado e validado."\n'
+            '       "what_exact_task": "Criar a aplicação em public/meu-app com index.html, style.css e app.js.",\n'
+            '       "what_out_of_scope": "Não criar arquivos fora da pasta public/meu-app.",\n'
+            '       "when_triggers": "Executar após a pasta public/meu-app ser criada.",\n'
+            '       "how_instructions": "Organizar todos os arquivos dentro de public/meu-app com visual moderno.",\n'
+            '       "allowed_tools": ["fs_write_file", "fs_read_file", "fs_create_directory"],\n'
+            '       "exit_condition": "Arquivos da aplicação criados em public/meu-app e validados."\n'
             '    }}\n'
             '  ],\n'
             '  "subtasks": []\n'

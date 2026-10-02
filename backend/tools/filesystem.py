@@ -37,7 +37,21 @@ def _get_workspace_dir(override_dir: Optional[str] = None) -> Path:
         root = Path(config.workspace_dir).resolve() if config.workspace_dir else Path(tempfile.gettempdir()) / "agentoffice_workspace"
     
     root.mkdir(parents=True, exist_ok=True)
+    # Garante que a pasta public sempre exista dentro do workspace
+    (root / "public").mkdir(parents=True, exist_ok=True)
     return root
+
+
+def ensure_public_project_folder(project_name: str, workspace_dir: Optional[str] = None) -> Path:
+    """
+    Garante que uma subpasta dedicada ao novo projeto seja criada dentro da pasta public.
+    Sempre que o agente for criar algo novo, ele cria uma pasta dentro da public.
+    """
+    clean_name = re.sub(r'[^a-zA-Z0-9_-]', '_', project_name.strip()).strip('_') or "novo_projeto"
+    ws = _get_workspace_dir(workspace_dir)
+    target = (ws / "public" / clean_name).resolve()
+    target.mkdir(parents=True, exist_ok=True)
+    return target
 
 
 def resolve_and_validate_path(relative_path: str, workspace_dir: Optional[str] = None) -> Path:

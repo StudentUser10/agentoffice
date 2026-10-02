@@ -13,7 +13,7 @@ from typing import Optional, List, Dict, Any
 import httpx
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.config import (
@@ -70,6 +70,8 @@ from backend.models import (
 )
 from backend.tools.filesystem import (
     SecuritySandboxError,
+    _get_workspace_dir,
+    ensure_public_project_folder,
     fs_copy,
     fs_create_directory,
     fs_delete_path,
@@ -179,6 +181,87 @@ async def serve_index():
             detail="Arquivo frontend/index.html não encontrado."
         )
     return FileResponse(index_file)
+
+
+@app.get("/public", include_in_schema=False)
+@app.get("/public/{file_path:path}", include_in_schema=False)
+async def serve_public_workspace(file_path: str = ""):
+    """
+    Serve arquivos e projetos gerados pelos agentes na pasta 'public' do workspace.
+    Sempre que o agente for criar algo novo, ele cria uma pasta dentro da public.
+    Este endpoint permite visualizar as aplicações web e artefatos criados diretamente pelo navegador.
+    """
+    ws_root = _get_workspace_dir()
+    public_root = (ws_root / "public").resolve()
+    public_root.mkdir(parents=True, exist_ok=True)
+
+    clean_p = file_path.strip().lstrip("/\\")
+    target_path = (public_root / clean_p).resolve()
+
+    # Validação rigorosa contra path traversal
+    try:
+        target_path.relative_to(public_root)
+    except ValueError:
+        raise HTTPException(status_code=403, detail="Acesso negado: fora do diretório public.")
+
+    # Se for um diretório existente
+    if target_path.is_dir():
+        index_file = target_path / "index.html"
+        if index_file.exists() and index_file.is_file():
+            return FileResponse(index_file)
+
+        # Se não houver index.html, listar conteúdo da pasta com visual amigável
+        items = []
+        try:
+            for item in sorted(target_path.iterdir()):
+                rel = item.relative_to(public_root).as_posix()
+                is_d = item.is_dir()
+                items.append({
+                    "name": item.name + ("/" if is_d else ""),
+                    "path": f"/public/{rel}" + ("/" if is_d else ""),
+                    "is_dir": is_d
+                })
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+        html_items = "".join([
+            f'<li style="margin: 8px 0;"><a href="{it["path"]}" style="color: #38bdf8; text-decoration: none; font-size: 1.1rem; font-family: monospace;">{"📁 " if it["is_dir"] else "📄 "}{it["name"]}</a></li>'
+            for it in items
+        ])
+        folder_display = clean_p if clean_p else "public"
+        back_link = ""
+        if clean_p:
+            parent_rel = Path(clean_p).parent.as_posix()
+            parent_url = f"/public/{parent_rel}" if parent_rel != "." else "/public"
+            back_link = f'<p><a href="{parent_url}" style="color: #94a3b8; text-decoration: none; font-size: 0.95rem;">⬅ Voltar</a></p>'
+
+        html_content = f"""<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgentOffice Public Workspace — /{folder_display}</title>
+  <style>
+    body {{ font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #f8fafc; padding: 2rem; max-width: 800px; margin: 0 auto; }}
+    h1 {{ color: #38bdf8; border-bottom: 1px solid #334155; padding-bottom: 0.5rem; }}
+    ul {{ list-style: none; padding: 0; }}
+    .badge {{ background: #1e293b; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; color: #a5f3fc; }}
+  </style>
+</head>
+<body>
+  <h1>📁 AgentOffice Workspace <span class="badge">/{folder_display}</span></h1>
+  {back_link}
+  <ul>{html_items if items else '<li style="color: #64748b;">Nenhum arquivo ou projeto criado nesta pasta.</li>'}</ul>
+</body>
+</html>"""
+        return HTMLResponse(content=html_content)
+
+    # Se for um arquivo existente
+    if target_path.is_file():
+        return FileResponse(target_path)
+
+    raise HTTPException(status_code=404, detail=f"Arquivo ou pasta '{clean_p}' não encontrado em public/.")
+
 
 
 @app.get("/api/health")
