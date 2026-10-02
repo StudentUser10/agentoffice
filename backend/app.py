@@ -424,11 +424,14 @@ async def create_agent(req: AgentCreateRequest):
         id=agent_id,
         name=req.name.strip(),
         title=req.title.strip() or "Assistente",
+        tier=getattr(req, "tier", None) or AgentTier.WORKER,
         avatar_id=req.avatar_id or "avatar_1",
         role_type=req.role_type,
         supervisor_id=req.supervisor_id if req.role_type == AgentRoleType.WORKER else None,
         subordinate_ids=[],
+        squad_id=getattr(req, "squad_id", None),
         desk_id=req.desk_id,
+        room_id=getattr(desk, "room_id", "room_dev"),
         system_prompt=req.system_prompt or "Você é um assistente técnico inteligente.",
         model_name=(req.model_name or "").strip()
     )
@@ -444,6 +447,18 @@ async def create_agent(req: AgentCreateRequest):
                 supervisor.subordinate_ids.append(agent_id)
 
     workspace.agents.append(new_agent)
+
+    # Sincronizar com squads caso possua squad_id
+    if new_agent.squad_id:
+        squads_data = storage.load_squads()
+        target_squad = next((s for s in squads_data.squads if s.id == new_agent.squad_id), None)
+        if target_squad:
+            if agent_id not in target_squad.member_ids:
+                target_squad.member_ids.append(agent_id)
+            if new_agent.tier == AgentTier.SQUAD_LEADER:
+                target_squad.leader_id = agent_id
+            storage.save_squads(squads_data)
+
     storage.save_workspace(workspace)
 
     # Notificar clientes conectados
@@ -455,7 +470,7 @@ async def create_agent(req: AgentCreateRequest):
 
 @app.put("/api/agents/{agent_id}", response_model=Agent)
 async def update_agent(agent_id: str, req: AgentUpdateRequest):
-    """Atualiza dados do agente, incluindo papel hierárquico, mesa e prompt."""
+    """Atualiza dados do agente, incluindo papel hierárquico, tier, squad, mesa e prompt."""
     workspace = storage.load_workspace()
     agent = next((a for a in workspace.agents if a.id == agent_id), None)
     if not agent:
@@ -478,17 +493,29 @@ async def update_agent(agent_id: str, req: AgentUpdateRequest):
             old_desk.agent_id = None
         new_desk.agent_id = agent.id
         agent.desk_id = req.desk_id
+        if hasattr(new_desk, "room_id") and new_desk.room_id:
+            agent.room_id = new_desk.room_id
 
     if req.name is not None:
         agent.name = req.name.strip()
     if req.title is not None:
         agent.title = req.title.strip()
+    if req.tier is not None:
+        agent.tier = req.tier
     if req.avatar_id is not None:
         agent.avatar_id = req.avatar_id
     if req.system_prompt is not None:
         agent.system_prompt = req.system_prompt
     if req.model_name is not None:
         agent.model_name = req.model_name
+    if req.room_id is not None:
+        agent.room_id = req.room_id
+
+    # Ajuste de squad
+    old_squad_id = agent.squad_id
+    if req.squad_id is not None:
+        clean_squad = req.squad_id.strip() if isinstance(req.squad_id, str) else None
+        agent.squad_id = clean_squad if clean_squad else None
 
     # Ajuste de papel hierárquico
     if req.role_type is not None:
@@ -515,6 +542,34 @@ async def update_agent(agent_id: str, req: AgentUpdateRequest):
             new_sup = next((a for a in workspace.agents if a.id == req.supervisor_id), None)
             if new_sup and agent.id not in new_sup.subordinate_ids:
                 new_sup.subordinate_ids.append(agent.id)
+
+    # Sincronização com a base de squads
+    squads_data = storage.load_squads()
+    squad_modified = False
+
+    for sq in squads_data.squads:
+        # Se pertence a este squad
+        if sq.id == agent.squad_id:
+            if agent.id not in sq.member_ids:
+                sq.member_ids.append(agent.id)
+                squad_modified = True
+            if agent.tier == AgentTier.SQUAD_LEADER and sq.leader_id != agent.id:
+                sq.leader_id = agent.id
+                squad_modified = True
+            elif agent.tier != AgentTier.SQUAD_LEADER and sq.leader_id == agent.id:
+                sq.leader_id = ""
+                squad_modified = True
+        else:
+            # Não pertence a este squad: se estava vinculado, desvincular
+            if agent.id in sq.member_ids and (old_squad_id == sq.id or agent.squad_id != sq.id):
+                sq.member_ids = [m for m in sq.member_ids if m != agent.id]
+                squad_modified = True
+            if sq.leader_id == agent.id and agent.squad_id != sq.id:
+                sq.leader_id = ""
+                squad_modified = True
+
+    if squad_modified:
+        storage.save_squads(squads_data)
 
     storage.save_workspace(workspace)
     await hub.broadcast_workspace_updated(workspace.model_dump())

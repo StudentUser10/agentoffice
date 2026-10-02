@@ -169,7 +169,7 @@
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div class="form-group">
-              <label class="form-label" for="agentRoleSelect">Papel Hierárquico</label>
+              <label class="form-label" for="agentRoleSelect">Papel de Execução</label>
               <select class="form-select" id="agentRoleSelect">
                 <option value="solo">✦ Solo (Autônomo)</option>
                 <option value="supervisor">👑 Supervisor (Tech Lead)</option>
@@ -180,6 +180,28 @@
             <div class="form-group">
               <label class="form-label" for="agentDeskSelect">Mesa de Trabalho</label>
               <select class="form-select" id="agentDeskSelect"></select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label" for="agentTierSelect">Nível Corporativo (Tier)</label>
+              <select class="form-select" id="agentTierSelect">
+                <option value="worker">⚙️ Especialista / Worker</option>
+                <option value="squad_leader">⭐ Líder de Squad</option>
+                <option value="sudo">👑 Sudo Agent (Diretor Geral)</option>
+                <option value="subagent">⚡ Subagente Temporário</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="agentSquadSelect">Departamento / Squad</label>
+              <select class="form-select" id="agentSquadSelect">
+                <option value="">-- Sem Squad (Solo / Diretoria) --</option>
+                <option value="squad-core-engineering">⚙️ Squad Engenharia (Sala Dev)</option>
+                <option value="squad-security">🛡️ Squad Segurança (Sala Sec)</option>
+                <option value="squad-documentation">📝 Squad Documentação (Sala Doc)</option>
+              </select>
             </div>
           </div>
 

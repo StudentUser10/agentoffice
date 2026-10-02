@@ -108,7 +108,7 @@ DEFAULT_SQUADS = [
         "room_id": "room_dev",
         "leader_id": "agent-dev-leader",
         "member_ids": ["agent-dev-leader", "agent-dev-backend", "agent-dev-frontend"],
-        "agent_ids": ["agent-dev-leader", "agent-dev-backend", "agent-dev-frontend"],
+        "agent_ids": ["template-tech-lead", "template-python-dev", "template-qa"],
         "domain_tags": ["python", "api", "database", "fastapi", "sqlite", "frontend"],
         "color_theme": "#10b981",
         "description": "Equipe multifuncional de engenharia para desenvolvimento, revisão e arquitetura.",

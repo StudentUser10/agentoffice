@@ -51,11 +51,12 @@
       "id": "squad-core-engineering",
       "name": "Squad Core Engineering",
       "room_id": "room_dev",
-      "leader_id": "agent-ed3237",
+      "leader_id": "agent-1c137c",
       "member_ids": [
         "agent-ed3237",
         "agent-31d838",
-        "agent-628ce1"
+        "agent-628ce1",
+        "agent-1c137c"
       ],
       "agent_ids": [
         "agent-ed3237",

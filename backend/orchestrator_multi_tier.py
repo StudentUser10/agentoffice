@@ -75,6 +75,102 @@ class MultiTierOrchestrator:
     def __init__(self):
         pass
 
+    def _record_message(self, workspace: WorkspaceData, agent_id: str, role: str, text: str):
+        """Persiste mensagens na estrutura de conversas do workspace para o histórico do chat."""
+        if agent_id not in workspace.conversations:
+            workspace.conversations[agent_id] = []
+        workspace.conversations[agent_id].append({
+            "sender": agent_id if role == "assistant" else "user",
+            "role": role,
+            "text": text,
+            "timestamp": time.time()
+        })
+        storage.save_workspace(workspace, backup=False)
+
+    def _is_conversational(self, prompt: str) -> bool:
+        """Determina se a mensagem é uma conversa/saudação/dúvida de status ou um épico de desenvolvimento."""
+        t = prompt.lower().strip().rstrip("?!.,:;")
+        greetings = {
+            "oi", "ola", "olá", "hello", "hi", "opa", "e ai", "e aí", "fala",
+            "bom dia", "boa tarde", "boa noite", "eae", "salve", "hey"
+        }
+        if t in greetings:
+            return True
+
+        technical_triggers = [
+            "desenvolv", "crie", "criacao", "criação", "faça", "fazer", "implement", "construa", "gere",
+            "api", "endpoint", "sqlite", "banco", "database", "crud", "rotas", "vulnerab",
+            "audite", "auditoria", "refatore", "arquivo", "script", "codigo", "código", "backend", "frontend",
+            "tabela", "migrat", "schema", "post", "get", "put", "delete", "test"
+        ]
+        has_tech_trigger = any(trig in t for trig in technical_triggers)
+
+        status_phrases = [
+            "como ta", "como tá", "como vai", "como estao", "como estão", "tudo bem", "tudo bom",
+            "quem e voce", "quem é você", "o que voce faz", "o que você faz", "qual o status",
+            "como funciona", "me ajude", "quais squads", "quais salas", "o que tem", "ta online",
+            "está online", "ta vivo", "bom te ver"
+        ]
+        is_status_phrase = any(sp in t for sp in status_phrases)
+
+        if is_status_phrase and not has_tech_trigger:
+            return True
+
+        # Se for mensagem curta sem triggers técnicos, tratar como conversa
+        if not has_tech_trigger and len(t.split()) <= 6:
+            return True
+
+        return False
+
+    async def _generate_conversational_response(
+        self,
+        sudo_agent: Agent,
+        available_squads: List[Squad],
+        workspace: WorkspaceData,
+        user_prompt: str
+    ) -> str:
+        """Gera resposta executiva e acolhedora do Diretor Geral quando o usuário apenas conversa."""
+        config = storage.load_config()
+        llm = LLMClient(config)
+
+        squads_info = ", ".join([s.name for s in available_squads]) or "Engenharia, Segurança e Documentação"
+        agent_count = len(workspace.agents)
+        active_tickets_count = len(getattr(workspace, "active_tickets", []) or [])
+
+        system_prompt = (
+            "Você é o SUDO AGENT, Diretor Geral e Orquestrador Supremo do AgentOffice 2D.\n"
+            "Seu papel na conversa é responder de forma executiva, calorosa, profissional e prestativa.\n"
+            f"Contexto do escritório: Você está na Sala da Diretoria (Executive Suite). "
+            f"Há {agent_count} agentes no escritório, distribuídos entre os squads: {squads_info}. "
+            f"Tickets inter-squad ativos no momento: {active_tickets_count}.\n"
+            "Explique sucintamente que você lidera a governança da empresa e está pronto para "
+            "receber metas de engenharia/segurança e coordenar a entrega dos squads. "
+            "Responda diretamente em português com tom de liderança acolhedora."
+        )
+
+        try:
+            response = await llm.generate_response(
+                messages=[{"role": "user", "content": user_prompt}],
+                system_prompt=system_prompt,
+                model_override=sudo_agent.model_name or None,
+                timeout=25.0
+            )
+            if response and response.strip():
+                return response.strip()
+        except Exception as e:
+            logger.warning(f"Fallback em resposta conversacional do Sudo Agent: {e}")
+
+        # Fallback rico e dinâmico
+        return (
+            f"Olá! Por aqui na Sala da Diretoria está tudo operando a pleno vapor. 🏛️✨\n\n"
+            f"Nossa estrutura corporativa conta atualmente com **{agent_count} agentes** a postos em suas salas:\n"
+            f"- ⚙️ **Squad Engenharia (Sala Dev)**: Desenvolvimento de rotas, microsserviços e persistência SQLite.\n"
+            f"- 🛡️ **Squad Segurança (Sala Sec)**: Auditoria preventiva, sanitização de requisições e OWASP.\n"
+            f"- 📝 **Squad Documentação & QA (Sala Doc)**: Especificações técnicas, manuais e conformidade.\n\n"
+            f"Como Diretor Geral, estou pronto para decompor qualquer meta macro e despachar os épicos "
+            f"para os Líderes de Departamento. Como posso coordenar a equipe para você hoje?"
+        )
+
     async def handle_sudo_macro_goal(
         self,
         user_prompt: str,
@@ -100,88 +196,174 @@ class MultiTierOrchestrator:
 
         logger.info(f"[MultiTier] Sudo Agent '{sudo_agent.name}' iniciou processamento da meta: {user_prompt[:80]}")
 
+        # Gravar mensagem do usuário no histórico da conversa
+        self._record_message(workspace, sudo_agent.id, "user", user_prompt)
+
         # 2. Sudo Agent entra em estado THINKING
         await hub.broadcast_agent_status(sudo_agent.id, AgentState.THINKING)
-        await hub.broadcast_system_notice(
-            f"👑 Sudo Agent '{sudo_agent.name}' assumiu o comando na Sala da Diretoria..."
-        )
 
-        # 3. Analisar squads disponíveis e decompor a meta
-        squads_data = storage.load_squads()
-        available_squads = squads_data.squads or []
+        try:
+            # Obter squads disponíveis
+            squads_data = storage.load_squads()
+            available_squads = squads_data.squads or []
 
-        epics_plan = await self._plan_sudo_epics(sudo_agent, available_squads, user_prompt)
+            # 3. Verificar se é uma mensagem conversacional (saudação / status / dúvida)
+            if self._is_conversational(user_prompt):
+                logger.info(f"[MultiTier] Interação conversacional direta com Sudo Agent: '{user_prompt}'")
+                await hub.broadcast_system_notice(
+                    f"👑 Sudo Agent '{sudo_agent.name}' está redigindo seu parecer executivo..."
+                )
+                conversational_reply = await self._generate_conversational_response(
+                    sudo_agent=sudo_agent,
+                    available_squads=available_squads,
+                    workspace=workspace,
+                    user_prompt=user_prompt
+                )
 
-        dispatched_results = []
-        squad_deliveries = []
+                # Transmitir via streaming delta e completar chat
+                await hub.broadcast_chat_delta(sudo_agent.id, conversational_reply)
+                self._record_message(workspace, sudo_agent.id, "assistant", conversational_reply)
+                await hub.broadcast_chat_completed(sudo_agent.id, conversational_reply)
+                await hub.broadcast_agent_status(sudo_agent.id, AgentState.IDLE)
 
-        # 4. Despachar cada épico para seu respectivo Squad Leader
-        for epic in epics_plan.get("epics", []):
-            target_squad_id = epic.get("target_squad_id")
-            epic_title = epic.get("epic_title", "Épico Departamental")
-            objective = epic.get("objective", "")
-            criteria = epic.get("acceptance_criteria", "")
+                return {
+                    "status": "success",
+                    "mode": "conversational",
+                    "sudo_agent": sudo_agent.name,
+                    "reply": conversational_reply
+                }
 
-            # Executar ferramenta dispatch_to_squad
-            dispatch_msg = await dispatch_to_squad(
-                target_squad_id=target_squad_id,
-                epic_title=epic_title,
-                objective=objective,
-                acceptance_criteria=criteria,
-                sudo_agent_id=sudo_agent.id,
-                workspace=workspace
+            # Caso contrário: META MACRO CORPORATIVA (Engenharia / Governança)
+            await hub.broadcast_system_notice(
+                f"👑 Sudo Agent '{sudo_agent.name}' assumiu o comando na Sala da Diretoria..."
             )
-            dispatched_results.append(dispatch_msg)
 
-            # Localizar squad e líder
-            squad_obj = next((s for s in available_squads if s.id == target_squad_id), None)
-            leader = self._find_squad_leader(workspace, squad_obj, target_squad_id)
+            # Notificar chat drawer sobre o início da governança
+            intro_msg = (
+                f"👑 **[Diretoria Executiva — Sudo Agent]**\n"
+                f"Meta macro recebida:\n"
+                f"> *\"{user_prompt}\"*\n\n"
+                f"🏛️ Iniciando decomposição estratégica e despacho de épicos para os squads competentes...\n"
+            )
+            await hub.broadcast_chat_delta(sudo_agent.id, intro_msg)
 
-            if leader:
-                # 5. Execução pelo Líder do Squad (com suporte a comunicação lateral)
-                delivery = await self._execute_squad_epic(
-                    leader=leader,
-                    squad=squad_obj,
-                    epic=epic,
-                    user_prompt=user_prompt,
+            # Decomposição estratégica via LLM (ou fallback estruturado)
+            epics_plan = await self._plan_sudo_epics(sudo_agent, available_squads, user_prompt)
+
+            dispatched_results = []
+            squad_deliveries = []
+
+            # 4. Despachar cada épico para seu respectivo Squad Leader
+            for epic in epics_plan.get("epics", []):
+                target_squad_id = epic.get("target_squad_id")
+                epic_title = epic.get("epic_title", "Épico Departamental")
+                objective = epic.get("objective", "")
+                criteria = epic.get("acceptance_criteria", "")
+
+                # Executar ferramenta dispatch_to_squad
+                dispatch_msg = await dispatch_to_squad(
+                    target_squad_id=target_squad_id,
+                    epic_title=epic_title,
+                    objective=objective,
+                    acceptance_criteria=criteria,
+                    sudo_agent_id=sudo_agent.id,
                     workspace=workspace
                 )
-                squad_deliveries.append({
-                    "squad_id": target_squad_id,
-                    "squad_name": squad_obj.name if squad_obj else target_squad_id,
-                    "leader_name": leader.name,
-                    "epic_title": epic_title,
-                    "delivery": delivery
-                })
+                dispatched_results.append(dispatch_msg)
 
-        # 6. Sudo Agent consolida as entregas e emite sudo.final_delivery
-        final_summary = await self._consolidate_sudo_delivery(
-            sudo_agent=sudo_agent,
-            user_prompt=user_prompt,
-            squad_deliveries=squad_deliveries
-        )
+                # Localizar squad e líder
+                squad_obj = next((s for s in available_squads if s.id == target_squad_id), None)
+                leader = self._find_squad_leader(workspace, squad_obj, target_squad_id)
+                squad_name = squad_obj.name if squad_obj else target_squad_id
 
-        await hub.broadcast_sudo_final_delivery({
-            "sudo_agent_id": sudo_agent.id,
-            "sudo_name": sudo_agent.name,
-            "user_prompt": user_prompt,
-            "squads_involved": [d["squad_id"] for d in squad_deliveries],
-            "final_summary": final_summary,
-            "timestamp": time.time()
-        })
+                await hub.broadcast_chat_delta(
+                    sudo_agent.id,
+                    f"\n📋 **Épico Despachado:** *'{epic_title}'* ➔ Squad **{squad_name}**"
+                )
 
-        await hub.broadcast_agent_status(sudo_agent.id, AgentState.IDLE)
-        await hub.broadcast_system_notice(
-            f"🏛️ Sudo Agent '{sudo_agent.name}' concluiu a consolidação estratégica da meta!"
-        )
+                if leader:
+                    # 5. Execução pelo Líder do Squad (com suporte a comunicação lateral)
+                    delivery = await self._execute_squad_epic(
+                        leader=leader,
+                        squad=squad_obj,
+                        epic=epic,
+                        user_prompt=user_prompt,
+                        workspace=workspace
+                    )
+                    squad_deliveries.append({
+                        "squad_id": target_squad_id,
+                        "squad_name": squad_name,
+                        "leader_name": leader.name,
+                        "epic_title": epic_title,
+                        "delivery": delivery
+                    })
+                    await hub.broadcast_chat_delta(
+                        sudo_agent.id,
+                        f"\n   ↳ ✅ Entrega concluída por **{leader.name}**."
+                    )
+                else:
+                    squad_deliveries.append({
+                        "squad_id": target_squad_id,
+                        "squad_name": squad_name,
+                        "leader_name": "Aguardando Alocação",
+                        "epic_title": epic_title,
+                        "delivery": f"Épico '{epic_title}' despachado para squad {squad_name} (aguardando alocação de líder)."
+                    })
 
-        return {
-            "status": "success",
-            "sudo_agent": sudo_agent.name,
-            "dispatches": dispatched_results,
-            "squad_deliveries": squad_deliveries,
-            "final_executive_summary": final_summary
-        }
+            # 6. Sudo Agent consolida as entregas e emite sudo.final_delivery
+            final_summary = await self._consolidate_sudo_delivery(
+                sudo_agent=sudo_agent,
+                user_prompt=user_prompt,
+                squad_deliveries=squad_deliveries
+            )
+
+            # Transmitir resumo consolidado para a conversa do chat
+            await hub.broadcast_chat_delta(
+                sudo_agent.id,
+                f"\n\n---\n\n{final_summary}"
+            )
+
+            # Montar transcrição completa da resposta do Sudo Agent
+            full_response_text = intro_msg + "\n".join([
+                f"\n📋 **Épico Despachado:** *'{e.get('epic_title')}'*"
+                for e in epics_plan.get("epics", [])
+            ]) + f"\n\n---\n\n{final_summary}"
+
+            # Gravar resposta consolidada no histórico
+            self._record_message(workspace, sudo_agent.id, "assistant", full_response_text)
+
+            # Emitir sudo.final_delivery para o modal da diretoria e painel de status
+            await hub.broadcast_sudo_final_delivery({
+                "sudo_agent_id": sudo_agent.id,
+                "sudo_name": sudo_agent.name,
+                "user_prompt": user_prompt,
+                "squads_involved": [d["squad_id"] for d in squad_deliveries],
+                "final_summary": final_summary,
+                "timestamp": time.time()
+            })
+
+            # Finalizar chat drawer com chat.completed
+            await hub.broadcast_chat_completed(sudo_agent.id, full_response_text)
+            await hub.broadcast_agent_status(sudo_agent.id, AgentState.IDLE)
+            await hub.broadcast_system_notice(
+                f"🏛️ Sudo Agent '{sudo_agent.name}' concluiu a consolidação estratégica da meta!"
+            )
+
+            return {
+                "status": "success",
+                "sudo_agent": sudo_agent.name,
+                "dispatches": dispatched_results,
+                "squad_deliveries": squad_deliveries,
+                "final_executive_summary": final_summary
+            }
+
+        except Exception as e:
+            logger.error(f"[MultiTier] Erro durante governança do Sudo Agent: {e}", exc_info=True)
+            err_msg = f"⚠️ Falha durante a governança executiva: {str(e)}"
+            await hub.broadcast_chat_error(sudo_agent.id, err_msg)
+            await hub.broadcast_chat_completed(sudo_agent.id, err_msg)
+            await hub.broadcast_agent_status(sudo_agent.id, AgentState.IDLE)
+            raise e
 
     def _find_squad_leader(
         self,

@@ -30,6 +30,8 @@ class OfficeUI {
     this.agentDeskSelect = document.getElementById('agentDeskSelect');
     this.agentPromptInput = document.getElementById('agentPromptInput');
     this.agentModelInput = document.getElementById('agentModelInput');
+    this.agentTierSelect = document.getElementById('agentTierSelect');
+    this.agentSquadSelect = document.getElementById('agentSquadSelect');
     this.deleteAgentBtn = document.getElementById('deleteAgentBtn');
     this.closeAgentModalBtn = document.getElementById('closeAgentModalBtn');
 
@@ -187,8 +189,9 @@ class OfficeUI {
     // Atalho para editar agente a partir do chat
     this.editCurrentAgentBtn.addEventListener('click', () => {
       if (this.activeChatAgent) {
+        const agentToEdit = this.activeChatAgent;
         this.closeChatDrawer();
-        this.openEditAgentModal(this.activeChatAgent);
+        this.openEditAgentModal(agentToEdit);
       }
     });
 
@@ -278,6 +281,14 @@ class OfficeUI {
     });
 
     socket.on('chat.completed', (data) => {
+      if (this.currentAssistantMessageElem) {
+        if (this.currentAssistantMessageElem.querySelector('.typing-indicator')) {
+          this.currentAssistantMessageElem.innerHTML = '';
+        }
+        if (!this.currentAssistantMessageElem.textContent.trim() && data.message) {
+          this.currentAssistantMessageElem.textContent = data.message;
+        }
+      }
       this.finalizeChatMessage();
       this.sendChatBtn.disabled = false;
       this.chatInput.disabled = false;
@@ -307,6 +318,17 @@ class OfficeUI {
     socket.on('sudo.final_delivery', (data) => {
       this.logActivity(`🏆 [Sudo Agent] Parecer Executivo consolidado!`, 'notice');
       this.handleSudoDelivery(data);
+      if (this.currentAssistantMessageElem) {
+        if (this.currentAssistantMessageElem.querySelector('.typing-indicator')) {
+          this.currentAssistantMessageElem.innerHTML = '';
+        }
+        if (!this.currentAssistantMessageElem.textContent.trim() && data.final_summary) {
+          this.currentAssistantMessageElem.textContent = data.final_summary;
+        }
+        this.finalizeChatMessage();
+      }
+      this.sendChatBtn.disabled = false;
+      this.chatInput.disabled = false;
     });
 
     socket.on('chat.error', (data) => {
@@ -336,6 +358,15 @@ class OfficeUI {
     this.agentNameInput.value = '';
     this.agentTitleInput.value = '';
     this.agentRoleSelect.value = 'solo';
+    if (this.agentTierSelect) {
+      this.agentTierSelect.value = 'worker';
+    }
+    if (this.agentSquadSelect) {
+      if (desk.room_id === 'room_dev') this.agentSquadSelect.value = 'squad-core-engineering';
+      else if (desk.room_id === 'room_sec') this.agentSquadSelect.value = 'squad-security';
+      else if (desk.room_id === 'room_doc') this.agentSquadSelect.value = 'squad-documentation';
+      else this.agentSquadSelect.value = '';
+    }
     this.supervisorGroup.style.display = 'none';
     this.populateDesksDropdown(desk.id);
     this.populateSupervisorsDropdown();
@@ -349,21 +380,31 @@ class OfficeUI {
   }
 
   openEditAgentModal(agent) {
+    if (!agent) return;
     this.editingAgentId = agent.id;
     this.selectedDeskForCreate = null;
     this.agentModalTitle.textContent = `Editar Agente: ${agent.name}`;
-    this.deleteAgentBtn.style.display = 'inline-flex';
+    
+    // Proteger Sudo Agent contra dispensa/exclusão acidental
+    const isSudo = agent.tier === 'sudo' || agent.id === 'agent-sudo';
+    this.deleteAgentBtn.style.display = isSudo ? 'none' : 'inline-flex';
 
-    this.agentNameInput.value = agent.name;
-    this.agentTitleInput.value = agent.title;
+    this.agentNameInput.value = agent.name || '';
+    this.agentTitleInput.value = agent.title || '';
     this.agentAvatarSelect.value = agent.avatar_id || 'avatar_1';
-    this.agentRoleSelect.value = agent.role_type;
+    this.agentRoleSelect.value = agent.role_type || 'solo';
+    if (this.agentTierSelect) {
+      this.agentTierSelect.value = agent.tier || 'worker';
+    }
+    if (this.agentSquadSelect) {
+      this.agentSquadSelect.value = agent.squad_id || '';
+    }
     this.supervisorGroup.style.display = agent.role_type === 'worker' ? 'block' : 'none';
 
     this.populateDesksDropdown(agent.desk_id);
     this.populateSupervisorsDropdown(agent.supervisor_id, agent.id);
 
-    this.agentPromptInput.value = agent.system_prompt;
+    this.agentPromptInput.value = agent.system_prompt || '';
     this.agentModelInput.value = agent.model_name || '';
 
     this.agentModal.classList.add('active');
@@ -411,9 +452,11 @@ class OfficeUI {
     const payload = {
       name: this.agentNameInput.value.trim(),
       title: this.agentTitleInput.value.trim() || 'Especialista',
+      tier: this.agentTierSelect ? this.agentTierSelect.value : undefined,
       avatar_id: this.agentAvatarSelect.value,
       role_type: this.agentRoleSelect.value,
       supervisor_id: this.agentRoleSelect.value === 'worker' ? this.agentSupervisorSelect.value : null,
+      squad_id: this.agentSquadSelect && this.agentSquadSelect.value ? this.agentSquadSelect.value : null,
       desk_id: this.agentDeskSelect.value,
       system_prompt: this.agentPromptInput.value.trim(),
       model_name: this.agentModelInput.value.trim()
@@ -570,7 +613,11 @@ class OfficeUI {
   }
 
   appendChatDelta(delta) {
-    if (!this.currentAssistantMessageElem) return;
+    if (!this.currentAssistantMessageElem) {
+      this.currentAssistantMessageElem = document.createElement('div');
+      this.currentAssistantMessageElem.className = 'chat-bubble assistant streaming';
+      this.chatMessages.appendChild(this.currentAssistantMessageElem);
+    }
 
     // Se ainda tiver o indicador de digitação, limpa
     if (this.currentAssistantMessageElem.querySelector('.typing-indicator')) {
@@ -590,8 +637,13 @@ class OfficeUI {
   finalizeChatMessage() {
     if (this.currentAssistantMessageElem) {
       this.currentAssistantMessageElem.classList.remove('streaming');
+      if (this.currentAssistantMessageElem.querySelector('.typing-indicator')) {
+        this.currentAssistantMessageElem.innerHTML = '';
+      }
       this.currentAssistantMessageElem = null;
     }
+    if (this.sendChatBtn) this.sendChatBtn.disabled = false;
+    if (this.chatInput) this.chatInput.disabled = false;
   }
 
   appendChatMessage(role, text) {
@@ -801,6 +853,7 @@ class OfficeUI {
           <div class="organogram-card-name">👑 ${sudoAgent.name}</div>
           <div class="organogram-card-title">${sudoAgent.title || 'Diretor Geral e Orquestrador Supremo'}</div>
           <div style="font-size: 10px; color: #fbbf24; margin-top: 4px;">Sala Executiva • Decomposição Estratégica & Despacho</div>
+          ${sudoAgent.id ? `<button class="btn-action edit-organogram-btn" data-agent-id="${sudoAgent.id}" style="font-size: 10px; padding: 2px 8px; margin-top: 6px; background: rgba(251, 191, 36, 0.2); border-color: #fbbf24; color: #fde68a;">✏️ Configurar Diretor</button>` : ''}
         </div>
         <div style="width: 2px; height: 20px; background: rgba(245, 158, 11, 0.4); margin: 4px auto;"></div>
       </div>
@@ -824,6 +877,7 @@ class OfficeUI {
             <span class="organogram-card-badge" style="background: rgba(255,255,255,0.1); color: ${sq.color};">⭐ Nível 2: Líder Departamental</span>
             <div class="organogram-card-name">${leader ? leader.name : 'Vaga Aberta'}</div>
             <div class="organogram-card-title">${leader ? leader.title : 'Aguardando Alocação'}</div>
+            ${leader ? `<button class="btn-action edit-organogram-btn" data-agent-id="${leader.id}" style="font-size: 10px; padding: 2px 6px; margin-top: 6px; border-color: ${sq.color};">✏️ Editar Líder</button>` : ''}
           </div>
 
           <!-- Subordinados / Especialistas -->
@@ -842,6 +896,7 @@ class OfficeUI {
             <div class="member-chip ${isSubagent ? 'subagent' : ''}">
               <span>${isSubagent ? '⚡' : '⚙️'} ${sub.name}</span>
               <span style="font-size: 9px; color: var(--text-muted);">${sub.title || 'Dev'}</span>
+              <button class="btn-action edit-organogram-btn" data-agent-id="${sub.id}" style="font-size: 9px; padding: 1px 4px; margin-left: auto;" title="Editar Agente">✏️</button>
             </div>
           `;
         });
@@ -855,6 +910,19 @@ class OfficeUI {
 
     html += `</div>`;
     this.organogramTree.innerHTML = html;
+
+    // Vincular cliques nos botões de edição do organograma
+    this.organogramTree.querySelectorAll('.edit-organogram-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const aId = btn.getAttribute('data-agent-id');
+        const ag = this.findAgent(aId);
+        if (ag) {
+          this.closeHierarchyModal();
+          this.openEditAgentModal(ag);
+        }
+      });
+    });
   }
 
   async loadActiveTickets() {

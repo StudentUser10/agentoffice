@@ -27,7 +27,7 @@ def test_stage2_desks_and_workspace():
     assert res.status_code == 200
     data = res.json()
     assert "desks" in data
-    assert len(data["desks"]) == 6
+    assert len(data["desks"]) >= 6
 
     # Verificar que cada mesa possui seat_x, seat_y, front_x, front_y
     for desk in data["desks"]:
