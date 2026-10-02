@@ -15,7 +15,9 @@
       "desk_id": "desk-1",
       "system_prompt": "Você é o Tech Lead do time.",
       "model_name": "",
-      "state": "idle"
+      "state": "idle",
+      "mission": null,
+      "is_temporary": false
     },
     {
       "id": "agent-31d838",
@@ -28,7 +30,9 @@
       "desk_id": "desk-2",
       "system_prompt": "Você desenvolve APIs robustas.",
       "model_name": "",
-      "state": "idle"
+      "state": "idle",
+      "mission": null,
+      "is_temporary": false
     },
     {
       "id": "agent-628ce1",
@@ -41,7 +45,9 @@
       "desk_id": "desk-3",
       "system_prompt": "Você é um especialista focado e analítico em front-end e design pronto para colaborar com a equipe.",
       "model_name": "",
-      "state": "idle"
+      "state": "idle",
+      "mission": null,
+      "is_temporary": false
     }
   ],
   "desks": [

@@ -118,6 +118,30 @@ class ConnectionManager:
             "payload": payload or {}
         })
 
+    async def broadcast_fs_activity(self, agent_id: str, action: str, path: str):
+        """Notifica atividade no sistema de arquivos para feedback visual no Canvas e logs."""
+        await self.broadcast({
+            "type": "fs.activity",
+            "agent_id": agent_id,
+            "action": action,
+            "path": path
+        })
+
+    async def broadcast_agent_spawned(self, agent_data: Dict[str, Any]):
+        """Notifica criação/spawning dinâmico de um novo subagente no escritório."""
+        await self.broadcast({
+            "type": "agent.spawned",
+            "agent": agent_data
+        })
+
+    async def broadcast_agent_despawned(self, agent_id: str, desk_id: str):
+        """Notifica conclusão de missão e desocupação da mesa do subagente temporário."""
+        await self.broadcast({
+            "type": "agent.despawned",
+            "agent_id": agent_id,
+            "desk_id": desk_id
+        })
+
 
 # Instância global singleton
 hub = ConnectionManager()

@@ -82,11 +82,48 @@
         <div class="chat-agent-name" id="chatAgentName">Agente</div>
         <div class="chat-agent-role" id="chatAgentRole">Cargo</div>
       </div>
-      <div style="display: flex; gap: 8px;">
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <button class="btn-action" id="dismissAgentBtn" type="button" style="display: none; background: rgba(239, 68, 68, 0.15); border-color: #ef4444; color: #fca5a5; font-size: 11px; padding: 4px 8px;" title="Bater Ponto e Liberar Mesa">
+          👋 Bater Ponto
+        </button>
         <button class="btn-action" id="editCurrentAgentBtn" type="button" title="Editar Perfil do Agente">
           ✏️ Editar
         </button>
         <button class="btn-close" id="closeChatBtn" type="button" title="Fechar">&times;</button>
+      </div>
+    </div>
+
+    <!-- Card de Missão Delegada (Subagentes) -->
+    <div class="subagent-mission-card" id="subagentMissionCard" style="display: none;">
+      <div class="mission-header">
+        <span class="mission-tag">🎯 MISSÃO CIRÚRGICA DELEGADA</span>
+        <button class="btn-toggle-mission" id="toggleMissionBtn" type="button">Detalhes ▼</button>
+      </div>
+      <div class="mission-body" id="missionBody" style="display: none;">
+        <div class="mission-field">
+          <span class="field-label">📌 O QUÊ (Entregável Exato):</span>
+          <p id="missionWhatTask" class="field-content"></p>
+        </div>
+        <div class="mission-field">
+          <span class="field-label">⛔ FORA DE ESCOPO:</span>
+          <p id="missionWhatOutOfScope" class="field-content error"></p>
+        </div>
+        <div class="mission-field">
+          <span class="field-label">⏱️ QUANDO (Gatilhos e Dependências):</span>
+          <p id="missionWhenTriggers" class="field-content"></p>
+        </div>
+        <div class="mission-field">
+          <span class="field-label">🛠️ COMO (Metodologia e Regras):</span>
+          <pre id="missionHowInstructions" class="field-pre"></pre>
+        </div>
+        <div class="mission-field">
+          <span class="field-label">🏁 CONDIÇÃO DE CONCLUSÃO:</span>
+          <p id="missionExitCondition" class="field-content success"></p>
+        </div>
+        <div class="mission-field">
+          <span class="field-label">🔧 FERRAMENTAS AUTORIZADAS:</span>
+          <div id="missionAllowedTools" class="tools-tag-list"></div>
+        </div>
       </div>
     </div>
 

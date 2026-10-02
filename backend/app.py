@@ -548,6 +548,8 @@ async def delete_agent(agent_id: str):
     workspace.agents = [a for a in workspace.agents if a.id != agent_id]
     storage.save_workspace(workspace)
 
+    if desk:
+        await hub.broadcast_agent_despawned(agent_id, desk.id)
     await hub.broadcast_workspace_updated(workspace.model_dump())
     await hub.broadcast_system_notice(f"Agente {agent.name} foi removido do escritório.")
 

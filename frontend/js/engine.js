@@ -53,8 +53,11 @@ class OfficeEngine {
     // Loop de animação
     this.lastTime = performance.now();
     this.steamParticles = [];
+    this.spawnParticles = [];
+    this.retroNotice = null;
     this.initWorld();
     this.setupInput();
+    this.setupWebSocketListeners();
   }
 
   initWorld() {
@@ -324,6 +327,14 @@ class OfficeEngine {
           agent.speechBubble = null;
         }
       }
+
+      // Temporizador do ícone flutuante de atividade de arquivo (1.2s)
+      if (agent.floatingIcon && agent.floatingIcon.timer > 0) {
+        agent.floatingIcon.timer -= dt;
+        if (agent.floatingIcon.timer <= 0) {
+          agent.floatingIcon = null;
+        }
+      }
     });
 
     // 4. Atualizar partículas de vapor do café
@@ -337,7 +348,27 @@ class OfficeEngine {
       }
     });
 
-    // 5. Detectar proximidade
+    // 5. Atualizar partículas retrô de spawn / despawn
+    for (let i = this.spawnParticles.length - 1; i >= 0; i--) {
+      const p = this.spawnParticles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.alpha -= dt * 1.3;
+      p.size = Math.max(0.5, p.size - dt * 1.5);
+      if (p.alpha <= 0) {
+        this.spawnParticles.splice(i, 1);
+      }
+    }
+
+    // 6. Atualizar notificação retrô do rodapé
+    if (this.retroNotice && this.retroNotice.timer > 0) {
+      this.retroNotice.timer -= dt;
+      if (this.retroNotice.timer <= 0) {
+        this.retroNotice = null;
+      }
+    }
+
+    // 7. Detectar proximidade
     this.checkProximity();
   }
 
@@ -456,12 +487,40 @@ class OfficeEngine {
     // 4. NPCs (Agentes de IA)
     this.agents.forEach(agent => this.renderNPC(ctx, agent));
 
-    // 5. Jogador
+    // 5. Partículas de Spawn Retrô
+    if (this.spawnParticles.length > 0) {
+      ctx.save();
+      this.spawnParticles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = Math.max(0, Math.min(1, p.alpha));
+        ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+      });
+      ctx.restore();
+    }
+
+    // 6. Jogador
     this.renderPlayer(ctx);
 
-    // 6. HUD de Proximidade flutuante
+    // 7. HUD de Proximidade flutuante
     if (this.nearestTarget) {
       this.renderInteractionHUD(ctx, this.nearestTarget);
+    }
+
+    // 8. Notificação Retrô no Rodapé do Escritório
+    if (this.retroNotice && this.retroNotice.timer > 0) {
+      const alpha = Math.min(1, this.retroNotice.timer / 0.3);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
+      ctx.fillRect(24, 484, 752, 22);
+      ctx.strokeStyle = '#06b6d4';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(24, 484, 752, 22);
+      ctx.font = "bold 9px 'Courier New', monospace";
+      ctx.fillStyle = '#38bdf8';
+      ctx.textAlign = 'left';
+      ctx.fillText(`⚡ ${this.retroNotice.text}`, 34, 498);
+      ctx.restore();
     }
   }
 
@@ -787,6 +846,35 @@ class OfficeEngine {
       ctx.fillText(bubbleText, x, y - 24);
     }
 
+    // Ícone flutuante de atividade de arquivo (fs.activity - 1.2s com animação)
+    if (agent.floatingIcon && agent.floatingIcon.timer > 0) {
+      const fi = agent.floatingIcon;
+      const progress = 1 - (fi.timer / fi.maxTimer);
+      const bounce = Math.sin(progress * Math.PI) * 12;
+      const iconY = y - 48 - bounce;
+      const alpha = fi.timer < 0.3 ? fi.timer / 0.3 : 1.0;
+
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+
+      ctx.font = "16px sans-serif";
+      ctx.textAlign = 'center';
+      ctx.fillText(fi.icon, x, iconY);
+
+      if (fi.label) {
+        ctx.font = "bold 8px 'Courier New', monospace";
+        const badgeWidth = ctx.measureText(fi.label).width + 8;
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+        ctx.fillRect(x - badgeWidth / 2, iconY + 3, badgeWidth, 12);
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x - badgeWidth / 2, iconY + 3, badgeWidth, 12);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillText(fi.label, x, iconY + 12);
+      }
+      ctx.restore();
+    }
+
     // Nome e Cargo do Agente acima do avatar
     ctx.font = "bold 9px 'Courier New', monospace";
     ctx.textAlign = 'center';
@@ -894,6 +982,103 @@ class OfficeEngine {
         this.moveAgent(fromAgentId, origX, origY, "walk", 3.0);
       }
     }, 2200);
+  }
+
+  triggerSpawnEffect(x, y) {
+    const colors = ['#38bdf8', '#10b981', '#f59e0b', '#c084fc', '#ffffff', '#ec4899'];
+    for (let i = 0; i < 28; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 25 + Math.random() * 85;
+      this.spawnParticles.push({
+        x: x,
+        y: y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 15,
+        alpha: 1.0,
+        size: 2 + Math.random() * 3,
+        color: colors[Math.floor(Math.random() * colors.length)]
+      });
+    }
+  }
+
+  triggerRetroNotice(text, duration = 2.5) {
+    this.retroNotice = {
+      text,
+      timer: duration,
+      maxTimer: duration
+    };
+  }
+
+  triggerFsActivity(agentId, action, path) {
+    const agent = this.agents.get(agentId);
+    const isDir = (action || '').includes('dir');
+    const icon = isDir ? '📁' : '💾';
+    const fileName = (path || '').split('/').pop().split('\\').pop() || 'arquivo';
+
+    if (agent) {
+      agent.floatingIcon = {
+        icon: icon,
+        label: `${action === 'read_file' ? 'Leu' : 'Gravou'} ${fileName}`,
+        timer: 1.2,
+        maxTimer: 1.2
+      };
+    }
+
+    const actionDesc = action === 'created_file' ? 'Gravou arquivo' :
+                       action === 'created_dir' ? 'Criou pasta' :
+                       action === 'read_file' ? 'Leu arquivo' : action;
+    this.triggerRetroNotice(`${icon} ${actionDesc}: ${path}`, 2.5);
+  }
+
+  setupWebSocketListeners() {
+    if (!window.officeSocket) return;
+
+    window.officeSocket.on('agent.spawned', (data) => {
+      const agentData = data.agent || data;
+      const desk = this.desks.find(d => d.id === agentData.desk_id);
+      const posX = desk ? desk.seat_x : (agentData.seat_x || 400);
+      const posY = desk ? desk.seat_y : (agentData.seat_y || 260);
+
+      if (desk) {
+        desk.agent_id = agentData.id;
+      }
+
+      this.agents.set(agentData.id, {
+        ...agentData,
+        x: posX,
+        y: posY,
+        targetX: posX,
+        targetY: posY,
+        walkSpeed: 2.5,
+        speechBubble: "⚡ Pronto para a missão!",
+        bubbleTimer: 3.0,
+        floatingIcon: null
+      });
+
+      this.triggerSpawnEffect(posX, posY);
+      this.triggerRetroNotice(`🎉 Subagente '${agentData.name}' (${agentData.title}) alocado na ${desk ? desk.name : 'mesa'}!`, 3.5);
+    });
+
+    window.officeSocket.on('agent.despawned', (data) => {
+      const agentId = data.agent_id || data.id;
+      const deskId = data.desk_id;
+      const agent = this.agents.get(agentId);
+      const desk = deskId ? this.desks.find(d => d.id === deskId) : (agent ? this.desks.find(d => d.agent_id === agentId) : null);
+
+      if (agent) {
+        this.triggerSpawnEffect(agent.x, agent.y);
+        this.agents.delete(agentId);
+      }
+      if (desk) {
+        desk.agent_id = null;
+      }
+
+      this.triggerRetroNotice(`👋 Agente concluiu a missão e liberou a mesa.`, 2.5);
+    });
+
+    window.officeSocket.on('fs.activity', (data) => {
+      this.triggerFsActivity(data.agent_id, data.action, data.path);
+    });
   }
 }
 

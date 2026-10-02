@@ -168,6 +168,51 @@ class Desk(BaseModel):
     agent_id: Optional[str] = None
 
 
+class SpawnSubagentParams(BaseModel):
+    name: str = Field(..., description="Nome do subagente (ex: 'SQL_Architect', 'CSS_Polisher').")
+    role_title: str = Field(..., description="Cargo e especialidade formal do agente.")
+    avatar_id: str = Field(default="avatar_1", description="ID visual do sprite.")
+    
+    # O QUÊ: Escopo e Limites Concretos
+    what_exact_task: str = Field(
+        ..., 
+        description="Descrição detalhada do entregável exato. Proibido ser vago. Deve listar arquivos específicos a criar/editar."
+    )
+    what_out_of_scope: str = Field(
+        ..., 
+        description="O que o subagente NÃO tem permissão de fazer (limites de escopo)."
+    )
+    
+    # QUANDO: Gatilhos e Condições de Execução
+    when_triggers: str = Field(
+        ..., 
+        description="Quando o subagente inicia, quais pré-requisitos/arquivos devem existir antes e dependências."
+    )
+    
+    # COMO: Metodologia, Formato e Regras
+    how_instructions: str = Field(
+        ..., 
+        description="Passo a passo rigoroso de execução, convenções de código, restrições e formato exato da resposta."
+    )
+    
+    # Ferramentas e Recursos Permitidos
+    allowed_tools: List[str] = Field(
+        default=["fs_read_file", "fs_write_file", "fs_create_directory", "fs_list_directory"],
+        description="Lista explícita de ferramentas que o subagente pode usar."
+    )
+    
+    # Condição de Encerramento (Exit Condition)
+    exit_condition: str = Field(
+        ..., 
+        description="Critério objetivo para considerar o trabalho concluído e liberar a mesa (ex: 'Arquivo schema.sql gerado e validado')."
+    )
+    
+    model_override: Optional[str] = Field(
+        default=None, 
+        description="Modelo específico para este subagente (ex: modelo rápido ou local)."
+    )
+
+
 class Agent(BaseModel):
     id: str
     name: str
@@ -180,6 +225,8 @@ class Agent(BaseModel):
     system_prompt: str = "Você é um assistente de IA focado e prestativo."
     model_name: str = ""
     state: AgentState = AgentState.IDLE
+    mission: Optional[SpawnSubagentParams] = None
+    is_temporary: bool = False
 
 
 class AgentCreateRequest(BaseModel):

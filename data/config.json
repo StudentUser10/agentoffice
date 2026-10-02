@@ -1,12 +1,12 @@
 {
-  "provider": "groq",
-  "base_url": "https://api.groq.com/openai/v1",
-  "model": "openai/gpt-oss-120b",
+  "provider": "ollama",
+  "base_url": "http://localhost:11434",
+  "model": "llama3:latest",
   "api_keys": {
     "ollama": "sk-temp-testing-key",
     "groq": "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"
   },
-  "workspace_dir": "C:\\Users\\jeffb\\AppData\\Local\\Temp\\tmpljkogxgv",
+  "workspace_dir": "C:\\Users\\jeffb\\OneDrive\\Desktop\\agentoffice\\workspace",
   "ui_preferences": {
     "theme": "retro-dark",
     "sound_enabled": true,

@@ -46,12 +46,46 @@ class OfficeUI {
     // Activity Log
     this.activityFeed = document.getElementById('activityFeed');
     this.clearLogsBtn = document.getElementById('clearLogsBtn');
+
+    // Subagent Mission Card & Dismissal
+    this.subagentMissionCard = document.getElementById('subagentMissionCard');
+    this.toggleMissionBtn = document.getElementById('toggleMissionBtn');
+    this.missionBody = document.getElementById('missionBody');
+    this.missionWhatTask = document.getElementById('missionWhatTask');
+    this.missionWhatOutOfScope = document.getElementById('missionWhatOutOfScope');
+    this.missionWhenTriggers = document.getElementById('missionWhenTriggers');
+    this.missionHowInstructions = document.getElementById('missionHowInstructions');
+    this.missionExitCondition = document.getElementById('missionExitCondition');
+    this.missionAllowedTools = document.getElementById('missionAllowedTools');
+    this.dismissAgentBtn = document.getElementById('dismissAgentBtn');
   }
 
   setupEvents() {
     // Fechar modais
     this.closeAgentModalBtn.addEventListener('click', () => this.closeAgentModal());
     this.closeChatBtn.addEventListener('click', () => this.closeChatDrawer());
+
+    // Toggle Missão Cirúrgica do Subagente
+    if (this.toggleMissionBtn) {
+      this.toggleMissionBtn.addEventListener('click', () => {
+        const isHidden = !this.missionBody.style.display || this.missionBody.style.display === 'none';
+        this.missionBody.style.display = isHidden ? 'flex' : 'none';
+        this.toggleMissionBtn.textContent = isHidden ? 'Ocultar ▲' : 'Detalhes ▼';
+      });
+    }
+
+    // Bater Ponto e Dispensar Subagente
+    if (this.dismissAgentBtn) {
+      this.dismissAgentBtn.addEventListener('click', () => {
+        if (this.activeChatAgent) {
+          if (confirm(`Confirmar encerramento de contrato e liberar a mesa de ${this.activeChatAgent.name}?`)) {
+            const agentId = this.activeChatAgent.id;
+            this.closeChatDrawer();
+            this.deleteAgent(agentId);
+          }
+        }
+      });
+    }
 
     // Mudança de papel hierárquico
     this.agentRoleSelect.addEventListener('change', () => {
@@ -127,6 +161,43 @@ class OfficeUI {
       if (window.officeEngine) {
         window.officeEngine.moveAgent(data.id, data.target_x, data.target_y, data.action, data.speed);
       }
+    });
+
+    socket.on('agent.spawned', (data) => {
+      const a = data.agent || data;
+      this.logActivity(`✨ Supervisor contratou '${a.name}' (${a.title})`, 'notice');
+      if (this.currentWorkspace) {
+        if (!this.currentWorkspace.agents) this.currentWorkspace.agents = [];
+        const idx = this.currentWorkspace.agents.findIndex(x => x.id === a.id);
+        if (idx >= 0) {
+          this.currentWorkspace.agents[idx] = a;
+        } else {
+          this.currentWorkspace.agents.push(a);
+        }
+        const d = (this.currentWorkspace.desks || []).find(x => x.id === a.desk_id);
+        if (d) d.agent_id = a.id;
+      }
+    });
+
+    socket.on('agent.despawned', (data) => {
+      const agentId = data.agent_id || data.id;
+      const deskId = data.desk_id;
+      this.logActivity(`🚪 Subagente concluiu a missão e liberou a mesa.`, 'info');
+      if (this.currentWorkspace) {
+        this.currentWorkspace.agents = (this.currentWorkspace.agents || []).filter(a => a.id !== agentId);
+        const d = (this.currentWorkspace.desks || []).find(x => x.id === deskId || x.agent_id === agentId);
+        if (d) d.agent_id = null;
+      }
+      if (this.activeChatAgent && this.activeChatAgent.id === agentId) {
+        this.closeChatDrawer();
+      }
+    });
+
+    socket.on('fs.activity', (data) => {
+      const act = data.action === 'created_file' ? 'criou arquivo' :
+                  data.action === 'created_dir' ? 'criou pasta' :
+                  data.action === 'read_file' ? 'leu arquivo' : data.action;
+      this.logActivity(`📁 [FS] ${data.agent_id ? data.agent_id + ' ' : ''}${act}: ${data.path}`, 'status');
     });
 
     socket.on('chat.system_notice', (data) => {
@@ -319,6 +390,34 @@ class OfficeUI {
     this.chatAgentName.textContent = `${roleIcon} ${agent.name}`;
     this.chatAgentRole.textContent = `${agent.title} • ${roleText}`;
 
+    // Painel de Missão Cirúrgica Delegada
+    if (agent.mission && this.subagentMissionCard) {
+      this.subagentMissionCard.style.display = 'block';
+      this.missionWhatTask.textContent = agent.mission.what_exact_task || '(Não especificado)';
+      this.missionWhatOutOfScope.textContent = agent.mission.what_out_of_scope || '(Nenhuma restrição)';
+      this.missionWhenTriggers.textContent = agent.mission.when_triggers || '(Imediato)';
+      this.missionHowInstructions.textContent = agent.mission.how_instructions || '(Livre)';
+      this.missionExitCondition.textContent = agent.mission.exit_condition || '(Sob demanda)';
+
+      this.missionAllowedTools.innerHTML = '';
+      const tools = agent.mission.allowed_tools || [];
+      tools.forEach(t => {
+        const span = document.createElement('span');
+        span.className = 'tool-tag';
+        span.textContent = t;
+        this.missionAllowedTools.appendChild(span);
+      });
+
+      if (this.dismissAgentBtn) {
+        this.dismissAgentBtn.style.display = 'inline-flex';
+      }
+    } else {
+      if (this.subagentMissionCard) this.subagentMissionCard.style.display = 'none';
+      if (this.dismissAgentBtn) {
+        this.dismissAgentBtn.style.display = agent.is_temporary ? 'inline-flex' : 'none';
+      }
+    }
+
     this.chatMessages.innerHTML = '';
     this.chatDrawer.classList.add('active');
 
@@ -340,6 +439,9 @@ class OfficeUI {
 
   closeChatDrawer() {
     this.chatDrawer.classList.remove('active');
+    if (this.subagentMissionCard) this.subagentMissionCard.style.display = 'none';
+    if (this.missionBody) this.missionBody.style.display = 'none';
+    if (this.toggleMissionBtn) this.toggleMissionBtn.textContent = 'Detalhes ▼';
     this.activeChatAgent = null;
   }
 
