@@ -40,81 +40,86 @@ def test_stage2_desks_and_workspace():
 def test_stage2_agent_hierarchy_crud():
     client = TestClient(app)
 
-    # Limpar agentes para teste limpo
-    ws = storage.load_workspace()
-    ws.agents = []
-    for d in ws.desks:
-        d.agent_id = None
-    storage.save_workspace(ws)
+    # Backup do workspace original para restaurar ao final
+    original_ws = storage.load_workspace()
+    try:
+        # Limpar agentes para teste limpo
+        ws = storage.load_workspace()
+        ws.agents = []
+        for d in ws.desks:
+            d.agent_id = None
+        storage.save_workspace(ws)
 
-    # 1. Criar um Supervisor (Tech Lead na Mesa 1)
-    sup_payload = {
-        "name": "Alex Tech Lead",
-        "title": "Tech Lead & Arquiteto",
-        "role_type": "supervisor",
-        "desk_id": "desk-1",
-        "system_prompt": "Você é o líder técnico responsável pelo projeto."
-    }
-    res = client.post("/api/agents", json=sup_payload)
-    assert res.status_code == 200, f"Falha ao criar supervisor: {res.text}"
-    supervisor = res.json()
-    assert supervisor["role_type"] == "supervisor"
-    assert supervisor["desk_id"] == "desk-1"
-    sup_id = supervisor["id"]
+        # 1. Criar um Supervisor (Tech Lead na Mesa 1)
+        sup_payload = {
+            "name": "Alex Tech Lead",
+            "title": "Tech Lead & Arquiteto",
+            "role_type": "supervisor",
+            "desk_id": "desk-1",
+            "system_prompt": "Você é o líder técnico responsável pelo projeto."
+        }
+        res = client.post("/api/agents", json=sup_payload)
+        assert res.status_code == 200, f"Falha ao criar supervisor: {res.text}"
+        supervisor = res.json()
+        assert supervisor["role_type"] == "supervisor"
+        assert supervisor["desk_id"] == "desk-1"
+        sup_id = supervisor["id"]
 
-    # 2. Criar um Worker subordinado ao Tech Lead (na Mesa 2)
-    worker_payload = {
-        "name": "Beatriz Backend",
-        "title": "Engenheira Backend",
-        "role_type": "worker",
-        "supervisor_id": sup_id,
-        "desk_id": "desk-2",
-        "system_prompt": "Você é especialista em APIs FastAPI e bancos de dados."
-    }
-    res = client.post("/api/agents", json=worker_payload)
-    assert res.status_code == 200, f"Falha ao criar worker: {res.text}"
-    worker = res.json()
-    assert worker["role_type"] == "worker"
-    assert worker["supervisor_id"] == sup_id
-    worker_id = worker["id"]
+        # 2. Criar um Worker subordinado ao Tech Lead (na Mesa 2)
+        worker_payload = {
+            "name": "Beatriz Backend",
+            "title": "Engenheira Backend",
+            "role_type": "worker",
+            "supervisor_id": sup_id,
+            "desk_id": "desk-2",
+            "system_prompt": "Você é especialista em APIs FastAPI e bancos de dados."
+        }
+        res = client.post("/api/agents", json=worker_payload)
+        assert res.status_code == 200, f"Falha ao criar worker: {res.text}"
+        worker = res.json()
+        assert worker["role_type"] == "worker"
+        assert worker["supervisor_id"] == sup_id
+        worker_id = worker["id"]
 
-    # 3. Verificar que o Supervisor registrou o Worker na sua lista de subordinados
-    ws_updated = storage.load_workspace()
-    updated_sup = next(a for a in ws_updated.agents if a.id == sup_id)
-    assert worker_id in updated_sup.subordinate_ids, "Worker deve constar em subordinate_ids do Supervisor"
+        # 3. Verificar que o Supervisor registrou o Worker na sua lista de subordinados
+        ws_updated = storage.load_workspace()
+        updated_sup = next(a for a in ws_updated.agents if a.id == sup_id)
+        assert worker_id in updated_sup.subordinate_ids, "Worker deve constar em subordinate_ids do Supervisor"
 
-    # 4. Verificar ocupação das mesas
-    desk1 = next(d for d in ws_updated.desks if d.id == "desk-1")
-    desk2 = next(d for d in ws_updated.desks if d.id == "desk-2")
-    assert desk1.agent_id == sup_id
-    assert desk2.agent_id == worker_id
+        # 4. Verificar ocupação das mesas
+        desk1 = next(d for d in ws_updated.desks if d.id == "desk-1")
+        desk2 = next(d for d in ws_updated.desks if d.id == "desk-2")
+        assert desk1.agent_id == sup_id
+        assert desk2.agent_id == worker_id
 
-    # 5. Tentativa de ocupar mesa já ocupada deve retornar erro 400
-    conflict_payload = {
-        "name": "Intruso",
-        "title": "Estagiário",
-        "role_type": "solo",
-        "desk_id": "desk-1"
-    }
-    res = client.post("/api/agents", json=conflict_payload)
-    assert res.status_code == 400
+        # 5. Tentativa de ocupar mesa já ocupada deve retornar erro 400
+        conflict_payload = {
+            "name": "Intruso",
+            "title": "Estagiário",
+            "role_type": "solo",
+            "desk_id": "desk-1"
+        }
+        res = client.post("/api/agents", json=conflict_payload)
+        assert res.status_code == 400
 
-    # 6. Atualizar agente
-    update_payload = {
-        "title": "Tech Lead Sênior"
-    }
-    res = client.put(f"/api/agents/{sup_id}", json=update_payload)
-    assert res.status_code == 200
-    assert res.json()["title"] == "Tech Lead Sênior"
+        # 6. Atualizar agente
+        update_payload = {
+            "title": "Tech Lead Sênior"
+        }
+        res = client.put(f"/api/agents/{sup_id}", json=update_payload)
+        assert res.status_code == 200
+        assert res.json()["title"] == "Tech Lead Sênior"
 
-    # 7. Excluir o Worker e verificar desvinculação
-    res = client.delete(f"/api/agents/{worker_id}")
-    assert res.status_code == 200
-    ws_after_del = storage.load_workspace()
-    updated_sup2 = next(a for a in ws_after_del.agents if a.id == sup_id)
-    assert worker_id not in updated_sup2.subordinate_ids, "Subordinado excluído deve ser removido do supervisor"
-    desk2_after = next(d for d in ws_after_del.desks if d.id == "desk-2")
-    assert desk2_after.agent_id is None, "Mesa deve ser liberada após exclusão do agente"
+        # 7. Excluir o Worker e verificar desvinculação
+        res = client.delete(f"/api/agents/{worker_id}")
+        assert res.status_code == 200
+        ws_after_del = storage.load_workspace()
+        updated_sup2 = next(a for a in ws_after_del.agents if a.id == sup_id)
+        assert worker_id not in updated_sup2.subordinate_ids, "Subordinado excluído deve ser removido do supervisor"
+        desk2_after = next(d for d in ws_after_del.desks if d.id == "desk-2")
+        assert desk2_after.agent_id is None, "Mesa deve ser liberada após exclusão do agente"
+    finally:
+        storage.save_workspace(original_ws)
 
 
 def test_stage2_orchestrator_json_parsing():

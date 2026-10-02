@@ -21,7 +21,7 @@ class OfficeEngine {
     // Estado do Jogador
     this.player = {
       x: 400,
-      y: 260,
+      y: 250,
       width: 22,
       height: 26,
       speed: 155, // pixels por segundo
@@ -277,13 +277,19 @@ class OfficeEngine {
     const moveDistX = dx * this.player.speed * dt;
     const moveDistY = dy * this.player.speed * dt;
 
+    // Auto-recuperação (unstuck): se o jogador estiver em colisão por qualquer motivo, move para área livre central
+    if (this.checkCollision(this.player.x, this.player.y)) {
+      this.player.x = 400;
+      this.player.y = 250;
+    }
+
     const newX = this.player.x + moveDistX;
-    if (!this.checkCollision(newX, this.player.y, this.player.width, this.player.height)) {
+    if (!this.checkCollision(newX, this.player.y)) {
       this.player.x = newX;
     }
 
     const newY = this.player.y + moveDistY;
-    if (!this.checkCollision(this.player.x, newY, this.player.width, this.player.height)) {
+    if (!this.checkCollision(this.player.x, newY)) {
       this.player.y = newY;
     }
 
@@ -331,13 +337,15 @@ class OfficeEngine {
     this.checkProximity();
   }
 
-  checkCollision(x, y, w, h) {
-    const halfW = w / 2;
-    const halfH = h / 2;
-    const pLeft = x - halfW;
-    const pRight = x + halfW;
-    const pTop = y - halfH;
-    const pBottom = y + halfH;
+  checkCollision(x, y) {
+    // Usar apenas a base/pés do personagem para colisão (profundidade 2.5D natural)
+    // Isso evita bloqueios indesejados da cabeça/ombros e permite movimentação fluida
+    const feetW = 14;
+    const feetH = 8;
+    const pLeft = x - feetW / 2;
+    const pRight = x + feetW / 2;
+    const pTop = (y + 11) - feetH / 2;
+    const pBottom = (y + 11) + feetH / 2;
 
     // Obstáculos fixos do mapa
     for (const obs of this.obstacles) {

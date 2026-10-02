@@ -55,12 +55,12 @@ DEFAULT_WORKSPACE = {
     "version": "2.0",
     "agents": [],
     "desks": [
-        {"id": "desk-1", "name": "Mesa 1 (Tech Lead)", "x": 140, "y": 130, "seat_x": 140, "seat_y": 105, "front_x": 140, "front_y": 185, "width": 76, "height": 48, "agent_id": None},
-        {"id": "desk-2", "name": "Mesa 2 (Backend)", "x": 380, "y": 130, "seat_x": 380, "seat_y": 105, "front_x": 380, "front_y": 185, "width": 76, "height": 48, "agent_id": None},
-        {"id": "desk-3", "name": "Mesa 3 (Frontend)", "x": 620, "y": 130, "seat_x": 620, "seat_y": 105, "front_x": 620, "front_y": 185, "width": 76, "height": 48, "agent_id": None},
-        {"id": "desk-4", "name": "Mesa 4 (DevOps)", "x": 140, "y": 350, "seat_x": 140, "seat_y": 325, "front_x": 140, "front_y": 405, "width": 76, "height": 48, "agent_id": None},
-        {"id": "desk-5", "name": "Mesa 5 (QA & Testes)", "x": 380, "y": 350, "seat_x": 380, "seat_y": 325, "front_x": 380, "front_y": 405, "width": 76, "height": 48, "agent_id": None},
-        {"id": "desk-6", "name": "Mesa 6 (Data & AI)", "x": 620, "y": 350, "seat_x": 620, "seat_y": 325, "front_x": 620, "front_y": 405, "width": 76, "height": 48, "agent_id": None}
+        {"id": "desk-1", "name": "Mesa 1 (Tech Lead)", "x": 102, "y": 120, "seat_x": 140, "seat_y": 105, "front_x": 140, "front_y": 185, "width": 76, "height": 48, "agent_id": None},
+        {"id": "desk-2", "name": "Mesa 2 (Backend)", "x": 342, "y": 120, "seat_x": 380, "seat_y": 105, "front_x": 380, "front_y": 185, "width": 76, "height": 48, "agent_id": None},
+        {"id": "desk-3", "name": "Mesa 3 (Frontend)", "x": 582, "y": 120, "seat_x": 620, "seat_y": 105, "front_x": 620, "front_y": 185, "width": 76, "height": 48, "agent_id": None},
+        {"id": "desk-4", "name": "Mesa 4 (DevOps)", "x": 102, "y": 340, "seat_x": 140, "seat_y": 325, "front_x": 140, "front_y": 405, "width": 76, "height": 48, "agent_id": None},
+        {"id": "desk-5", "name": "Mesa 5 (QA & Testes)", "x": 342, "y": 340, "seat_x": 380, "seat_y": 325, "front_x": 380, "front_y": 405, "width": 76, "height": 48, "agent_id": None},
+        {"id": "desk-6", "name": "Mesa 6 (Data & AI)", "x": 582, "y": 340, "seat_x": 620, "seat_y": 325, "front_x": 620, "front_y": 405, "width": 76, "height": 48, "agent_id": None}
     ],
     "conversations": {}
 }
