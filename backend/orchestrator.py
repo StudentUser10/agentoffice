@@ -30,9 +30,17 @@ from backend.tools.filesystem import (
     SecuritySandboxError,
     _get_workspace_dir,
     aiox_validate_code_syntax,
+    fs_copy,
     fs_create_directory,
+    fs_delete_path,
+    fs_edit_file,
+    fs_file_info,
+    fs_find_files,
     fs_list_directory,
     fs_read_file,
+    fs_rename_or_move,
+    fs_search_content,
+    fs_tree_view,
     fs_write_file,
 )
 from backend.tools.spawner import (
@@ -57,15 +65,19 @@ Você DEVE definir detalhadamente:
 Subagentes criados sem esse rigor falharão.
 
 FERRAMENTAS DISPONÍVEIS:
-1. `fs_create_directory`: Cria pastas e subpastas no sandbox do projeto.
-   - Parâmetro: `path` (string, ex: "src/routers")
-2. `fs_write_file`: Cria ou sobrescreve arquivos de texto de forma atômica no sandbox.
-   - Parâmetros: `path` (string), `content` (string), `mode` ("overwrite" ou "append")
-3. `fs_read_file`: Lê conteúdo de um arquivo de texto.
-   - Parâmetros: `path` (string), `max_lines` (int, default: 500)
-4. `fs_list_directory`: Lista itens de um diretório no sandbox.
-   - Parâmetro: `path` (string, default: ".")
-5. `spawn_subagent`: Contrata e aloca um subagente especialista em uma mesa vaga para uma missão cirúrgica.
+1. `fs_list_directory`: Lista arquivos e pastas de um diretório no sandbox. Parâmetro: `path` (string, default: ".")
+2. `fs_tree_view`: Mapeia a árvore completa de pastas e arquivos no sandbox. Parâmetros: `path` (string, default: "."), `max_depth` (int, default: 4)
+3. `fs_find_files`: Localiza pastas e arquivos pelo nome ou padrão glob. Parâmetros: `pattern` (string, ex: "*.py", "test_*"), `path` (string, default: ".")
+4. `fs_search_content`: Busca por ocorrências de texto/código (grep) nos arquivos. Parâmetros: `query` (string), `path` (string, default: "."), `file_pattern` (string, default: "*")
+5. `fs_file_info`: Retorna metadados técnicos de arquivo ou pasta (tamanho, linhas, data, AST check). Parâmetro: `path` (string)
+6. `fs_read_file`: Lê conteúdo de um arquivo com fatiamento opcional. Parâmetros: `path` (string), `max_lines` (int, default: 500), `start_line` (int, default: 1), `show_line_numbers` (bool, default: false)
+7. `fs_write_file`: Cria ou sobrescreve arquivos de texto de forma atômica no sandbox. Parâmetros: `path` (string), `content` (string), `mode` ("overwrite" ou "append")
+8. `fs_edit_file`: Edição cirúrgica substituindo um trecho específico de texto/código por outro. Parâmetros: `path` (string), `target_text` (string exata existente), `replacement_text` (string nova), `allow_multiple` (bool, default: false)
+9. `fs_create_directory`: Cria pastas e subpastas no sandbox. Parâmetro: `path` (string, ex: "src/routers")
+10. `fs_rename_or_move`: Renomeia ou move arquivos e pastas com segurança. Parâmetros: `source_path` (string), `target_path` (string)
+11. `fs_copy`: Copia arquivos ou pastas no sandbox. Parâmetros: `source_path` (string), `target_path` (string)
+12. `fs_delete_path`: Remove arquivos ou pastas no sandbox. Parâmetros: `path` (string), `recursive` (bool, default: false)
+13. `spawn_subagent`: Contrata e aloca um subagente especialista em uma mesa vaga para uma missão cirúrgica.
    - Parâmetros:
      - `name`: string (ex: "SQL_Architect", "CSS_Polisher")
      - `role_title`: string (ex: "Engenheiro de Banco de Dados")
@@ -74,7 +86,7 @@ FERRAMENTAS DISPONÍVEIS:
      - `what_out_of_scope`: string (o que o subagente NÃO tem permissão de fazer)
      - `when_triggers`: string (gatilhos e dependências)
      - `how_instructions`: string (passo a passo técnico rigoroso e convenções)
-     - `allowed_tools`: list[string] (ferramentas autorizadas, ex: ["fs_write_file", "fs_read_file"])
+     - `allowed_tools`: list[string] (ferramentas autorizadas, ex: ["fs_write_file", "fs_read_file", "fs_edit_file"])
      - `exit_condition`: string (critério objetivo para considerar o trabalho concluído)
 
 COMO INVOCAR FERRAMENTAS:
@@ -95,13 +107,21 @@ Ou uma lista de ferramentas a executar:
 """
 
 SUBAGENT_TOOL_DIRECTIVE = """
-FERRAMENTAS DE ARQUIVOS DISPONÍVEIS NO SANDBOX:
-1. `fs_create_directory`: Cria pastas. Parâmetros: `{"path": "caminho/da/pasta"}`
-2. `fs_write_file`: Grava arquivo. Parâmetros: `{"path": "caminho/arquivo.ext", "content": "conteúdo completo", "mode": "overwrite"}`
-3. `fs_read_file`: Lê arquivo. Parâmetros: `{"path": "caminho/arquivo.ext"}`
-4. `fs_list_directory`: Lista diretório. Parâmetros: `{"path": "."}`
+FERRAMENTAS DE SISTEMA DE ARQUIVOS DISPONÍVEIS NO SANDBOX:
+1. `fs_list_directory`: Lista diretório. `{"path": "."}`
+2. `fs_tree_view`: Mapeia árvore de pastas e arquivos. `{"path": ".", "max_depth": 4}`
+3. `fs_find_files`: Busca arquivos por nome/glob. `{"pattern": "*.py", "path": "."}`
+4. `fs_search_content`: Busca texto/código (grep). `{"query": "def ", "path": "."}`
+5. `fs_file_info`: Metadados do arquivo/pasta. `{"path": "caminho/arquivo.ext"}`
+6. `fs_read_file`: Lê arquivo. `{"path": "caminho/arquivo.ext", "start_line": 1, "max_lines": 500}`
+7. `fs_write_file`: Grava arquivo completo. `{"path": "caminho/arquivo.ext", "content": "conteúdo", "mode": "overwrite"}`
+8. `fs_edit_file`: Edição cirúrgica de trecho. `{"path": "caminho/arquivo.ext", "target_text": "antigo", "replacement_text": "novo"}`
+9. `fs_create_directory`: Cria pastas. `{"path": "caminho/da/pasta"}`
+10. `fs_rename_or_move`: Renomeia ou move. `{"source_path": "origem", "target_path": "destino"}`
+11. `fs_copy`: Copia arquivo ou pasta. `{"source_path": "origem", "target_path": "destino"}`
+12. `fs_delete_path`: Exclui arquivo/pasta. `{"path": "caminho/arquivo.ext", "recursive": false}`
 
-Para executar uma ferramenta de arquivo, emita o bloco JSON:
+Para executar uma ferramenta, emita o bloco JSON:
 ```json
 {
   "tool": "nome_da_ferramenta",
@@ -196,10 +216,21 @@ class Orchestrator:
                 f"- **Tier:** `{agent.tier.value if hasattr(agent.tier, 'value') else agent.tier}`\n"
                 f"- **Squad / Sala:** `{agent.squad_id or 'Geral'}` (Sala: `{getattr(agent, 'room_id', 'escritório')}`)\n"
                 f"- **Mesa Atribuída:** `{agent.desk_id}`\n"
-                f"- **Ferramentas Habilitadas:** `fs_read_file`, `fs_write_file`, `fs_list_directory`, `fs_create_directory`\n\n"
-                "**Comandos Rápidos AIOX (CLI First):**\n"
+                f"- **Ferramentas Habilitadas:** `fs_list_directory`, `fs_tree_view`, `fs_find_files`, `fs_search_content`, `fs_file_info`, `fs_read_file`, `fs_write_file`, `fs_edit_file`, `fs_create_directory`, `fs_rename_or_move`, `fs_copy`, `fs_delete_path`\n\n"
+                "**Comandos Rápidos AIOX & Sistema de Arquivos (CLI First):**\n"
                 "- `*help`: Exibe esta matriz de recursos e comandos do agente.\n"
                 "- `*status`: Exibe o estado operacional, ocupação e tickets inter-squad.\n"
+                "- `*ls [caminho]`: Lista os arquivos e pastas do diretório no sandbox.\n"
+                "- `*tree [caminho]`: Mapeia a árvore completa de pastas e arquivos no sandbox.\n"
+                "- `*cat <arquivo>`: Lê e exibe o conteúdo de um arquivo com linhas numeradas.\n"
+                "- `*find <padrão>`: Localiza pastas e arquivos por nome ou glob (ex: `*find *.py`).\n"
+                "- `*grep <termo>`: Busca por ocorrências de texto/código dentro dos arquivos.\n"
+                "- `*info <caminho>`: Exibe metadados, tamanho, linhas e sintaxe de um item.\n"
+                "- `*mkdir <caminho>`: Cria nova pasta ou estrutura de diretórios recursiva.\n"
+                "- `*touch <caminho>`: Cria um arquivo vazio no sandbox.\n"
+                "- `*rm <caminho>`: Remove um arquivo ou pasta do sandbox.\n"
+                "- `*mv <origem> <destino>`: Move ou renomeia um arquivo ou pasta.\n"
+                "- `*cp <origem> <destino>`: Copia um arquivo ou pasta dentro do sandbox.\n"
                 "- `*qa` ou `*test`: Executa o Quality Gate estático e validação de sintaxe (AST) no sandbox.\n"
                 "- `*critique`: Executa auto-crítica ADE (Autonomous Development Engine) do código.\n"
                 "- `*decisions`: Lista as Decisões Arquiteturais Registradas (ADRs).\n"
@@ -395,6 +426,57 @@ class Orchestrator:
                 )
             else:
                 reply = f"Manifesto AIOX: Agente {agent.name} comprometido com entregas seguras e conformidade técnica."
+        elif cmd in ("*ls", "*dir"):
+            target_path = args if args else "."
+            reply = await fs_list_directory(target_path, agent_id=agent.id)
+        elif cmd == "*tree":
+            target_path = args if args else "."
+            reply = await fs_tree_view(target_path, agent_id=agent.id)
+        elif cmd in ("*cat", "*read"):
+            if not args:
+                reply = "⚠️ Por favor especifique o caminho do arquivo. Exemplo: `*cat src/database.py`"
+            else:
+                reply = await fs_read_file(args, show_line_numbers=True, agent_id=agent.id)
+        elif cmd == "*find":
+            pat = args if args else "*"
+            reply = await fs_find_files(pattern=pat, agent_id=agent.id)
+        elif cmd in ("*grep", "*search"):
+            if not args:
+                reply = "⚠️ Por favor especifique o termo para busca. Exemplo: `*grep def get_db`"
+            else:
+                reply = await fs_search_content(query=args, agent_id=agent.id)
+        elif cmd == "*info":
+            if not args:
+                reply = "⚠️ Por favor especifique o caminho do item. Exemplo: `*info src/database.py`"
+            else:
+                reply = await fs_file_info(args, agent_id=agent.id)
+        elif cmd == "*mkdir":
+            if not args:
+                reply = "⚠️ Por favor especifique o caminho da pasta a criar. Exemplo: `*mkdir src/routers`"
+            else:
+                reply = await fs_create_directory(args, agent_id=agent.id)
+        elif cmd == "*touch":
+            if not args:
+                reply = "⚠️ Por favor especifique o arquivo a ser criado. Exemplo: `*touch src/__init__.py`"
+            else:
+                reply = await fs_write_file(args, "", mode="overwrite", agent_id=agent.id)
+        elif cmd == "*rm":
+            if not args:
+                reply = "⚠️ Por favor especifique o arquivo ou pasta a remover. Exemplo: `*rm temp.log`"
+            else:
+                reply = await fs_delete_path(args, recursive=True, agent_id=agent.id)
+        elif cmd == "*mv":
+            parts = args.split(maxsplit=1)
+            if len(parts) < 2:
+                reply = "⚠️ Uso correto: `*mv <caminho_origem> <caminho_destino>`"
+            else:
+                reply = await fs_rename_or_move(parts[0].strip(), parts[1].strip(), agent_id=agent.id)
+        elif cmd == "*cp":
+            parts = args.split(maxsplit=1)
+            if len(parts) < 2:
+                reply = "⚠️ Uso correto: `*cp <caminho_origem> <caminho_destino>`"
+            else:
+                reply = await fs_copy(parts[0].strip(), parts[1].strip(), agent_id=agent.id)
         elif cmd == "*plan":
             if not args:
                 reply = "⚠️ Por favor especifique o objetivo do plano. Exemplo: `*plan Desenvolver API de usuários com SQLite`"
@@ -744,14 +826,79 @@ class Orchestrator:
                 mode = params.get("mode", "overwrite")
                 return await fs_write_file(path, content, mode=mode, agent_id=agent.id)
 
+            elif tool_name == "fs_edit_file":
+                path = params.get("path", "")
+                target_text = params.get("target_text", "")
+                replacement_text = params.get("replacement_text", "")
+                allow_multiple = params.get("allow_multiple", False)
+                return await fs_edit_file(path, target_text, replacement_text, allow_multiple=allow_multiple, agent_id=agent.id)
+
             elif tool_name == "fs_read_file":
                 path = params.get("path", "")
                 max_lines = params.get("max_lines", 500)
-                return await fs_read_file(path, max_lines=max_lines, agent_id=agent.id)
+                start_line = params.get("start_line", 1)
+                end_line = params.get("end_line", None)
+                show_line_numbers = params.get("show_line_numbers", False)
+                return await fs_read_file(
+                    path,
+                    max_lines=max_lines,
+                    start_line=start_line,
+                    end_line=end_line,
+                    show_line_numbers=show_line_numbers,
+                    agent_id=agent.id
+                )
 
             elif tool_name == "fs_list_directory":
                 path = params.get("path", ".")
                 return await fs_list_directory(path, agent_id=agent.id)
+
+            elif tool_name == "fs_tree_view":
+                path = params.get("path", ".")
+                max_depth = params.get("max_depth", 4)
+                show_hidden = params.get("show_hidden", False)
+                return await fs_tree_view(path, max_depth=max_depth, show_hidden=show_hidden, agent_id=agent.id)
+
+            elif tool_name == "fs_find_files":
+                pattern = params.get("pattern", "*")
+                path = params.get("path", ".")
+                max_results = params.get("max_results", 100)
+                return await fs_find_files(pattern=pattern, path=path, max_results=max_results, agent_id=agent.id)
+
+            elif tool_name == "fs_search_content":
+                query = params.get("query", "")
+                path = params.get("path", ".")
+                file_pattern = params.get("file_pattern", "*")
+                is_regex = params.get("is_regex", False)
+                case_insensitive = params.get("case_insensitive", True)
+                max_results = params.get("max_results", 40)
+                return await fs_search_content(
+                    query=query,
+                    path=path,
+                    file_pattern=file_pattern,
+                    is_regex=is_regex,
+                    case_insensitive=case_insensitive,
+                    max_results=max_results,
+                    agent_id=agent.id
+                )
+
+            elif tool_name == "fs_file_info":
+                path = params.get("path", "")
+                return await fs_file_info(path, agent_id=agent.id)
+
+            elif tool_name == "fs_rename_or_move":
+                source_path = params.get("source_path", "")
+                target_path = params.get("target_path", "")
+                return await fs_rename_or_move(source_path, target_path, agent_id=agent.id)
+
+            elif tool_name == "fs_copy":
+                source_path = params.get("source_path", "")
+                target_path = params.get("target_path", "")
+                return await fs_copy(source_path, target_path, agent_id=agent.id)
+
+            elif tool_name == "fs_delete_path":
+                path = params.get("path", "")
+                recursive = params.get("recursive", False)
+                return await fs_delete_path(path, recursive=recursive, agent_id=agent.id)
 
             elif tool_name == "spawn_subagent":
                 subagent_params = SpawnSubagentParams(**params)

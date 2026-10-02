@@ -591,3 +591,41 @@ class SkillRegistryData(BaseModel):
     skills: List[ClaudeSkill] = Field(default_factory=list)
 
 
+# --- Modelos de Operações de Sistema de Arquivos (Sandbox) ---
+
+class FSWriteFileRequest(BaseModel):
+    path: str
+    content: str
+    mode: str = "overwrite"  # "overwrite" ou "append"
+
+
+class FSEditFileRequest(BaseModel):
+    path: str
+    target_text: str
+    replacement_text: str
+    allow_multiple: bool = False
+
+
+class FSCreateDirRequest(BaseModel):
+    path: str
+
+
+class FSMoveRequest(BaseModel):
+    source_path: str
+    target_path: str
+
+
+class FSCopyRequest(BaseModel):
+    source_path: str
+    target_path: str
+
+
+class FSSearchRequest(BaseModel):
+    query: str
+    path: str = "."
+    file_pattern: str = "*"
+    is_regex: bool = False
+    case_insensitive: bool = True
+
+
+

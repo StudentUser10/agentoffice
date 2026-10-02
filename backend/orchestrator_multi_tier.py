@@ -39,9 +39,17 @@ from backend.tools.filesystem import (
     SecuritySandboxError,
     _get_workspace_dir,
     aiox_validate_code_syntax,
+    fs_copy,
     fs_create_directory,
+    fs_delete_path,
+    fs_edit_file,
+    fs_file_info,
+    fs_find_files,
     fs_list_directory,
     fs_read_file,
+    fs_rename_or_move,
+    fs_search_content,
+    fs_tree_view,
     fs_write_file,
 )
 from backend.tools.spawner import spawn_subagent
@@ -203,6 +211,17 @@ class MultiTierOrchestrator:
                 "**Comandos Executivos AIOX:**\n"
                 "- `*help`: Exibe esta matriz de governança corporativa.\n"
                 "- `*status`: Exibe o painel corporativo e integridade dos squads.\n"
+                "- `*ls [caminho]`: Lista os arquivos e pastas do diretório no sandbox.\n"
+                "- `*tree [caminho]`: Mapeia a árvore completa de pastas e arquivos no sandbox.\n"
+                "- `*cat <arquivo>`: Lê e exibe o conteúdo de um arquivo com linhas numeradas.\n"
+                "- `*find <padrão>`: Localiza pastas e arquivos por nome ou glob (ex: `*find *.py`).\n"
+                "- `*grep <termo>`: Busca por ocorrências de texto/código dentro dos arquivos.\n"
+                "- `*info <caminho>`: Exibe metadados, tamanho, linhas e integridade de um item.\n"
+                "- `*mkdir <caminho>`: Cria nova pasta ou estrutura de diretórios recursiva.\n"
+                "- `*touch <caminho>`: Cria um arquivo vazio no sandbox.\n"
+                "- `*rm <caminho>`: Remove um arquivo ou pasta do sandbox.\n"
+                "- `*mv <origem> <destino>`: Move ou renomeia um arquivo ou pasta.\n"
+                "- `*cp <origem> <destino>`: Copia um arquivo ou pasta dentro do sandbox.\n"
                 "- `*qa` ou `*test`: Executa auditoria global de Quality Gate em todo o sandbox.\n"
                 "- `*critique`: Executa auditoria de auto-crítica ADE em todos os módulos.\n"
                 "- `*decisions`: Lista as Decisões Arquiteturais Registradas (ADRs).\n"
@@ -349,6 +368,49 @@ class MultiTierOrchestrator:
                 "4. **Isolamento de Sandbox:** Nenhuma leitura ou gravação fora do diretório de workspace autorizado.\n"
                 "5. **Colaboração Inter-Squad:** Departamentos colaboram via tickets e contratos auditáveis.\n"
             )
+        elif cmd in ("*ls", "*dir"):
+            target_path = args if args else "."
+            return await fs_list_directory(target_path, agent_id=sudo_agent.id)
+        elif cmd == "*tree":
+            target_path = args if args else "."
+            return await fs_tree_view(target_path, agent_id=sudo_agent.id)
+        elif cmd in ("*cat", "*read"):
+            if not args:
+                return "⚠️ Por favor especifique o caminho do arquivo. Exemplo: `*cat src/database.py`"
+            return await fs_read_file(args, show_line_numbers=True, agent_id=sudo_agent.id)
+        elif cmd == "*find":
+            pat = args if args else "*"
+            return await fs_find_files(pattern=pat, agent_id=sudo_agent.id)
+        elif cmd in ("*grep", "*search"):
+            if not args:
+                return "⚠️ Por favor especifique o termo para busca. Exemplo: `*grep def get_db`"
+            return await fs_search_content(query=args, agent_id=sudo_agent.id)
+        elif cmd == "*info":
+            if not args:
+                return "⚠️ Por favor especifique o caminho do item. Exemplo: `*info src/database.py`"
+            return await fs_file_info(args, agent_id=sudo_agent.id)
+        elif cmd == "*mkdir":
+            if not args:
+                return "⚠️ Por favor especifique o caminho da pasta a criar. Exemplo: `*mkdir src/routers`"
+            return await fs_create_directory(args, agent_id=sudo_agent.id)
+        elif cmd == "*touch":
+            if not args:
+                return "⚠️ Por favor especifique o arquivo a ser criado. Exemplo: `*touch src/__init__.py`"
+            return await fs_write_file(args, "", mode="overwrite", agent_id=sudo_agent.id)
+        elif cmd == "*rm":
+            if not args:
+                return "⚠️ Por favor especifique o arquivo ou pasta a remover. Exemplo: `*rm temp.log`"
+            return await fs_delete_path(args, recursive=True, agent_id=sudo_agent.id)
+        elif cmd == "*mv":
+            parts = args.split(maxsplit=1)
+            if len(parts) < 2:
+                return "⚠️ Uso correto: `*mv <caminho_origem> <caminho_destino>`"
+            return await fs_rename_or_move(parts[0].strip(), parts[1].strip(), agent_id=sudo_agent.id)
+        elif cmd == "*cp":
+            parts = args.split(maxsplit=1)
+            if len(parts) < 2:
+                return "⚠️ Uso correto: `*cp <caminho_origem> <caminho_destino>`"
+            return await fs_copy(parts[0].strip(), parts[1].strip(), agent_id=sudo_agent.id)
         elif cmd == "*plan":
             if not args:
                 return "⚠️ Por favor especifique a meta corporativa para planejamento. Exemplo: `*plan Desenvolver API com autenticação e SQLite`"

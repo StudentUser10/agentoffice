@@ -61,6 +61,27 @@ from backend.models import (
     ClaudeSkill,
     SkillInstallRequest,
     SkillAssignRequest,
+    FSWriteFileRequest,
+    FSEditFileRequest,
+    FSCreateDirRequest,
+    FSMoveRequest,
+    FSCopyRequest,
+    FSSearchRequest,
+)
+from backend.tools.filesystem import (
+    SecuritySandboxError,
+    fs_copy,
+    fs_create_directory,
+    fs_delete_path,
+    fs_edit_file,
+    fs_file_info,
+    fs_find_files,
+    fs_list_directory,
+    fs_read_file,
+    fs_rename_or_move,
+    fs_search_content,
+    fs_tree_view,
+    fs_write_file,
 )
 from backend.orchestrator import orchestrator
 from backend.orchestrator_multi_tier import multi_tier_orchestrator
@@ -1368,6 +1389,162 @@ async def remove_skill_endpoint(skill_id: str):
     if not success:
         raise HTTPException(status_code=404, detail="Skill não encontrada para remoção.")
     return {"status": "removed", "skill_id": skill_id}
+
+
+# --- Sandboxed File System REST Endpoints ---
+
+@app.get("/api/workspace/files")
+async def list_workspace_files(
+    path: str = ".",
+    mode: str = "list",
+    max_depth: int = 4
+):
+    """Lista o conteúdo ou a árvore completa do workspace sandbox."""
+    try:
+        if mode == "tree":
+            tree_text = await fs_tree_view(path, max_depth=max_depth)
+            return {"mode": "tree", "path": path, "output": tree_text, "tree": tree_text}
+        else:
+            list_text = await fs_list_directory(path)
+            return {"mode": "list", "path": path, "output": list_text, "content": list_text}
+    except SecuritySandboxError as se:
+        raise HTTPException(status_code=403, detail=str(se))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/api/workspace/file")
+async def read_workspace_file(
+    path: str,
+    start_line: int = 1,
+    max_lines: int = 500,
+    show_line_numbers: bool = False
+):
+    """Lê o conteúdo de um arquivo com suporte a fatiamento e numeração de linhas."""
+    try:
+        content = await fs_read_file(
+            path,
+            start_line=start_line,
+            max_lines=max_lines,
+            show_line_numbers=show_line_numbers
+        )
+        return {"path": path, "content": content}
+    except SecuritySandboxError as se:
+        raise HTTPException(status_code=403, detail=str(se))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/workspace/file")
+async def write_workspace_file(req: FSWriteFileRequest):
+    """Cria ou substitui um arquivo de texto no workspace sandbox de forma atômica."""
+    try:
+        msg = await fs_write_file(req.path, req.content, mode=req.mode)
+        return {"success": True, "message": msg}
+    except SecuritySandboxError as se:
+        raise HTTPException(status_code=403, detail=str(se))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/workspace/file/edit")
+async def edit_workspace_file(req: FSEditFileRequest):
+    """Edição cirúrgica: substitui trecho específico de texto/código em um arquivo existente."""
+    try:
+        msg = await fs_edit_file(
+            req.path,
+            req.target_text,
+            req.replacement_text,
+            allow_multiple=req.allow_multiple
+        )
+        return {"success": True, "message": msg}
+    except SecuritySandboxError as se:
+        raise HTTPException(status_code=403, detail=str(se))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.delete("/api/workspace/file")
+async def delete_workspace_file(path: str, recursive: bool = False):
+    """Remove um arquivo ou pasta do workspace sandbox."""
+    try:
+        msg = await fs_delete_path(path, recursive=recursive)
+        return {"success": True, "message": msg}
+    except SecuritySandboxError as se:
+        raise HTTPException(status_code=403, detail=str(se))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/workspace/directory")
+async def create_workspace_directory(req: FSCreateDirRequest):
+    """Cria uma nova pasta ou estrutura de diretórios recursiva no sandbox."""
+    try:
+        msg = await fs_create_directory(req.path)
+        return {"success": True, "message": msg}
+    except SecuritySandboxError as se:
+        raise HTTPException(status_code=403, detail=str(se))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/workspace/move")
+async def move_workspace_path(req: FSMoveRequest):
+    """Move ou renomeia um arquivo ou pasta dentro do sandbox."""
+    try:
+        msg = await fs_rename_or_move(req.source_path, req.target_path)
+        return {"success": True, "message": msg}
+    except SecuritySandboxError as se:
+        raise HTTPException(status_code=403, detail=str(se))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/workspace/copy")
+async def copy_workspace_path(req: FSCopyRequest):
+    """Copia um arquivo ou pasta dentro do sandbox."""
+    try:
+        msg = await fs_copy(req.source_path, req.target_path)
+        return {"success": True, "message": msg}
+    except SecuritySandboxError as se:
+        raise HTTPException(status_code=403, detail=str(se))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/api/workspace/search")
+async def search_workspace(
+    query: Optional[str] = None,
+    pattern: Optional[str] = None,
+    path: str = "."
+):
+    """Busca textual (grep) ou localização por nome de arquivo (find)."""
+    try:
+        if query:
+            res = await fs_search_content(query=query, path=path)
+            return {"type": "content_search", "query": query, "output": res}
+        elif pattern:
+            res = await fs_find_files(pattern=pattern, path=path)
+            return {"type": "file_search", "pattern": pattern, "output": res}
+        else:
+            raise HTTPException(status_code=400, detail="Especifique 'query' para busca textual ou 'pattern' para busca por nome.")
+    except SecuritySandboxError as se:
+        raise HTTPException(status_code=403, detail=str(se))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/api/workspace/info")
+async def get_workspace_item_info(path: str):
+    """Retorna informações e metadados de um arquivo ou diretório."""
+    try:
+        info_text = await fs_file_info(path)
+        return {"path": path, "info": info_text}
+    except SecuritySandboxError as se:
+        raise HTTPException(status_code=403, detail=str(se))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 
 
 
