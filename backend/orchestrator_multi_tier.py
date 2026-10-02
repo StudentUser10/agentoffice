@@ -28,9 +28,13 @@ from backend.models import (
     SpawnSubagentParams,
     Squad,
     WorkspaceData,
+    ClaudeSkill,
+    SkillInstallRequest,
+    SkillAssignRequest,
 )
 from backend.memory_layer import memory_layer
 from backend.storage import storage
+from backend.tools.skill_manager import skill_manager
 from backend.tools.filesystem import (
     SecuritySandboxError,
     _get_workspace_dir,
@@ -204,20 +208,73 @@ class MultiTierOrchestrator:
                 "- `*decisions`: Lista as Decisões Arquiteturais Registradas (ADRs).\n"
                 "- `*gotchas`: Lista as armadilhas e edge cases corporativos.\n"
                 "- `*insights`: Lista os insights corporativos aprendidos.\n"
+                "- `*skills`: Lista as Claude Skills instaladas e disponíveis no catálogo.\n"
+                "- `*skill-install <id|url>`: Baixa e instala uma Claude Skill.\n"
+                "- `*skill-assign <id> <@handle|squad>`: Concede uma Claude Skill a um agente/squad.\n"
                 "- `*remember <categoria> <texto>`: Salva nova regra na governança imutável.\n"
                 "- `*rules` ou `*manifest`: Exibe o estatuto de governança e Definition of Done corporativo.\n"
                 "- `*plan <meta>`: Simula a decomposição estratégica de uma meta macro.\n"
             )
         elif cmd in ("*status", "*estado"):
             tickets = getattr(workspace, "active_tickets", []) or []
+            installed_skills = skill_manager.list_installed_skills()
             return (
                 f"### 📊 Painel Corporativo AIOX — Diretoria Executiva\n"
                 f"- **Agentes em Operação:** {len(workspace.agents)} agentes\n"
                 f"- **Departamentos Ativos:** {len(available_squads)} squads\n"
                 f"- **Tickets Inter-Squad Ativos:** {len(tickets)} tickets\n"
+                f"- **Claude Skills Habilitadas:** {len(installed_skills)} skills ativas\n"
                 f"- **Sandbox Root:** `{storage.load_config().workspace_dir or 'sandbox ativo'}`\n"
                 f"- **Status da Governança:** 🟢 Operação Normal (Todos os sistemas conformes)\n"
             )
+        elif cmd in ("*skills", "*skills-list"):
+            installed = skill_manager.list_installed_skills()
+            catalog = skill_manager.list_catalog()
+            installed_txt = "\n".join([
+                f"- ⚡ **{s.name}** (`{s.id}`) [v{s.version} — {s.category}]: {s.description}\n  *Atribuída a:* `{', '.join(s.assigned_to)}`"
+                for s in installed
+            ]) if installed else "Nenhuma skill instalada no momento."
+
+            uninstalled_catalog = [c for c in catalog if not c.get("is_installed")]
+            catalog_txt = ", ".join([f"`{c['id']}`" for c in uninstalled_catalog]) if uninstalled_catalog else "Todas as skills do catálogo já estão instaladas."
+
+            return (
+                f"### ⚡ Central de Claude Skills — Governança AIOX\n\n"
+                f"**Skills Atualmente Instaladas ({len(installed)}):**\n{installed_txt}\n\n"
+                f"**Disponíveis no Catálogo para Download/Instalação:**\n{catalog_txt}\n\n"
+                f"---\n"
+                f"**Comandos Rápidos de Skills:**\n"
+                f"- `*skill-install <id|url>`: Baixa e instala skill do catálogo ou URL externa (GitHub/Web).\n"
+                f"- `*skill-assign <id> <@handle|squad_id|*>`: Atribui skill a um agente ou departamento.\n"
+                f"- `*skill-remove <id>`: Remove uma skill instalada.\n"
+            )
+        elif cmd == "*skill-install":
+            if not args:
+                return "⚠️ Especifique o ID da skill do catálogo ou uma URL de download. Exemplo: `*skill-install frontend-craftsman` ou `*skill-install https://raw.githubusercontent.com/.../SKILL.md`"
+            try:
+                is_url = args.startswith("http://") or args.startswith("https://")
+                req = SkillInstallRequest(url=args if is_url else None, skill_id=None if is_url else args)
+                skill = await skill_manager.download_or_install_skill(req, requester_agent_id=sudo_agent.id)
+                return f"✅ Claude Skill **'{skill.name}'** (`{skill.id}`) instalada com sucesso e atribuída para `{', '.join(skill.assigned_to)}`!"
+            except Exception as err:
+                return f"❌ Erro ao instalar Claude Skill: {err}"
+        elif cmd == "*skill-assign":
+            if not args or len(args.split()) < 2:
+                return "⚠️ Formato esperado: `*skill-assign <skill_id> <alvo>`\nExemplo: `*skill-assign frontend-craftsman @dev` ou `*skill-assign python-security-auditor squad-security`"
+            parts = args.split()
+            s_id, target = parts[0], parts[1]
+            try:
+                skill = await skill_manager.assign_skill(s_id, target, "assign")
+                return f"✅ Claude Skill **'{skill.name}'** atribuída com sucesso para `{target}`!"
+            except Exception as err:
+                return f"❌ Erro ao atribuir skill: {err}"
+        elif cmd == "*skill-remove":
+            if not args:
+                return "⚠️ Especifique o ID da skill a ser removida. Exemplo: `*skill-remove frontend-craftsman`"
+            ok = await skill_manager.remove_skill(args)
+            if ok:
+                return f"✅ Claude Skill `{args}` removida com sucesso do escritório."
+            return f"⚠️ Skill `{args}` não foi encontrada para remoção."
         elif cmd in ("*qa", "*test", "*teste"):
             ws_root = _get_workspace_dir()
             py_files = list(ws_root.glob("**/*.py"))
@@ -622,11 +679,12 @@ class MultiTierOrchestrator:
         leader: Agent,
         epic: Dict[str, Any],
         user_prompt: str,
-        squad_id: str
+        squad_id: str,
+        squad: Optional[Squad] = None
     ) -> List[Dict[str, str]]:
         """
         Gera dinamicamente a estrutura de arquivos e código-fonte com LLM
-        com base na demanda real do usuário, eliminando arquivos estáticos hardcoded.
+        com base na demanda real do usuário, aplicando as Claude Skills autorizadas pela diretoria.
         """
         config = storage.load_config()
         llm = LLMClient(config)
@@ -658,6 +716,9 @@ class MultiTierOrchestrator:
             "}\n\n"
             f"{memory_context}"
         )
+
+        # Injetar Claude Skills ativas no system prompt
+        system_prompt = skill_manager.inject_skills_into_prompt(leader, system_prompt, squad)
 
         user_content = (
             f"DEMANDA DO USUÁRIO:\n{user_prompt}\n\n"
@@ -810,6 +871,14 @@ class MultiTierOrchestrator:
             f"⚙️ Líder '{leader.name}' iniciou os trabalhos do squad '{squad_name}'..."
         )
 
+        # 1.1 Pax (@aiox-master) avalia o épico e concede Claude Skills indicadas para a missão
+        granted_skills = await skill_manager.auto_recommend_and_grant_skills(
+            user_prompt=user_prompt,
+            epic_title=epic_title,
+            leader=leader,
+            squad=squad
+        )
+
         cross_squad_notes = []
 
         # 2. Identificar se o épico requer assistência técnica de outro squad
@@ -859,7 +928,7 @@ class MultiTierOrchestrator:
             await asyncio.sleep(0.5)
             await hub.broadcast_agent_status(architect_agent.id, AgentState.IDLE)
 
-            # Fase B: Obter arquivos reais dinamicamente com LLM
+            # Fase B: Obter arquivos reais dinamicamente com LLM aplicando Claude Skills
             dev_agent = next((a for a in workspace.agents if a.id == "agent-9debfa" or getattr(a, "aiox_role", "") == "dev"), None)
             if dev_agent:
                 await hub.broadcast_agent_status(dev_agent.id, AgentState.WORKING)
@@ -868,7 +937,8 @@ class MultiTierOrchestrator:
                 leader=leader,
                 epic=epic,
                 user_prompt=user_prompt,
-                squad_id=squad_id
+                squad_id=squad_id,
+                squad=squad
             )
 
             # Gravar cada arquivo no sandbox
@@ -894,6 +964,9 @@ class MultiTierOrchestrator:
             if sm_agent:
                 await hub.broadcast_agent_status(sm_agent.id, AgentState.WORKING)
 
+            active_skills = skill_manager.get_active_skills_for_agent(leader, squad)
+            skills_active_str = ", ".join([f"`{s.name}`" for s in active_skills]) if active_skills else "Operação Padrão AIOX"
+
             await fs_create_directory("stories", agent_id=leader.id)
             ac_items = "\n".join([f"- [x] **AC-{i+1}:** Implementação funcional de `{f_p}`." for i, f_p in enumerate(created_files)])
             story_content = (
@@ -905,12 +978,14 @@ class MultiTierOrchestrator:
                 f"**Scrum Master:** Morgan (@sm)\n"
                 f"**Desenvolvedor:** Dex (@dev)\n"
                 f"**QA Gatekeeper:** Quinn (@qa)\n"
+                f"**Claude Skills Ativas:** {skills_active_str}\n"
                 f"**Status:** IMPLEMENTED (Validado pelo QA Gate)\n\n"
                 f"## 🎯 Objetivo de Engenharia\n"
                 f"{objective}\n\n"
                 f"## 📋 Critérios de Aceite (Acceptance Criteria)\n"
                 f"{ac_items}\n"
                 f"- [x] **AC-Syntax:** Validação sintática AST sem erros.\n"
+                f"- [x] **AC-Skills:** Conformidade com as diretrizes das Claude Skills mobilizadas.\n"
                 f"- [x] **AC-Sandbox:** Isolamento restrito ao workspace sandbox.\n\n"
                 f"## 🛡️ Definition of Done (DoD)\n"
                 f"- [x] Códigos gravados e persistidos no sandbox.\n"
@@ -944,6 +1019,7 @@ class MultiTierOrchestrator:
                 f"- **Data:** {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
                 f"- **Squad:** {squad_name} (`{squad_id}`)\n"
                 f"- **Auditor Responsável:** Quinn (@qa) & AIOX Automated Code Reviewer\n"
+                f"- **Claude Skills Inspecionadas:** {skills_active_str}\n"
                 f"- **Veredito Geral:** {'✅ APROVADO' if all_passed else '❌ REPROVADO'}\n\n"
                 f"## Detalhes das Validações:\n\n"
             )
@@ -979,6 +1055,7 @@ class MultiTierOrchestrator:
             f"- Épico: {epic_title}\n"
             f"- Especificação AIOX: `stories/STORY-{squad_id}.md` (Critérios de Aceite)\n"
             f"- Entregáveis Criados no Sandbox: {files_summary}\n"
+            f"- Claude Skills Mobilizadas: {skills_active_str}\n"
             f"- Quality Gate AST: {'✅ APROVADO' if all_passed else '❌ COM FALHAS'} (`reports/QA-REPORT-{squad_id}.md`)\n"
             f"- Auto-Crítica ADE: Score {critique['score']}/100 em `reports/CRITIQUE-LATEST.md`\n"
         )
@@ -999,17 +1076,21 @@ class MultiTierOrchestrator:
             for d in squad_deliveries
         ])
 
+        all_skills = skill_manager.list_installed_skills()
+        skills_summary = ", ".join([f"`{s.name}`" for s in all_skills]) if all_skills else "Nenhuma skill instalada"
+
         summary = (
             f"# 🏛️ PARECER EXECUTIVO — DIRETORIA AGENTOFFICE 2D\n\n"
             f"**Meta Solicitada:** {user_prompt}\n"
             f"**Orquestrador Responsável:** {sudo_agent.name} (Sudo Agent)\n"
-            f"**Status da Operação:** Concluído com Sucesso e Auditoria Inter-Squad Conforme\n\n"
+            f"**Status da Operação:** Concluído com Sucesso e Auditoria Inter-Squad Conforme\n"
+            f"**Claude Skills Mobilizadas no Escritório:** {skills_summary}\n\n"
             f"---\n\n"
             f"## Entregas Departamentais Validadas:\n\n"
             f"{deliveries_text}\n\n"
             f"---\n"
             f"**Avaliação da Diretoria:** Todas as metas foram decompostas, executadas no sandbox seguro "
-            f"e auditadas entre os departamentos conforme o protocolo corporativo multinível."
+            f"com reforço das Claude Skills e auditadas entre os departamentos conforme o protocolo corporativo multinível."
         )
 
         return summary

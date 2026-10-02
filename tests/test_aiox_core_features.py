@@ -94,13 +94,13 @@ def test_aiox_story_driven_and_quality_gate():
     # 1. Validar que a história AIOX foi gerada em stories/
     stories_dir = ws_root / "stories"
     assert stories_dir.exists(), "Diretório stories/ deve ter sido criado no sandbox."
-    story_files = list(stories_dir.glob("STORY-*.md"))
-    assert len(story_files) > 0, "Deve haver pelo menos um arquivo de história gerado."
-    story_content = story_files[0].read_text(encoding="utf-8")
+    core_story_file = stories_dir / "STORY-squad-core-engineering.md"
+    assert core_story_file.exists(), "STORY-squad-core-engineering.md deve ter sido gerado."
+    story_content = core_story_file.read_text(encoding="utf-8")
     assert "[AIOX STORY]" in story_content
     assert "Critérios de Aceite" in story_content
     assert "Definition of Done" in story_content
-    print(f"  -> História AIOX validada com sucesso: '{story_files[0].name}'!")
+    print(f"  -> História AIOX validada com sucesso: '{core_story_file.name}'!")
 
     # 2. Validar que o código foi gravado no sandbox
     db_file = ws_root / "src" / "database.py"
@@ -111,12 +111,12 @@ def test_aiox_story_driven_and_quality_gate():
     # 3. Validar Quality Gate e Relatório de Conformidade
     reports_dir = ws_root / "reports"
     assert reports_dir.exists(), "Diretório reports/ deve existir no sandbox."
-    qa_reports = list(reports_dir.glob("QA-REPORT-*.md"))
-    assert len(qa_reports) > 0, "Deve haver pelo menos um relatório de QA gerado."
-    qa_content = qa_reports[0].read_text(encoding="utf-8")
+    core_qa_file = reports_dir / "QA-REPORT-squad-core-engineering.md"
+    assert core_qa_file.exists(), "QA-REPORT-squad-core-engineering.md deve existir no sandbox."
+    qa_content = core_qa_file.read_text(encoding="utf-8")
     assert "AIOX QUALITY GATE REPORT" in qa_content
     assert "APROVADO" in qa_content
-    print(f"  -> Relatório de Quality Gate validado com sucesso: '{qa_reports[0].name}'!")
+    print(f"  -> Relatório de Quality Gate validado com sucesso: '{core_qa_file.name}'!")
 
     # 4. Validar o log de auditoria imutável AIOX (.aiox_audit.jsonl)
     audit_file = ws_root / ".aiox_audit.jsonl"

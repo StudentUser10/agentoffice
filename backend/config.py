@@ -13,6 +13,8 @@ WORKSPACE_FILE = DATA_DIR / "workspace.json"
 WORKFLOWS_FILE = DATA_DIR / "workflows.json"
 SQUADS_FILE = DATA_DIR / "squads.json"
 TASKS_FILE = DATA_DIR / "tasks.json"
+SKILLS_DIR = DATA_DIR / "skills"
+SKILLS_REGISTRY_FILE = SKILLS_DIR / "registry.json"
 BACKUP_DIR = DATA_DIR / "backups"
 FRONTEND_DIR = BASE_DIR / "frontend"
 

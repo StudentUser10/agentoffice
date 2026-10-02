@@ -86,6 +86,29 @@ class OfficeUI {
     this.refreshTicketsBtn = document.getElementById('refreshTicketsBtn');
     this.tabTicketsCount = document.getElementById('tabTicketsCount');
     this.ticketsActiveBadge = document.getElementById('ticketsActiveBadge');
+
+    // Claude Skills Modal & Elements
+    this.openSkillsModalBtn = document.getElementById('openSkillsModalBtn');
+    this.closeSkillsModalBtn = document.getElementById('closeSkillsModalBtn');
+    this.skillsModal = document.getElementById('skillsModal');
+    this.skillsActiveBadge = document.getElementById('skillsActiveBadge');
+    this.installedSkillsCount = document.getElementById('installedSkillsCount');
+    this.tabInstalledSkillsBtn = document.getElementById('tabInstalledSkillsBtn');
+    this.tabCatalogSkillsBtn = document.getElementById('tabCatalogSkillsBtn');
+    this.tabDownloadCustomSkillBtn = document.getElementById('tabDownloadCustomSkillBtn');
+    this.tabContentInstalledSkills = document.getElementById('tabContentInstalledSkills');
+    this.tabContentCatalogSkills = document.getElementById('tabContentCatalogSkills');
+    this.tabContentDownloadCustomSkill = document.getElementById('tabContentDownloadCustomSkill');
+    this.installedSkillsGrid = document.getElementById('installedSkillsGrid');
+    this.catalogSkillsGrid = document.getElementById('catalogSkillsGrid');
+    this.refreshSkillsBtn = document.getElementById('refreshSkillsBtn');
+    this.skillUrlInput = document.getElementById('skillUrlInput');
+    this.downloadSkillUrlBtn = document.getElementById('downloadSkillUrlBtn');
+    this.customSkillNameInput = document.getElementById('customSkillNameInput');
+    this.customSkillDescInput = document.getElementById('customSkillDescInput');
+    this.customSkillContentInput = document.getElementById('customSkillContentInput');
+    this.createCustomSkillBtn = document.getElementById('createCustomSkillBtn');
+    this.agentSkillsInput = document.getElementById('agentSkillsInput');
   }
 
   setupEvents() {
@@ -129,6 +152,32 @@ class OfficeUI {
     }
     if (this.refreshTicketsBtn) {
       this.refreshTicketsBtn.addEventListener('click', () => this.loadActiveTickets());
+    }
+
+    // Modal de Skills Claude
+    if (this.openSkillsModalBtn) {
+      this.openSkillsModalBtn.addEventListener('click', () => this.openSkillsModal());
+    }
+    if (this.closeSkillsModalBtn) {
+      this.closeSkillsModalBtn.addEventListener('click', () => this.closeSkillsModal());
+    }
+    if (this.tabInstalledSkillsBtn) {
+      this.tabInstalledSkillsBtn.addEventListener('click', () => this.switchSkillsTab('installed'));
+    }
+    if (this.tabCatalogSkillsBtn) {
+      this.tabCatalogSkillsBtn.addEventListener('click', () => this.switchSkillsTab('catalog'));
+    }
+    if (this.tabDownloadCustomSkillBtn) {
+      this.tabDownloadCustomSkillBtn.addEventListener('click', () => this.switchSkillsTab('custom'));
+    }
+    if (this.refreshSkillsBtn) {
+      this.refreshSkillsBtn.addEventListener('click', () => this.loadSkillsData());
+    }
+    if (this.downloadSkillUrlBtn) {
+      this.downloadSkillUrlBtn.addEventListener('click', () => this.handleDownloadSkillFromUrl());
+    }
+    if (this.createCustomSkillBtn) {
+      this.createCustomSkillBtn.addEventListener('click', () => this.handleCreateCustomSkill());
     }
 
     // Toggle Missão Cirúrgica do Subagente
@@ -359,6 +408,21 @@ class OfficeUI {
       this.sendChatBtn.disabled = false;
       this.chatInput.disabled = false;
     });
+
+    // Claude Skills Real-time updates
+    socket.on('skills_updated', () => {
+      this.loadSkillsBadge();
+      if (this.skillsModal && this.skillsModal.classList.contains('active')) {
+        this.loadSkillsData();
+      }
+    });
+
+    socket.on('agent_skills_updated', () => {
+      this.loadSkillsBadge();
+      if (this.skillsModal && this.skillsModal.classList.contains('active')) {
+        this.loadSkillsData();
+      }
+    });
   }
 
   findAgent(agentId) {
@@ -394,6 +458,9 @@ class OfficeUI {
     // Sugerir prompt padrão
     this.agentPromptInput.value = "Você é um especialista focado e analítico, pronto para colaborar com a equipe.";
     this.agentModelInput.value = '';
+    if (this.agentSkillsInput) {
+      this.agentSkillsInput.value = '';
+    }
 
     this.agentModal.classList.add('active');
     this.agentNameInput.focus();
@@ -426,6 +493,9 @@ class OfficeUI {
 
     this.agentPromptInput.value = agent.system_prompt || '';
     this.agentModelInput.value = agent.model_name || '';
+    if (this.agentSkillsInput) {
+      this.agentSkillsInput.value = (agent.skills || []).join(', ');
+    }
 
     this.agentModal.classList.add('active');
   }
@@ -479,7 +549,10 @@ class OfficeUI {
       squad_id: this.agentSquadSelect && this.agentSquadSelect.value ? this.agentSquadSelect.value : null,
       desk_id: this.agentDeskSelect.value,
       system_prompt: this.agentPromptInput.value.trim(),
-      model_name: this.agentModelInput.value.trim()
+      model_name: this.agentModelInput.value.trim(),
+      skills: (this.agentSkillsInput && this.agentSkillsInput.value)
+        ? this.agentSkillsInput.value.split(',').map(s => s.trim()).filter(Boolean)
+        : []
     };
 
     if (!payload.name) {
@@ -1009,6 +1082,422 @@ class OfficeUI {
     });
 
     this.ticketsListContainer.innerHTML = html;
+  }
+
+  // =========================================================================
+  // Claude Skills Engine (Anthropic SKILL.md Architecture & Autonomy)
+  // =========================================================================
+  openSkillsModal() {
+    if (!this.skillsModal) return;
+    this.skillsModal.classList.add('active');
+    this.loadSkillsData();
+  }
+
+  closeSkillsModal() {
+    if (!this.skillsModal) return;
+    this.skillsModal.classList.remove('active');
+  }
+
+  switchSkillsTab(tabName) {
+    const tabs = [
+      { id: 'installed', btn: this.tabInstalledSkillsBtn, content: this.tabContentInstalledSkills },
+      { id: 'catalog', btn: this.tabCatalogSkillsBtn, content: this.tabContentCatalogSkills },
+      { id: 'custom', btn: this.tabDownloadCustomSkillBtn, content: this.tabContentDownloadCustomSkill }
+    ];
+
+    tabs.forEach(t => {
+      if (!t.btn || !t.content) return;
+      if (t.id === tabName) {
+        t.btn.classList.add('active');
+        t.content.style.display = 'block';
+        t.content.classList.add('active');
+      } else {
+        t.btn.classList.remove('active');
+        t.content.style.display = 'none';
+        t.content.classList.remove('active');
+      }
+    });
+  }
+
+  async loadSkillsBadge() {
+    try {
+      const res = await fetch('/api/skills');
+      if (res.ok) {
+        const data = await res.json();
+        const count = (data.installed || []).length;
+        if (this.skillsActiveBadge) {
+          this.skillsActiveBadge.textContent = count;
+        }
+        if (this.installedSkillsCount) {
+          this.installedSkillsCount.textContent = count;
+        }
+      }
+    } catch (e) {
+      console.warn('[UI] Falha ao atualizar badge de skills:', e);
+    }
+  }
+
+  async loadSkillsData() {
+    try {
+      const [skillsRes, squadsRes, agentsRes] = await Promise.all([
+        fetch('/api/skills'),
+        fetch('/api/squads'),
+        fetch('/api/workspace')
+      ]);
+
+      if (!skillsRes.ok) return;
+      const skillsData = await skillsRes.json();
+      const squadsData = squadsRes.ok ? await squadsRes.json() : [];
+      let agentsList = [];
+      if (agentsRes.ok) {
+        const ws = await agentsRes.json();
+        agentsList = ws.agents || [];
+      }
+
+      const installed = skillsData.installed || [];
+      const catalog = skillsData.catalog || [];
+
+      if (this.installedSkillsCount) {
+        this.installedSkillsCount.textContent = installed.length;
+      }
+      if (this.skillsActiveBadge) {
+        this.skillsActiveBadge.textContent = installed.length;
+      }
+
+      this.renderInstalledSkills(installed, squadsData, agentsList);
+      this.renderCatalogSkills(catalog, installed);
+    } catch (e) {
+      console.warn('[UI] Erro ao carregar dados de Claude Skills:', e);
+    }
+  }
+
+  renderInstalledSkills(installed, squads, agents) {
+    if (!this.installedSkillsGrid) return;
+
+    if (installed.length === 0) {
+      this.installedSkillsGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 32px; color: var(--text-muted); font-size: 13px;">
+          ⚡ Nenhuma habilidade instalada no momento. Abra a aba <strong>Catálogo Claude</strong> para instalar com 1 clique!
+        </div>
+      `;
+      return;
+    }
+
+    let html = '';
+    installed.forEach(skill => {
+      const assigned = skill.assigned_to || [];
+      const isMasterSudo = skill.master_authorized;
+
+      let assignedPills = '';
+      if (assigned.length === 0) {
+        assignedPills = `<span style="font-size: 11px; color: var(--text-dim); font-style: italic;">Disponível para Pax (@aiox-master) e Líderes</span>`;
+      } else {
+        assigned.forEach(target => {
+          const squad = squads.find(s => s.id === target);
+          const ag = agents.find(a => a.id === target);
+          const label = squad ? `${squad.icon || '🏢'} ${squad.name}` : (ag ? `👤 ${ag.name}` : target);
+          assignedPills += `
+            <span class="skill-assigned-pill">
+              ${label}
+              <button class="remove-assign-btn" data-skill-id="${skill.id}" data-target="${target}" title="Desvincular habilidade">&times;</button>
+            </span>
+          `;
+        });
+      }
+
+      // Dropdown de destino para atribuição rápida
+      let assignOptions = `<option value="">-- Atribuir a Squad / Agente --</option>`;
+      assignOptions += `<option value="agent-sudo">👑 Pax (@aiox-master / Diretoria)</option>`;
+      squads.forEach(sq => {
+        assignOptions += `<option value="${sq.id}">${sq.icon || '🏢'} ${sq.name}</option>`;
+      });
+      agents.forEach(ag => {
+        if (ag.id !== 'agent-sudo') {
+          assignOptions += `<option value="${ag.id}">👤 ${ag.name} (${ag.title})</option>`;
+        }
+      });
+
+      const skillIcon = skill.id.includes('craftsman') ? '🎨' :
+                        skill.id.includes('architect') ? '🏗️' :
+                        skill.id.includes('security') ? '🛡️' :
+                        skill.id.includes('qa') ? '🧪' :
+                        skill.id.includes('doc') ? '📝' :
+                        skill.id.includes('game') ? '🎮' : '⚡';
+
+      html += `
+        <div class="skill-card" data-skill-id="${skill.id}">
+          <div class="skill-card-header">
+            <div class="skill-card-title-group">
+              <div class="skill-card-icon">${skillIcon}</div>
+              <div>
+                <div class="skill-card-name">${skill.name}</div>
+                <div class="skill-card-id">${skill.id} • v${skill.version || '1.0.0'}</div>
+              </div>
+            </div>
+            <span class="organogram-card-badge" style="background: rgba(147, 51, 234, 0.25); color: #c084fc;">
+              Claude SKILL.md
+            </span>
+          </div>
+
+          <div class="skill-card-desc">${skill.description}</div>
+
+          <div class="skill-assigned-bar">
+            <span style="font-weight: 600; font-size: 10px; text-transform: uppercase;">Atribuído a:</span>
+            ${assignedPills}
+          </div>
+
+          <div class="skill-actions">
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <select class="skill-assign-select" id="assignSelect_${skill.id}">
+                ${assignOptions}
+              </select>
+              <button class="btn-action btn-sm assign-action-btn" data-skill-id="${skill.id}" type="button" style="font-size: 11px; padding: 3px 8px; border-color: #9333ea; color: #c084fc;">
+                + Atribuir
+              </button>
+            </div>
+            <button class="btn-danger btn-sm remove-skill-btn" data-skill-id="${skill.id}" type="button" style="font-size: 11px; padding: 3px 8px;" title="Remover habilidade">
+              🗑️
+            </button>
+          </div>
+        </div>
+      `;
+    });
+
+    this.installedSkillsGrid.innerHTML = html;
+
+    // Vincular botões de atribuição
+    this.installedSkillsGrid.querySelectorAll('.assign-action-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const skillId = btn.getAttribute('data-skill-id');
+        const select = document.getElementById(`assignSelect_${skillId}`);
+        if (select && select.value) {
+          this.handleAssignSkill(skillId, select.value, false);
+        }
+      });
+    });
+
+    // Vincular desvinculação individual de pill
+    this.installedSkillsGrid.querySelectorAll('.remove-assign-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const skillId = btn.getAttribute('data-skill-id');
+        const target = btn.getAttribute('data-target');
+        this.handleAssignSkill(skillId, target, true);
+      });
+    });
+
+    // Vincular remoção de skill
+    this.installedSkillsGrid.querySelectorAll('.remove-skill-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const skillId = btn.getAttribute('data-skill-id');
+        if (confirm(`Deseja realmente desinstalar a skill '${skillId}' do AgentOffice?`)) {
+          this.handleRemoveSkill(skillId);
+        }
+      });
+    });
+  }
+
+  renderCatalogSkills(catalog, installed) {
+    if (!this.catalogSkillsGrid) return;
+    const installedIds = new Set((installed || []).map(s => s.id));
+
+    let html = '';
+    catalog.forEach(item => {
+      const isInstalled = installedIds.has(item.id);
+      const icon = item.id.includes('craftsman') ? '🎨' :
+                   item.id.includes('architect') ? '🏗️' :
+                   item.id.includes('security') ? '🛡️' :
+                   item.id.includes('qa') ? '🧪' :
+                   item.id.includes('doc') ? '📝' :
+                   item.id.includes('game') ? '🎮' : '⚡';
+
+      html += `
+        <div class="skill-card" style="border-left: 3px solid ${isInstalled ? '#10b981' : '#9333ea'};">
+          <div class="skill-card-header">
+            <div class="skill-card-title-group">
+              <div class="skill-card-icon">${icon}</div>
+              <div>
+                <div class="skill-card-name">${item.name}</div>
+                <div class="skill-card-id">${item.id}</div>
+              </div>
+            </div>
+            <span class="organogram-card-badge" style="background: rgba(6, 182, 212, 0.2); color: #38bdf8;">
+              Anthropic Curated
+            </span>
+          </div>
+
+          <div class="skill-card-desc">${item.description}</div>
+
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
+            ${(item.tags || []).map(t => `<span class="badge-tag" style="font-size: 9px;">#${t}</span>`).join('')}
+          </div>
+
+          <div class="skill-actions" style="margin-top: 10px;">
+            <span style="font-size: 11px; color: var(--text-dim); font-family: var(--font-pixel);">
+              Origem: Claude Official
+            </span>
+            ${isInstalled
+              ? `<span style="font-size: 11px; color: #10b981; font-weight: 700; display: flex; align-items: center; gap: 4px;">✅ Ativa no Escritório</span>`
+              : `<button class="btn-primary btn-sm install-catalog-btn" data-skill-id="${item.id}" type="button" style="font-size: 11px; padding: 4px 12px; background: linear-gradient(135deg, #7c3aed, #9333ea);">
+                   ⚡ Instalar (1-Clique)
+                 </button>`
+            }
+          </div>
+        </div>
+      `;
+    });
+
+    this.catalogSkillsGrid.innerHTML = html;
+
+    // Vincular botões de instalação rápida do catálogo
+    this.catalogSkillsGrid.querySelectorAll('.install-catalog-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const skillId = btn.getAttribute('data-skill-id');
+        this.handleInstallSkill(skillId);
+      });
+    });
+  }
+
+  async handleInstallSkill(skillId) {
+    try {
+      const res = await fetch('/api/skills/install', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ skill_id: skillId })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (window.officeModals) {
+          window.officeModals.showToast(`⚡ Habilidade '${skillId}' instalada e pronta para uso!`, 'success');
+        }
+        await this.loadSkillsData();
+      } else {
+        alert(data.error || 'Falha ao instalar skill.');
+      }
+    } catch (e) {
+      alert(`Erro de conexão ao instalar: ${e.message}`);
+    }
+  }
+
+  async handleDownloadSkillFromUrl() {
+    if (!this.skillUrlInput) return;
+    const url = this.skillUrlInput.value.trim();
+    if (!url) {
+      alert('Por favor, informe a URL do arquivo SKILL.md ou repositório.');
+      return;
+    }
+
+    this.downloadSkillUrlBtn.disabled = true;
+    this.downloadSkillUrlBtn.textContent = 'Baixando...';
+
+    try {
+      const res = await fetch('/api/skills/install', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: url })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (window.officeModals) {
+          window.officeModals.showToast(`🌐 Habilidade baixada e instalada com sucesso!`, 'success');
+        }
+        this.skillUrlInput.value = '';
+        this.switchSkillsTab('installed');
+        await this.loadSkillsData();
+      } else {
+        alert(`Erro ao baixar skill: ${data.error || 'Falha no download'}`);
+      }
+    } catch (e) {
+      alert(`Erro de conexão: ${e.message}`);
+    } finally {
+      this.downloadSkillUrlBtn.disabled = false;
+      this.downloadSkillUrlBtn.textContent = '⚡ Baixar & Instalar';
+    }
+  }
+
+  async handleCreateCustomSkill() {
+    const name = this.customSkillNameInput ? this.customSkillNameInput.value.trim() : '';
+    const desc = this.customSkillDescInput ? this.customSkillDescInput.value.trim() : '';
+    const content = this.customSkillContentInput ? this.customSkillContentInput.value.trim() : '';
+
+    if (!name) {
+      alert('Por favor, defina um nome para a habilidade.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/skills/install', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name,
+          description: desc || name,
+          instructions: content || `## ${name}\nSiga as melhores práticas da área.`
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (window.officeModals) {
+          window.officeModals.showToast(`✍️ Nova habilidade '${name}' criada e ativada!`, 'success');
+        }
+        if (this.customSkillNameInput) this.customSkillNameInput.value = '';
+        if (this.customSkillDescInput) this.customSkillDescInput.value = '';
+        if (this.customSkillContentInput) this.customSkillContentInput.value = '';
+        this.switchSkillsTab('installed');
+        await this.loadSkillsData();
+      } else {
+        alert(data.error || 'Falha ao salvar habilidade customizada.');
+      }
+    } catch (e) {
+      alert(`Erro: ${e.message}`);
+    }
+  }
+
+  async handleAssignSkill(skillId, target, unassign = false) {
+    try {
+      const res = await fetch('/api/skills/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          skill_id: skillId,
+          target_squad_or_agent_id: target,
+          unassign: unassign
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const msg = unassign
+          ? `Habilidade '${skillId}' desvinculada de ${target}.`
+          : `⚡ Habilidade '${skillId}' atribuída a ${target}!`;
+        if (window.officeModals) {
+          window.officeModals.showToast(msg, 'success');
+        }
+        await this.loadSkillsData();
+      } else {
+        alert(data.error || 'Falha ao atualizar atribuição.');
+      }
+    } catch (e) {
+      alert(`Erro: ${e.message}`);
+    }
+  }
+
+  async handleRemoveSkill(skillId) {
+    try {
+      const res = await fetch(`/api/skills/${skillId}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (window.officeModals) {
+          window.officeModals.showToast(`🗑️ Habilidade '${skillId}' removida com sucesso.`, 'info');
+        }
+        await this.loadSkillsData();
+      } else {
+        alert(data.error || 'Falha ao remover habilidade.');
+      }
+    } catch (e) {
+      alert(`Erro: ${e.message}`);
+    }
   }
 }
 

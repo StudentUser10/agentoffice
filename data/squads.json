@@ -9,7 +9,8 @@
       "avatar_id": "avatar_3",
       "default_model": "",
       "aiox_handle": null,
-      "aiox_role": null
+      "aiox_role": null,
+      "skills": []
     },
     {
       "id": "template-python-dev",
@@ -20,7 +21,8 @@
       "avatar_id": "avatar_1",
       "default_model": "",
       "aiox_handle": null,
-      "aiox_role": null
+      "aiox_role": null,
+      "skills": []
     },
     {
       "id": "template-qa",
@@ -31,7 +33,8 @@
       "avatar_id": "avatar_4",
       "default_model": "",
       "aiox_handle": null,
-      "aiox_role": null
+      "aiox_role": null,
+      "skills": []
     },
     {
       "id": "template-analyst",
@@ -42,7 +45,8 @@
       "avatar_id": "avatar_2",
       "default_model": "",
       "aiox_handle": null,
-      "aiox_role": null
+      "aiox_role": null,
+      "skills": []
     },
     {
       "id": "template-writer",
@@ -53,7 +57,8 @@
       "avatar_id": "avatar_2",
       "default_model": "",
       "aiox_handle": null,
-      "aiox_role": null
+      "aiox_role": null,
+      "skills": []
     }
   ],
   "squads": [
@@ -80,6 +85,7 @@
         "scrum",
         "backend"
       ],
+      "skills": [],
       "color_theme": "#10b981",
       "description": "Arquitetura e desenvolvimento de software, APIs e persistência.",
       "created_at": 1790949869.0811787
@@ -101,6 +107,9 @@
         "audit",
         "sql_injection",
         "cryptography"
+      ],
+      "skills": [
+        "test-rest-skill"
       ],
       "color_theme": "#a855f7",
       "description": "Auditoria de código, sanitização, hardening e segurança ofensiva/defensiva.",
@@ -127,6 +136,7 @@
         "quality_gates",
         "ast_linting"
       ],
+      "skills": [],
       "color_theme": "#38bdf8",
       "description": "Documentação técnica, especificações OpenAPI e Quality Gates (AST + ADE).",
       "created_at": 1790949869.0812
@@ -150,6 +160,7 @@
         "etl",
         "duckdb"
       ],
+      "skills": [],
       "color_theme": "#f59e0b",
       "description": "Squad especializado em pipelines de dados e analytics.",
       "created_at": 1790956336.3179398

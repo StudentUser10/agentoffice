@@ -23,7 +23,8 @@
       "mission": null,
       "is_temporary": false,
       "aiox_handle": "@aiox-master",
-      "aiox_role": "master"
+      "aiox_role": "master",
+      "skills": []
     },
     {
       "id": "agent-1c137c",
@@ -46,7 +47,10 @@
       "mission": null,
       "is_temporary": false,
       "aiox_handle": "@architect",
-      "aiox_role": "architect"
+      "aiox_role": "architect",
+      "skills": [
+        "docker-devops-ninja"
+      ]
     },
     {
       "id": "agent-9debfa",
@@ -66,7 +70,8 @@
       "mission": null,
       "is_temporary": false,
       "aiox_handle": "@dev",
-      "aiox_role": "dev"
+      "aiox_role": "dev",
+      "skills": []
     },
     {
       "id": "agent-sm",
@@ -86,7 +91,8 @@
       "mission": null,
       "is_temporary": false,
       "aiox_handle": "@sm",
-      "aiox_role": "sm"
+      "aiox_role": "sm",
+      "skills": []
     },
     {
       "id": "agent-ce2916",
@@ -106,7 +112,8 @@
       "mission": null,
       "is_temporary": false,
       "aiox_handle": "@sec",
-      "aiox_role": "sec"
+      "aiox_role": "sec",
+      "skills": []
     },
     {
       "id": "agent-doc",
@@ -128,7 +135,8 @@
       "mission": null,
       "is_temporary": false,
       "aiox_handle": "@doc",
-      "aiox_role": "doc"
+      "aiox_role": "doc",
+      "skills": []
     },
     {
       "id": "agent-qa",
@@ -148,7 +156,8 @@
       "mission": null,
       "is_temporary": false,
       "aiox_handle": "@qa",
-      "aiox_role": "qa"
+      "aiox_role": "qa",
+      "skills": []
     }
   ],
   "desks": [
@@ -1138,6 +1147,342 @@
         "role": "assistant",
         "text": "👑 **[Diretoria Executiva — Sudo Agent]**\nMeta macro recebida:\n> *\"Desenvolva uma API simples de usuários com banco SQLite e rotas FastAPI\"*\n\n🏛️ Iniciando decomposição estratégica e despacho de épicos para os squads competentes...\n\n📋 **Épico Despachado:** *'Implementar API de Usuários com FastAPI e SQLite'*\n\n📋 **Épico Despachado:** *'Auditar e Hardenizar a API de Usuários contra Vulnerabilidades'*\n\n📋 **Épico Despachado:** *'Documentar API de Usuários e Estabelecer QA'*\n\n---\n\n# 🏛️ PARECER EXECUTIVO — DIRETORIA AGENTOFFICE 2D\n\n**Meta Solicitada:** Desenvolva uma API simples de usuários com banco SQLite e rotas FastAPI\n**Orquestrador Responsável:** Pax (@aiox-master) (Sudo Agent)\n**Status da Operação:** Concluído com Sucesso e Auditoria Inter-Squad Conforme\n\n---\n\n## Entregas Departamentais Validadas:\n\n### Squad Core Engineering (Líder: Aria (@architect))\n**Squad Squad Core Engineering — Relatório de Entrega (AIOX):**\n- Épico: Implementar API de Usuários com FastAPI e SQLite\n- Especificação AIOX: `stories/STORY-squad-core-engineering.md` (Critérios de Aceite)\n- Entregáveis Criados no Sandbox: `docs/architecture.md`, `docs/api_spec.md`\n- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-squad-core-engineering.md`)\n- Auto-Crítica ADE: Score 100/100 em `reports/CRITIQUE-LATEST.md`\n\n\n### Squad Segurança Cibernética (Líder: Cipher (@sec))\n**Squad Squad Segurança Cibernética — Relatório de Entrega (AIOX):**\n- Épico: Auditar e Hardenizar a API de Usuários contra Vulnerabilidades\n- Especificação AIOX: `stories/STORY-squad-security.md` (Critérios de Aceite)\n- Entregáveis Criados no Sandbox: `src/security/sanitizer.py`, `src/security/rate_limiter.py`\n- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-squad-security.md`)\n- Auto-Crítica ADE: Score 100/100 em `reports/CRITIQUE-LATEST.md`\n\n\n### Squad Documentação & QA (Líder: Echo (@doc))\n**Squad Squad Documentação & QA — Relatório de Entrega (AIOX):**\n- Épico: Documentar API de Usuários e Estabelecer QA\n- Especificação AIOX: `stories/STORY-squad-documentation.md` (Critérios de Aceite)\n- Entregáveis Criados no Sandbox: `docs/architecture.md`, `docs/api_spec.md`\n- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-squad-documentation.md`)\n- Auto-Crítica ADE: Score 100/100 em `reports/CRITIQUE-LATEST.md`\n\n\n---\n**Avaliação da Diretoria:** Todas as metas foram decompostas, executadas no sandbox seguro e auditadas entre os departamentos conforme o protocolo corporativo multinível.",
         "timestamp": 1790965529.4491475
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "crie um site em html de apresentação showoff do agentoffice 2D",
+        "timestamp": 1790966501.8523405
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "👑 **[Diretoria Executiva — Sudo Agent]**\nMeta macro recebida:\n> *\"crie um site em html de apresentação showoff do agentoffice 2D\"*\n\n🏛️ Iniciando decomposição estratégica e despacho de épicos para os squads competentes...\n\n📋 **Épico Despachado:** *'Desenvolvimento do site estático de apresentação do AgentOffice 2D'*\n\n📋 **Épico Despachado:** *'Auditoria de segurança e hardening do site de apresentação'*\n\n📋 **Épico Despachado:** *'Criação de conteúdo, design visual e documentação do site'*\n\n📋 **Épico Despachado:** *'Implementação de tracking de métricas de visita ao site'*\n\n---\n\n# 🏛️ PARECER EXECUTIVO — DIRETORIA AGENTOFFICE 2D\n\n**Meta Solicitada:** crie um site em html de apresentação showoff do agentoffice 2D\n**Orquestrador Responsável:** Pax (@aiox-master) (Sudo Agent)\n**Status da Operação:** Concluído com Sucesso e Auditoria Inter-Squad Conforme\n\n---\n\n## Entregas Departamentais Validadas:\n\n### Squad Core Engineering (Líder: Aria (@architect))\n**Squad Squad Core Engineering — Relatório de Entrega (AIOX):**\n- Épico: Desenvolvimento do site estático de apresentação do AgentOffice 2D\n- Especificação AIOX: `stories/STORY-squad-core-engineering.md` (Critérios de Aceite)\n- Entregáveis Criados no Sandbox: `STORY-001.md`, `index.html`, `styles.css`, `app.js`, `reports/QA-REPORT-001.md`\n- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-squad-core-engineering.md`)\n- Auto-Crítica ADE: Score 100/100 em `reports/CRITIQUE-LATEST.md`\n\n\n### Squad Segurança Cibernética (Líder: Cipher (@sec))\n**Squad Squad Segurança Cibernética — Relatório de Entrega (AIOX):**\n- Épico: Auditoria de segurança e hardening do site de apresentação\n- Especificação AIOX: `stories/STORY-squad-security.md` (Critérios de Aceite)\n- Entregáveis Criados no Sandbox: `index.html`, `styles.css`, `app.js`\n- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-squad-security.md`)\n- Auto-Crítica ADE: Score 100/100 em `reports/CRITIQUE-LATEST.md`\n\n\n### Squad Documentação & QA (Líder: Echo (@doc))\n**Squad Squad Documentação & QA — Relatório de Entrega (AIOX):**\n- Épico: Criação de conteúdo, design visual e documentação do site\n- Especificação AIOX: `stories/STORY-squad-documentation.md` (Critérios de Aceite)\n- Entregáveis Criados no Sandbox: `public/index.html`, `public/style.css`, `public/app.js`\n- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-squad-documentation.md`)\n- Auto-Crítica ADE: Score 100/100 em `reports/CRITIQUE-LATEST.md`\n\n\n### Squad Data & Analytics (Líder: Aria (@architect))\n**Squad Squad Data & Analytics — Relatório de Entrega (AIOX):**\n- Épico: Implementação de tracking de métricas de visita ao site\n- Especificação AIOX: `stories/STORY-squad-data-analytics.md` (Critérios de Aceite)\n- Entregáveis Criados no Sandbox: `stories/STORY-001.md`, `src/index.html`, `src/styles.css`, `src/app.js`, `reports/QA-REPORT-001.md`\n- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-squad-data-analytics.md`)\n- Auto-Crítica ADE: Score 100/100 em `reports/CRITIQUE-LATEST.md`\n\n\n---\n**Avaliação da Diretoria:** Todas as metas foram decompostas, executadas no sandbox seguro e auditadas entre os departamentos conforme o protocolo corporativo multinível.",
+        "timestamp": 1790966533.7912996
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*skills",
+        "timestamp": 1790967178.2815342
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "### ⚡ Central de Claude Skills — Governança AIOX\n\n**Skills Atualmente Instaladas (7):**\n- ⚡ **Claude Frontend Craftsman** (`frontend-craftsman`) [v1.2.0 — frontend]: Especialista em interfaces web modernas, responsivas e visualmente ricas com HTML5 semântico, CSS avançado (glassmorphism, gradientes, tipografia moderna) e JavaScript nativo.\n  *Atribuída a:* `*`\n- ⚡ **Claude System Architect** (`claude-code-architect`) [v1.1.0 — architecture]: Engenharia de software de alta fidelidade: arquitetura limpa, separação de camadas (Clean Architecture), contratos tipados com Pydantic, resiliência assíncrona e desacoplamento de storage.\n  *Atribuída a:* `*`\n- ⚡ **Python Security & OWASP Auditor** (`python-security-auditor`) [v1.3.0 — security]: Hardening corporativo e auditoria estática contra OWASP Top 10: prevenção a SQL Injection, XSS, Path Traversal em sandboxes, sanitização de inputs e mitigação de DoS.\n  *Atribuída a:* `*`\n- ⚡ **2D Canvas & Arcade Game Engine** (`game-engine-2d`) [v1.0.0 — code]: Especialista em desenvolvimento de jogos 2D nativos: game loop estável em 60 FPS, detecção de colisão AABB, física vetorial (gravidade, aceleração, atrito), partículas e HUD de pontuação.\n  *Atribuída a:* `*`\n- ⚡ **Automated QA & ADE Quality Gatekeeper** (`qa-quality-gatekeeper`) [v1.2.0 — qa]: Garantia de qualidade autônoma: inspeção via AST (Abstract Syntax Tree), cobertura de critérios de aceite (ACs), prevenção de TODOs/placeholders e auto-crítica ADE com score 100/100.\n  *Atribuída a:* `*`\n- ⚡ **Technical Documentation & Story Writer** (`api-doc-story-writer`) [v1.0.0 — docs]: Documentação técnica corporativa de alta precisão: especificações OpenAPI 3.0, redação de Histórias formais de desenvolvimento (AIOX Stories) e resumos executivos.\n  *Atribuída a:* `*`\n- ⚡ **Data Extraction & Web Scraping Specialist** (`scraping-data-extractor`) [v1.0.0 — code]: Extração estruturada de dados da web: requisições HTTP seguras, parsing de HTML/JSON, rotação de headers (User-Agent), extração via Regex/Seletores e gravação em CSV/JSON no sandbox.\n  *Atribuída a:* `*`\n\n**Disponíveis no Catálogo para Download/Instalação:**\nTodas as skills do catálogo já estão instaladas.\n\n---\n**Comandos Rápidos de Skills:**\n- `*skill-install <id|url>`: Baixa e instala skill do catálogo ou URL externa (GitHub/Web).\n- `*skill-assign <id> <@handle|squad_id|*>`: Atribui skill a um agente ou departamento.\n- `*skill-remove <id>`: Remove uma skill instalada.\n",
+        "timestamp": 1790967178.3141377
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*skills",
+        "timestamp": 1790967216.5774162
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "### ⚡ Central de Claude Skills — Governança AIOX\n\n**Skills Atualmente Instaladas (7):**\n- ⚡ **Claude Frontend Craftsman** (`frontend-craftsman`) [v1.2.0 — frontend]: Especialista em interfaces web modernas, responsivas e visualmente ricas com HTML5 semântico, CSS avançado (glassmorphism, gradientes, tipografia moderna) e JavaScript nativo.\n  *Atribuída a:* `*`\n- ⚡ **Claude System Architect** (`claude-code-architect`) [v1.1.0 — architecture]: Engenharia de software de alta fidelidade: arquitetura limpa, separação de camadas (Clean Architecture), contratos tipados com Pydantic, resiliência assíncrona e desacoplamento de storage.\n  *Atribuída a:* `*`\n- ⚡ **Python Security & OWASP Auditor** (`python-security-auditor`) [v1.3.0 — security]: Hardening corporativo e auditoria estática contra OWASP Top 10: prevenção a SQL Injection, XSS, Path Traversal em sandboxes, sanitização de inputs e mitigação de DoS.\n  *Atribuída a:* `*`\n- ⚡ **2D Canvas & Arcade Game Engine** (`game-engine-2d`) [v1.0.0 — code]: Especialista em desenvolvimento de jogos 2D nativos: game loop estável em 60 FPS, detecção de colisão AABB, física vetorial (gravidade, aceleração, atrito), partículas e HUD de pontuação.\n  *Atribuída a:* `*`\n- ⚡ **Automated QA & ADE Quality Gatekeeper** (`qa-quality-gatekeeper`) [v1.2.0 — qa]: Garantia de qualidade autônoma: inspeção via AST (Abstract Syntax Tree), cobertura de critérios de aceite (ACs), prevenção de TODOs/placeholders e auto-crítica ADE com score 100/100.\n  *Atribuída a:* `*`\n- ⚡ **Technical Documentation & Story Writer** (`api-doc-story-writer`) [v1.0.0 — docs]: Documentação técnica corporativa de alta precisão: especificações OpenAPI 3.0, redação de Histórias formais de desenvolvimento (AIOX Stories) e resumos executivos.\n  *Atribuída a:* `*`\n- ⚡ **Data Extraction & Web Scraping Specialist** (`scraping-data-extractor`) [v1.0.0 — code]: Extração estruturada de dados da web: requisições HTTP seguras, parsing de HTML/JSON, rotação de headers (User-Agent), extração via Regex/Seletores e gravação em CSV/JSON no sandbox.\n  *Atribuída a:* `*`\n\n**Disponíveis no Catálogo para Download/Instalação:**\nTodas as skills do catálogo já estão instaladas.\n\n---\n**Comandos Rápidos de Skills:**\n- `*skill-install <id|url>`: Baixa e instala skill do catálogo ou URL externa (GitHub/Web).\n- `*skill-assign <id> <@handle|squad_id|*>`: Atribui skill a um agente ou departamento.\n- `*skill-remove <id>`: Remove uma skill instalada.\n",
+        "timestamp": 1790967216.6010926
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*skill-install scraping-data-extractor",
+        "timestamp": 1790967216.6307187
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "❌ Erro ao instalar Claude Skill: name 'SkillInstallRequest' is not defined",
+        "timestamp": 1790967216.6548057
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*skills",
+        "timestamp": 1790967304.708836
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "### ⚡ Central de Claude Skills — Governança AIOX\n\n**Skills Atualmente Instaladas (7):**\n- ⚡ **Claude Frontend Craftsman** (`frontend-craftsman`) [v1.2.0 — frontend]: Especialista em interfaces web modernas, responsivas e visualmente ricas com HTML5 semântico, CSS avançado (glassmorphism, gradientes, tipografia moderna) e JavaScript nativo.\n  *Atribuída a:* `*`\n- ⚡ **Claude System Architect** (`claude-code-architect`) [v1.1.0 — architecture]: Engenharia de software de alta fidelidade: arquitetura limpa, separação de camadas (Clean Architecture), contratos tipados com Pydantic, resiliência assíncrona e desacoplamento de storage.\n  *Atribuída a:* `*`\n- ⚡ **Python Security & OWASP Auditor** (`python-security-auditor`) [v1.3.0 — security]: Hardening corporativo e auditoria estática contra OWASP Top 10: prevenção a SQL Injection, XSS, Path Traversal em sandboxes, sanitização de inputs e mitigação de DoS.\n  *Atribuída a:* `*`\n- ⚡ **2D Canvas & Arcade Game Engine** (`game-engine-2d`) [v1.0.0 — code]: Especialista em desenvolvimento de jogos 2D nativos: game loop estável em 60 FPS, detecção de colisão AABB, física vetorial (gravidade, aceleração, atrito), partículas e HUD de pontuação.\n  *Atribuída a:* `*`\n- ⚡ **Automated QA & ADE Quality Gatekeeper** (`qa-quality-gatekeeper`) [v1.2.0 — qa]: Garantia de qualidade autônoma: inspeção via AST (Abstract Syntax Tree), cobertura de critérios de aceite (ACs), prevenção de TODOs/placeholders e auto-crítica ADE com score 100/100.\n  *Atribuída a:* `*`\n- ⚡ **Technical Documentation & Story Writer** (`api-doc-story-writer`) [v1.0.0 — docs]: Documentação técnica corporativa de alta precisão: especificações OpenAPI 3.0, redação de Histórias formais de desenvolvimento (AIOX Stories) e resumos executivos.\n  *Atribuída a:* `*`\n- ⚡ **Data Extraction & Web Scraping Specialist** (`scraping-data-extractor`) [v1.0.0 — code]: Extração estruturada de dados da web: requisições HTTP seguras, parsing de HTML/JSON, rotação de headers (User-Agent), extração via Regex/Seletores e gravação em CSV/JSON no sandbox.\n  *Atribuída a:* `*`\n\n**Disponíveis no Catálogo para Download/Instalação:**\nTodas as skills do catálogo já estão instaladas.\n\n---\n**Comandos Rápidos de Skills:**\n- `*skill-install <id|url>`: Baixa e instala skill do catálogo ou URL externa (GitHub/Web).\n- `*skill-assign <id> <@handle|squad_id|*>`: Atribui skill a um agente ou departamento.\n- `*skill-remove <id>`: Remove uma skill instalada.\n",
+        "timestamp": 1790967304.7382708
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*skill-install scraping-data-extractor",
+        "timestamp": 1790967304.7648518
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "❌ Erro ao instalar Claude Skill: name 'SkillInstallRequest' is not defined",
+        "timestamp": 1790967304.770237
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*skills",
+        "timestamp": 1790967322.487248
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "### ⚡ Central de Claude Skills — Governança AIOX\n\n**Skills Atualmente Instaladas (7):**\n- ⚡ **Claude Frontend Craftsman** (`frontend-craftsman`) [v1.2.0 — frontend]: Especialista em interfaces web modernas, responsivas e visualmente ricas com HTML5 semântico, CSS avançado (glassmorphism, gradientes, tipografia moderna) e JavaScript nativo.\n  *Atribuída a:* `*`\n- ⚡ **Claude System Architect** (`claude-code-architect`) [v1.1.0 — architecture]: Engenharia de software de alta fidelidade: arquitetura limpa, separação de camadas (Clean Architecture), contratos tipados com Pydantic, resiliência assíncrona e desacoplamento de storage.\n  *Atribuída a:* `*`\n- ⚡ **Python Security & OWASP Auditor** (`python-security-auditor`) [v1.3.0 — security]: Hardening corporativo e auditoria estática contra OWASP Top 10: prevenção a SQL Injection, XSS, Path Traversal em sandboxes, sanitização de inputs e mitigação de DoS.\n  *Atribuída a:* `*`\n- ⚡ **2D Canvas & Arcade Game Engine** (`game-engine-2d`) [v1.0.0 — code]: Especialista em desenvolvimento de jogos 2D nativos: game loop estável em 60 FPS, detecção de colisão AABB, física vetorial (gravidade, aceleração, atrito), partículas e HUD de pontuação.\n  *Atribuída a:* `*`\n- ⚡ **Automated QA & ADE Quality Gatekeeper** (`qa-quality-gatekeeper`) [v1.2.0 — qa]: Garantia de qualidade autônoma: inspeção via AST (Abstract Syntax Tree), cobertura de critérios de aceite (ACs), prevenção de TODOs/placeholders e auto-crítica ADE com score 100/100.\n  *Atribuída a:* `*`\n- ⚡ **Technical Documentation & Story Writer** (`api-doc-story-writer`) [v1.0.0 — docs]: Documentação técnica corporativa de alta precisão: especificações OpenAPI 3.0, redação de Histórias formais de desenvolvimento (AIOX Stories) e resumos executivos.\n  *Atribuída a:* `*`\n- ⚡ **Data Extraction & Web Scraping Specialist** (`scraping-data-extractor`) [v1.0.0 — code]: Extração estruturada de dados da web: requisições HTTP seguras, parsing de HTML/JSON, rotação de headers (User-Agent), extração via Regex/Seletores e gravação em CSV/JSON no sandbox.\n  *Atribuída a:* `*`\n\n**Disponíveis no Catálogo para Download/Instalação:**\nTodas as skills do catálogo já estão instaladas.\n\n---\n**Comandos Rápidos de Skills:**\n- `*skill-install <id|url>`: Baixa e instala skill do catálogo ou URL externa (GitHub/Web).\n- `*skill-assign <id> <@handle|squad_id|*>`: Atribui skill a um agente ou departamento.\n- `*skill-remove <id>`: Remove uma skill instalada.\n",
+        "timestamp": 1790967322.50277
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*skill-install scraping-data-extractor",
+        "timestamp": 1790967322.5300536
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "❌ Erro ao instalar Claude Skill: name 'SkillInstallRequest' is not defined",
+        "timestamp": 1790967322.5358648
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*skills",
+        "timestamp": 1790967337.6329744
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "### ⚡ Central de Claude Skills — Governança AIOX\n\n**Skills Atualmente Instaladas (7):**\n- ⚡ **Claude Frontend Craftsman** (`frontend-craftsman`) [v1.2.0 — frontend]: Especialista em interfaces web modernas, responsivas e visualmente ricas com HTML5 semântico, CSS avançado (glassmorphism, gradientes, tipografia moderna) e JavaScript nativo.\n  *Atribuída a:* `*`\n- ⚡ **Claude System Architect** (`claude-code-architect`) [v1.1.0 — architecture]: Engenharia de software de alta fidelidade: arquitetura limpa, separação de camadas (Clean Architecture), contratos tipados com Pydantic, resiliência assíncrona e desacoplamento de storage.\n  *Atribuída a:* `*`\n- ⚡ **Python Security & OWASP Auditor** (`python-security-auditor`) [v1.3.0 — security]: Hardening corporativo e auditoria estática contra OWASP Top 10: prevenção a SQL Injection, XSS, Path Traversal em sandboxes, sanitização de inputs e mitigação de DoS.\n  *Atribuída a:* `*`\n- ⚡ **2D Canvas & Arcade Game Engine** (`game-engine-2d`) [v1.0.0 — code]: Especialista em desenvolvimento de jogos 2D nativos: game loop estável em 60 FPS, detecção de colisão AABB, física vetorial (gravidade, aceleração, atrito), partículas e HUD de pontuação.\n  *Atribuída a:* `*`\n- ⚡ **Automated QA & ADE Quality Gatekeeper** (`qa-quality-gatekeeper`) [v1.2.0 — qa]: Garantia de qualidade autônoma: inspeção via AST (Abstract Syntax Tree), cobertura de critérios de aceite (ACs), prevenção de TODOs/placeholders e auto-crítica ADE com score 100/100.\n  *Atribuída a:* `*`\n- ⚡ **Technical Documentation & Story Writer** (`api-doc-story-writer`) [v1.0.0 — docs]: Documentação técnica corporativa de alta precisão: especificações OpenAPI 3.0, redação de Histórias formais de desenvolvimento (AIOX Stories) e resumos executivos.\n  *Atribuída a:* `*`\n- ⚡ **Data Extraction & Web Scraping Specialist** (`scraping-data-extractor`) [v1.0.0 — code]: Extração estruturada de dados da web: requisições HTTP seguras, parsing de HTML/JSON, rotação de headers (User-Agent), extração via Regex/Seletores e gravação em CSV/JSON no sandbox.\n  *Atribuída a:* `*`\n\n**Disponíveis no Catálogo para Download/Instalação:**\nTodas as skills do catálogo já estão instaladas.\n\n---\n**Comandos Rápidos de Skills:**\n- `*skill-install <id|url>`: Baixa e instala skill do catálogo ou URL externa (GitHub/Web).\n- `*skill-assign <id> <@handle|squad_id|*>`: Atribui skill a um agente ou departamento.\n- `*skill-remove <id>`: Remove uma skill instalada.\n",
+        "timestamp": 1790967337.6622605
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*skill-install scraping-data-extractor",
+        "timestamp": 1790967337.6886585
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "❌ Erro ao instalar Claude Skill: name 'SkillInstallRequest' is not defined",
+        "timestamp": 1790967337.6954293
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*skills",
+        "timestamp": 1790967354.5738537
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "### ⚡ Central de Claude Skills — Governança AIOX\n\n**Skills Atualmente Instaladas (7):**\n- ⚡ **Claude Frontend Craftsman** (`frontend-craftsman`) [v1.2.0 — frontend]: Especialista em interfaces web modernas, responsivas e visualmente ricas com HTML5 semântico, CSS avançado (glassmorphism, gradientes, tipografia moderna) e JavaScript nativo.\n  *Atribuída a:* `*`\n- ⚡ **Claude System Architect** (`claude-code-architect`) [v1.1.0 — architecture]: Engenharia de software de alta fidelidade: arquitetura limpa, separação de camadas (Clean Architecture), contratos tipados com Pydantic, resiliência assíncrona e desacoplamento de storage.\n  *Atribuída a:* `*`\n- ⚡ **Python Security & OWASP Auditor** (`python-security-auditor`) [v1.3.0 — security]: Hardening corporativo e auditoria estática contra OWASP Top 10: prevenção a SQL Injection, XSS, Path Traversal em sandboxes, sanitização de inputs e mitigação de DoS.\n  *Atribuída a:* `*`\n- ⚡ **2D Canvas & Arcade Game Engine** (`game-engine-2d`) [v1.0.0 — code]: Especialista em desenvolvimento de jogos 2D nativos: game loop estável em 60 FPS, detecção de colisão AABB, física vetorial (gravidade, aceleração, atrito), partículas e HUD de pontuação.\n  *Atribuída a:* `*`\n- ⚡ **Automated QA & ADE Quality Gatekeeper** (`qa-quality-gatekeeper`) [v1.2.0 — qa]: Garantia de qualidade autônoma: inspeção via AST (Abstract Syntax Tree), cobertura de critérios de aceite (ACs), prevenção de TODOs/placeholders e auto-crítica ADE com score 100/100.\n  *Atribuída a:* `*`\n- ⚡ **Technical Documentation & Story Writer** (`api-doc-story-writer`) [v1.0.0 — docs]: Documentação técnica corporativa de alta precisão: especificações OpenAPI 3.0, redação de Histórias formais de desenvolvimento (AIOX Stories) e resumos executivos.\n  *Atribuída a:* `*`\n- ⚡ **Data Extraction & Web Scraping Specialist** (`scraping-data-extractor`) [v1.0.0 — code]: Extração estruturada de dados da web: requisições HTTP seguras, parsing de HTML/JSON, rotação de headers (User-Agent), extração via Regex/Seletores e gravação em CSV/JSON no sandbox.\n  *Atribuída a:* `*`\n\n**Disponíveis no Catálogo para Download/Instalação:**\nTodas as skills do catálogo já estão instaladas.\n\n---\n**Comandos Rápidos de Skills:**\n- `*skill-install <id|url>`: Baixa e instala skill do catálogo ou URL externa (GitHub/Web).\n- `*skill-assign <id> <@handle|squad_id|*>`: Atribui skill a um agente ou departamento.\n- `*skill-remove <id>`: Remove uma skill instalada.\n",
+        "timestamp": 1790967354.600824
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*skill-install scraping-data-extractor",
+        "timestamp": 1790967354.6326156
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "❌ Erro ao instalar Claude Skill: name 'SkillInstallRequest' is not defined",
+        "timestamp": 1790967354.6385326
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*skills",
+        "timestamp": 1790967409.1251028
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "### ⚡ Central de Claude Skills — Governança AIOX\n\n**Skills Atualmente Instaladas (7):**\n- ⚡ **Claude Frontend Craftsman** (`frontend-craftsman`) [v1.2.0 — frontend]: Especialista em interfaces web modernas, responsivas e visualmente ricas com HTML5 semântico, CSS avançado (glassmorphism, gradientes, tipografia moderna) e JavaScript nativo.\n  *Atribuída a:* `*`\n- ⚡ **Claude System Architect** (`claude-code-architect`) [v1.1.0 — architecture]: Engenharia de software de alta fidelidade: arquitetura limpa, separação de camadas (Clean Architecture), contratos tipados com Pydantic, resiliência assíncrona e desacoplamento de storage.\n  *Atribuída a:* `*`\n- ⚡ **Python Security & OWASP Auditor** (`python-security-auditor`) [v1.3.0 — security]: Hardening corporativo e auditoria estática contra OWASP Top 10: prevenção a SQL Injection, XSS, Path Traversal em sandboxes, sanitização de inputs e mitigação de DoS.\n  *Atribuída a:* `*`\n- ⚡ **2D Canvas & Arcade Game Engine** (`game-engine-2d`) [v1.0.0 — code]: Especialista em desenvolvimento de jogos 2D nativos: game loop estável em 60 FPS, detecção de colisão AABB, física vetorial (gravidade, aceleração, atrito), partículas e HUD de pontuação.\n  *Atribuída a:* `*`\n- ⚡ **Automated QA & ADE Quality Gatekeeper** (`qa-quality-gatekeeper`) [v1.2.0 — qa]: Garantia de qualidade autônoma: inspeção via AST (Abstract Syntax Tree), cobertura de critérios de aceite (ACs), prevenção de TODOs/placeholders e auto-crítica ADE com score 100/100.\n  *Atribuída a:* `*`\n- ⚡ **Technical Documentation & Story Writer** (`api-doc-story-writer`) [v1.0.0 — docs]: Documentação técnica corporativa de alta precisão: especificações OpenAPI 3.0, redação de Histórias formais de desenvolvimento (AIOX Stories) e resumos executivos.\n  *Atribuída a:* `*`\n- ⚡ **Data Extraction & Web Scraping Specialist** (`scraping-data-extractor`) [v1.0.0 — code]: Extração estruturada de dados da web: requisições HTTP seguras, parsing de HTML/JSON, rotação de headers (User-Agent), extração via Regex/Seletores e gravação em CSV/JSON no sandbox.\n  *Atribuída a:* `*`\n\n**Disponíveis no Catálogo para Download/Instalação:**\nTodas as skills do catálogo já estão instaladas.\n\n---\n**Comandos Rápidos de Skills:**\n- `*skill-install <id|url>`: Baixa e instala skill do catálogo ou URL externa (GitHub/Web).\n- `*skill-assign <id> <@handle|squad_id|*>`: Atribui skill a um agente ou departamento.\n- `*skill-remove <id>`: Remove uma skill instalada.\n",
+        "timestamp": 1790967409.1498227
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*skill-install scraping-data-extractor",
+        "timestamp": 1790967409.176387
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "✅ Claude Skill **'Data Extraction & Web Scraping Specialist'** (`scraping-data-extractor`) instalada com sucesso e atribuída para `*`!",
+        "timestamp": 1790967409.185215
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*help",
+        "timestamp": 1790967419.005354
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "### 👑 Matriz Executiva AIOX — Pax (@aiox-master) (Diretoria Geral)\n- **Cargo:** Diretor Geral e Orquestrador Supremo do AgentOffice 2D\n- **Sala:** `room_sudo` (Sala da Diretoria / Presidência)\n- **Mesa:** `desk-sudo`\n- **Governança:** AIOX Multi-Tier Architecture & Inter-Squad Delegations\n\n**Squads Corporativos Subordinados:**\n- 🏛️ **Squad Core Engineering** (`room_dev`): Arquitetura e desenvolvimento de software, APIs e persistência.\n- 🏛️ **Squad Segurança Cibernética** (`room_sec`): Auditoria de código, sanitização, hardening e segurança ofensiva/defensiva.\n- 🏛️ **Squad Documentação & QA** (`room_doc`): Documentação técnica, especificações OpenAPI e Quality Gates (AST + ADE).\n- 🏛️ **Squad Data & Analytics** (`room_doc`): Squad especializado em pipelines de dados e analytics.\n\n**Comandos Executivos AIOX:**\n- `*help`: Exibe esta matriz de governança corporativa.\n- `*status`: Exibe o painel corporativo e integridade dos squads.\n- `*qa` ou `*test`: Executa auditoria global de Quality Gate em todo o sandbox.\n- `*critique`: Executa auditoria de auto-crítica ADE em todos os módulos.\n- `*decisions`: Lista as Decisões Arquiteturais Registradas (ADRs).\n- `*gotchas`: Lista as armadilhas e edge cases corporativos.\n- `*insights`: Lista os insights corporativos aprendidos.\n- `*skills`: Lista as Claude Skills instaladas e disponíveis no catálogo.\n- `*skill-install <id|url>`: Baixa e instala uma Claude Skill.\n- `*skill-assign <id> <@handle|squad>`: Concede uma Claude Skill a um agente/squad.\n- `*remember <categoria> <texto>`: Salva nova regra na governança imutável.\n- `*rules` ou `*manifest`: Exibe o estatuto de governança e Definition of Done corporativo.\n- `*plan <meta>`: Simula a decomposição estratégica de uma meta macro.\n",
+        "timestamp": 1790967419.0138524
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*status",
+        "timestamp": 1790967419.0209966
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "### 📊 Painel Corporativo AIOX — Diretoria Executiva\n- **Agentes em Operação:** 7 agentes\n- **Departamentos Ativos:** 4 squads\n- **Tickets Inter-Squad Ativos:** 17 tickets\n- **Claude Skills Habilitadas:** 7 skills ativas\n- **Sandbox Root:** `C:\\Users\\jeffb\\OneDrive\\Desktop\\agentoffice\\workspace`\n- **Status da Governança:** 🟢 Operação Normal (Todos os sistemas conformes)\n",
+        "timestamp": 1790967419.0379627
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "Desenvolva uma API simples de usuários com banco SQLite e rotas FastAPI",
+        "timestamp": 1790967419.0640664
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "👑 **[Diretoria Executiva — Sudo Agent]**\nMeta macro recebida:\n> *\"Desenvolva uma API simples de usuários com banco SQLite e rotas FastAPI\"*\n\n🏛️ Iniciando decomposição estratégica e despacho de épicos para os squads competentes...\n\n📋 **Épico Despachado:** *'Implementação da API de Usuários com FastAPI e SQLite'*\n\n📋 **Épico Despachado:** *'Revisão de Segurança e Hardening da API de Usuários'*\n\n📋 **Épico Despachado:** *'Documentação Técnica e Guia de Uso da API de Usuários'*\n\n---\n\n# 🏛️ PARECER EXECUTIVO — DIRETORIA AGENTOFFICE 2D\n\n**Meta Solicitada:** Desenvolva uma API simples de usuários com banco SQLite e rotas FastAPI\n**Orquestrador Responsável:** Pax (@aiox-master) (Sudo Agent)\n**Status da Operação:** Concluído com Sucesso e Auditoria Inter-Squad Conforme\n**Claude Skills Mobilizadas no Escritório:** `Claude Frontend Craftsman`, `Claude System Architect`, `Python Security & OWASP Auditor`, `2D Canvas & Arcade Game Engine`, `Automated QA & ADE Quality Gatekeeper`, `Technical Documentation & Story Writer`, `Data Extraction & Web Scraping Specialist`\n\n---\n\n## Entregas Departamentais Validadas:\n\n### Squad Core Engineering (Líder: Aria (@architect))\n**Squad Squad Core Engineering — Relatório de Entrega (AIOX):**\n- Épico: Implementação da API de Usuários com FastAPI e SQLite\n- Especificação AIOX: `stories/STORY-squad-core-engineering.md` (Critérios de Aceite)\n- Entregáveis Criados no Sandbox: `src/implementa__o_da_api_de_usu_rios_com_fastapi_e_sqlite.py`, `src/routers/implementa__o_da_api_de_usu_rios_com_fastapi_e_sqlite_router.py`\n- Claude Skills Mobilizadas: `Claude Frontend Craftsman`, `Claude System Architect`, `Python Security & OWASP Auditor`, `2D Canvas & Arcade Game Engine`, `Automated QA & ADE Quality Gatekeeper`, `Technical Documentation & Story Writer`, `Data Extraction & Web Scraping Specialist`\n- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-squad-core-engineering.md`)\n- Auto-Crítica ADE: Score 100/100 em `reports/CRITIQUE-LATEST.md`\n\n\n### Squad Segurança Cibernética (Líder: Cipher (@sec))\n**Squad Squad Segurança Cibernética — Relatório de Entrega (AIOX):**\n- Épico: Revisão de Segurança e Hardening da API de Usuários\n- Especificação AIOX: `stories/STORY-squad-security.md` (Critérios de Aceite)\n- Entregáveis Criados no Sandbox: `STORY-001.md`, `reports/QA-REPORT-001.md`, `src/database.py`, `src/models/user.py`, `src/security.py`, `src/services/user_service.py`, `src/routers/users.py`\n- Claude Skills Mobilizadas: `Claude Frontend Craftsman`, `Claude System Architect`, `Python Security & OWASP Auditor`, `2D Canvas & Arcade Game Engine`, `Automated QA & ADE Quality Gatekeeper`, `Technical Documentation & Story Writer`, `Data Extraction & Web Scraping Specialist`\n- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-squad-security.md`)\n- Auto-Crítica ADE: Score 100/100 em `reports/CRITIQUE-LATEST.md`\n\n\n### Squad Documentação & QA (Líder: Echo (@doc))\n**Squad Squad Documentação & QA — Relatório de Entrega (AIOX):**\n- Épico: Documentação Técnica e Guia de Uso da API de Usuários\n- Especificação AIOX: `stories/STORY-squad-documentation.md` (Critérios de Aceite)\n- Entregáveis Criados no Sandbox: `docs/architecture.md`, `docs/api_spec.md`\n- Claude Skills Mobilizadas: `Claude Frontend Craftsman`, `Claude System Architect`, `Python Security & OWASP Auditor`, `2D Canvas & Arcade Game Engine`, `Automated QA & ADE Quality Gatekeeper`, `Technical Documentation & Story Writer`, `Data Extraction & Web Scraping Specialist`\n- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-squad-documentation.md`)\n- Auto-Crítica ADE: Score 100/100 em `reports/CRITIQUE-LATEST.md`\n\n\n---\n**Avaliação da Diretoria:** Todas as metas foram decompostas, executadas no sandbox seguro com reforço das Claude Skills e auditadas entre os departamentos conforme o protocolo corporativo multinível.",
+        "timestamp": 1790967447.0217679
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*help",
+        "timestamp": 1790967523.0929012
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "### 👑 Matriz Executiva AIOX — Pax (@aiox-master) (Diretoria Geral)\n- **Cargo:** Diretor Geral e Orquestrador Supremo do AgentOffice 2D\n- **Sala:** `room_sudo` (Sala da Diretoria / Presidência)\n- **Mesa:** `desk-sudo`\n- **Governança:** AIOX Multi-Tier Architecture & Inter-Squad Delegations\n\n**Squads Corporativos Subordinados:**\n- 🏛️ **Squad Core Engineering** (`room_dev`): Arquitetura e desenvolvimento de software, APIs e persistência.\n- 🏛️ **Squad Segurança Cibernética** (`room_sec`): Auditoria de código, sanitização, hardening e segurança ofensiva/defensiva.\n- 🏛️ **Squad Documentação & QA** (`room_doc`): Documentação técnica, especificações OpenAPI e Quality Gates (AST + ADE).\n- 🏛️ **Squad Data & Analytics** (`room_doc`): Squad especializado em pipelines de dados e analytics.\n\n**Comandos Executivos AIOX:**\n- `*help`: Exibe esta matriz de governança corporativa.\n- `*status`: Exibe o painel corporativo e integridade dos squads.\n- `*qa` ou `*test`: Executa auditoria global de Quality Gate em todo o sandbox.\n- `*critique`: Executa auditoria de auto-crítica ADE em todos os módulos.\n- `*decisions`: Lista as Decisões Arquiteturais Registradas (ADRs).\n- `*gotchas`: Lista as armadilhas e edge cases corporativos.\n- `*insights`: Lista os insights corporativos aprendidos.\n- `*skills`: Lista as Claude Skills instaladas e disponíveis no catálogo.\n- `*skill-install <id|url>`: Baixa e instala uma Claude Skill.\n- `*skill-assign <id> <@handle|squad>`: Concede uma Claude Skill a um agente/squad.\n- `*remember <categoria> <texto>`: Salva nova regra na governança imutável.\n- `*rules` ou `*manifest`: Exibe o estatuto de governança e Definition of Done corporativo.\n- `*plan <meta>`: Simula a decomposição estratégica de uma meta macro.\n",
+        "timestamp": 1790967523.098839
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*status",
+        "timestamp": 1790967523.1046286
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "### 📊 Painel Corporativo AIOX — Diretoria Executiva\n- **Agentes em Operação:** 7 agentes\n- **Departamentos Ativos:** 4 squads\n- **Tickets Inter-Squad Ativos:** 17 tickets\n- **Claude Skills Habilitadas:** 7 skills ativas\n- **Sandbox Root:** `C:\\Users\\jeffb\\OneDrive\\Desktop\\agentoffice\\workspace`\n- **Status da Governança:** 🟢 Operação Normal (Todos os sistemas conformes)\n",
+        "timestamp": 1790967523.1132731
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "Desenvolva uma API simples de usuários com banco SQLite e rotas FastAPI",
+        "timestamp": 1790967523.1364665
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "👑 **[Diretoria Executiva — Sudo Agent]**\nMeta macro recebida:\n> *\"Desenvolva uma API simples de usuários com banco SQLite e rotas FastAPI\"*\n\n🏛️ Iniciando decomposição estratégica e despacho de épicos para os squads competentes...\n\n📋 **Épico Despachado:** *'Implementar API de Usuários com FastAPI e SQLite'*\n\n📋 **Épico Despachado:** *'Auditar e Hardenizar API de Usuários'*\n\n📋 **Épico Despachado:** *'Documentar API de Usuários e Garantir Qualidade'*\n\n---\n\n# 🏛️ PARECER EXECUTIVO — DIRETORIA AGENTOFFICE 2D\n\n**Meta Solicitada:** Desenvolva uma API simples de usuários com banco SQLite e rotas FastAPI\n**Orquestrador Responsável:** Pax (@aiox-master) (Sudo Agent)\n**Status da Operação:** Concluído com Sucesso e Auditoria Inter-Squad Conforme\n**Claude Skills Mobilizadas no Escritório:** `Claude Frontend Craftsman`, `Claude System Architect`, `Python Security & OWASP Auditor`, `2D Canvas & Arcade Game Engine`, `Automated QA & ADE Quality Gatekeeper`, `Technical Documentation & Story Writer`, `Data Extraction & Web Scraping Specialist`\n\n---\n\n## Entregas Departamentais Validadas:\n\n### Squad Core Engineering (Líder: Aria (@architect))\n**Squad Squad Core Engineering — Relatório de Entrega (AIOX):**\n- Épico: Implementar API de Usuários com FastAPI e SQLite\n- Especificação AIOX: `stories/STORY-squad-core-engineering.md` (Critérios de Aceite)\n- Entregáveis Criados no Sandbox: `requirements.txt`, `src/db/database.py`, `src/models/user.py`, `src/schemas/user.py`, `src/crud/user.py`, `src/routers/users.py`, `src/main.py`\n- Claude Skills Mobilizadas: `Claude Frontend Craftsman`, `Claude System Architect`, `Python Security & OWASP Auditor`, `2D Canvas & Arcade Game Engine`, `Automated QA & ADE Quality Gatekeeper`, `Technical Documentation & Story Writer`, `Data Extraction & Web Scraping Specialist`\n- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-squad-core-engineering.md`)\n- Auto-Crítica ADE: Score 100/100 em `reports/CRITIQUE-LATEST.md`\n\n\n### Squad Segurança Cibernética (Líder: Cipher (@sec))\n**Squad Squad Segurança Cibernética — Relatório de Entrega (AIOX):**\n- Épico: Auditar e Hardenizar API de Usuários\n- Especificação AIOX: `stories/STORY-squad-security.md` (Critérios de Aceite)\n- Entregáveis Criados no Sandbox: `src/security/sanitizer.py`, `src/security/rate_limiter.py`\n- Claude Skills Mobilizadas: `Claude Frontend Craftsman`, `Claude System Architect`, `Python Security & OWASP Auditor`, `2D Canvas & Arcade Game Engine`, `Automated QA & ADE Quality Gatekeeper`, `Technical Documentation & Story Writer`, `Data Extraction & Web Scraping Specialist`\n- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-squad-security.md`)\n- Auto-Crítica ADE: Score 100/100 em `reports/CRITIQUE-LATEST.md`\n\n\n### Squad Documentação & QA (Líder: Echo (@doc))\n**Squad Squad Documentação & QA — Relatório de Entrega (AIOX):**\n- Épico: Documentar API de Usuários e Garantir Qualidade\n- Especificação AIOX: `stories/STORY-squad-documentation.md` (Critérios de Aceite)\n- Entregáveis Criados no Sandbox: `docs/architecture.md`, `docs/api_spec.md`\n- Claude Skills Mobilizadas: `Claude Frontend Craftsman`, `Claude System Architect`, `Python Security & OWASP Auditor`, `2D Canvas & Arcade Game Engine`, `Automated QA & ADE Quality Gatekeeper`, `Technical Documentation & Story Writer`, `Data Extraction & Web Scraping Specialist`\n- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-squad-documentation.md`)\n- Auto-Crítica ADE: Score 100/100 em `reports/CRITIQUE-LATEST.md`\n\n\n---\n**Avaliação da Diretoria:** Todas as metas foram decompostas, executadas no sandbox seguro com reforço das Claude Skills e auditadas entre os departamentos conforme o protocolo corporativo multinível.",
+        "timestamp": 1790967544.4764876
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*help",
+        "timestamp": 1790967598.494986
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "### 👑 Matriz Executiva AIOX — Pax (@aiox-master) (Diretoria Geral)\n- **Cargo:** Diretor Geral e Orquestrador Supremo do AgentOffice 2D\n- **Sala:** `room_sudo` (Sala da Diretoria / Presidência)\n- **Mesa:** `desk-sudo`\n- **Governança:** AIOX Multi-Tier Architecture & Inter-Squad Delegations\n\n**Squads Corporativos Subordinados:**\n- 🏛️ **Squad Core Engineering** (`room_dev`): Arquitetura e desenvolvimento de software, APIs e persistência.\n- 🏛️ **Squad Segurança Cibernética** (`room_sec`): Auditoria de código, sanitização, hardening e segurança ofensiva/defensiva.\n- 🏛️ **Squad Documentação & QA** (`room_doc`): Documentação técnica, especificações OpenAPI e Quality Gates (AST + ADE).\n- 🏛️ **Squad Data & Analytics** (`room_doc`): Squad especializado em pipelines de dados e analytics.\n\n**Comandos Executivos AIOX:**\n- `*help`: Exibe esta matriz de governança corporativa.\n- `*status`: Exibe o painel corporativo e integridade dos squads.\n- `*qa` ou `*test`: Executa auditoria global de Quality Gate em todo o sandbox.\n- `*critique`: Executa auditoria de auto-crítica ADE em todos os módulos.\n- `*decisions`: Lista as Decisões Arquiteturais Registradas (ADRs).\n- `*gotchas`: Lista as armadilhas e edge cases corporativos.\n- `*insights`: Lista os insights corporativos aprendidos.\n- `*skills`: Lista as Claude Skills instaladas e disponíveis no catálogo.\n- `*skill-install <id|url>`: Baixa e instala uma Claude Skill.\n- `*skill-assign <id> <@handle|squad>`: Concede uma Claude Skill a um agente/squad.\n- `*remember <categoria> <texto>`: Salva nova regra na governança imutável.\n- `*rules` ou `*manifest`: Exibe o estatuto de governança e Definition of Done corporativo.\n- `*plan <meta>`: Simula a decomposição estratégica de uma meta macro.\n",
+        "timestamp": 1790967598.5016305
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*status",
+        "timestamp": 1790967598.5153763
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "### 📊 Painel Corporativo AIOX — Diretoria Executiva\n- **Agentes em Operação:** 7 agentes\n- **Departamentos Ativos:** 4 squads\n- **Tickets Inter-Squad Ativos:** 17 tickets\n- **Claude Skills Habilitadas:** 7 skills ativas\n- **Sandbox Root:** `C:\\Users\\jeffb\\OneDrive\\Desktop\\agentoffice\\workspace`\n- **Status da Governança:** 🟢 Operação Normal (Todos os sistemas conformes)\n",
+        "timestamp": 1790967598.525914
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "Desenvolva uma API simples de usuários com banco SQLite e rotas FastAPI",
+        "timestamp": 1790967598.5547605
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "👑 **[Diretoria Executiva — Sudo Agent]**\nMeta macro recebida:\n> *\"Desenvolva uma API simples de usuários com banco SQLite e rotas FastAPI\"*\n\n🏛️ Iniciando decomposição estratégica e despacho de épicos para os squads competentes...\n\n📋 **Épico Despachado:** *'Implementar API de Usuários com FastAPI e SQLite'*\n\n📋 **Épico Despachado:** *'Garantir Segurança e Conformidade da API de Usuários'*\n\n📋 **Épico Despachado:** *'Documentar API de Usuários e Gerar Especificação OpenAPI'*\n\n---\n\n# 🏛️ PARECER EXECUTIVO — DIRETORIA AGENTOFFICE 2D\n\n**Meta Solicitada:** Desenvolva uma API simples de usuários com banco SQLite e rotas FastAPI\n**Orquestrador Responsável:** Pax (@aiox-master) (Sudo Agent)\n**Status da Operação:** Concluído com Sucesso e Auditoria Inter-Squad Conforme\n**Claude Skills Mobilizadas no Escritório:** `Claude Frontend Craftsman`, `Claude System Architect`, `Python Security & OWASP Auditor`, `2D Canvas & Arcade Game Engine`, `Automated QA & ADE Quality Gatekeeper`, `Technical Documentation & Story Writer`, `Data Extraction & Web Scraping Specialist`\n\n---\n\n## Entregas Departamentais Validadas:\n\n### Squad Core Engineering (Líder: Aria (@architect))\n**Squad Squad Core Engineering — Relatório de Entrega (AIOX):**\n- Épico: Implementar API de Usuários com FastAPI e SQLite\n- Especificação AIOX: `stories/STORY-squad-core-engineering.md` (Critérios de Aceite)\n- Entregáveis Criados no Sandbox: `src/implementar_api_de_usu_rios_com_fastapi_e_sqlite.py`, `src/routers/implementar_api_de_usu_rios_com_fastapi_e_sqlite_router.py`\n- Claude Skills Mobilizadas: `Claude Frontend Craftsman`, `Claude System Architect`, `Python Security & OWASP Auditor`, `2D Canvas & Arcade Game Engine`, `Automated QA & ADE Quality Gatekeeper`, `Technical Documentation & Story Writer`, `Data Extraction & Web Scraping Specialist`\n- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-squad-core-engineering.md`)\n- Auto-Crítica ADE: Score 100/100 em `reports/CRITIQUE-LATEST.md`\n\n\n### Squad Segurança Cibernética (Líder: Cipher (@sec))\n**Squad Squad Segurança Cibernética — Relatório de Entrega (AIOX):**\n- Épico: Garantir Segurança e Conformidade da API de Usuários\n- Especificação AIOX: `stories/STORY-squad-security.md` (Critérios de Aceite)\n- Entregáveis Criados no Sandbox: `src/security/sanitizer.py`, `src/security/rate_limiter.py`\n- Claude Skills Mobilizadas: `Claude Frontend Craftsman`, `Claude System Architect`, `Python Security & OWASP Auditor`, `2D Canvas & Arcade Game Engine`, `Automated QA & ADE Quality Gatekeeper`, `Technical Documentation & Story Writer`, `Data Extraction & Web Scraping Specialist`\n- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-squad-security.md`)\n- Auto-Crítica ADE: Score 100/100 em `reports/CRITIQUE-LATEST.md`\n\n\n### Squad Documentação & QA (Líder: Echo (@doc))\n**Squad Squad Documentação & QA — Relatório de Entrega (AIOX):**\n- Épico: Documentar API de Usuários e Gerar Especificação OpenAPI\n- Especificação AIOX: `stories/STORY-squad-documentation.md` (Critérios de Aceite)\n- Entregáveis Criados no Sandbox: `docs/architecture.md`, `docs/api_spec.md`\n- Claude Skills Mobilizadas: `Claude Frontend Craftsman`, `Claude System Architect`, `Python Security & OWASP Auditor`, `2D Canvas & Arcade Game Engine`, `Automated QA & ADE Quality Gatekeeper`, `Technical Documentation & Story Writer`, `Data Extraction & Web Scraping Specialist`\n- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-squad-documentation.md`)\n- Auto-Crítica ADE: Score 100/100 em `reports/CRITIQUE-LATEST.md`\n\n\n---\n**Avaliação da Diretoria:** Todas as metas foram decompostas, executadas no sandbox seguro com reforço das Claude Skills e auditadas entre os departamentos conforme o protocolo corporativo multinível.",
+        "timestamp": 1790967612.2933345
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*skills",
+        "timestamp": 1790967898.7422502
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "### ⚡ Central de Claude Skills — Governança AIOX\n\n**Skills Atualmente Instaladas (7):**\n- ⚡ **Claude Frontend Craftsman** (`frontend-craftsman`) [v1.2.0 — frontend]: Especialista em interfaces web modernas, responsivas e visualmente ricas com HTML5 semântico, CSS avançado (glassmorphism, gradientes, tipografia moderna) e JavaScript nativo.\n  *Atribuída a:* `*`\n- ⚡ **Claude System Architect** (`claude-code-architect`) [v1.1.0 — architecture]: Engenharia de software de alta fidelidade: arquitetura limpa, separação de camadas (Clean Architecture), contratos tipados com Pydantic, resiliência assíncrona e desacoplamento de storage.\n  *Atribuída a:* `*`\n- ⚡ **Python Security & OWASP Auditor** (`python-security-auditor`) [v1.3.0 — security]: Hardening corporativo e auditoria estática contra OWASP Top 10: prevenção a SQL Injection, XSS, Path Traversal em sandboxes, sanitização de inputs e mitigação de DoS.\n  *Atribuída a:* `*`\n- ⚡ **2D Canvas & Arcade Game Engine** (`game-engine-2d`) [v1.0.0 — code]: Especialista em desenvolvimento de jogos 2D nativos: game loop estável em 60 FPS, detecção de colisão AABB, física vetorial (gravidade, aceleração, atrito), partículas e HUD de pontuação.\n  *Atribuída a:* `*`\n- ⚡ **Automated QA & ADE Quality Gatekeeper** (`qa-quality-gatekeeper`) [v1.2.0 — qa]: Garantia de qualidade autônoma: inspeção via AST (Abstract Syntax Tree), cobertura de critérios de aceite (ACs), prevenção de TODOs/placeholders e auto-crítica ADE com score 100/100.\n  *Atribuída a:* `*`\n- ⚡ **Technical Documentation & Story Writer** (`api-doc-story-writer`) [v1.0.0 — docs]: Documentação técnica corporativa de alta precisão: especificações OpenAPI 3.0, redação de Histórias formais de desenvolvimento (AIOX Stories) e resumos executivos.\n  *Atribuída a:* `*`\n- ⚡ **Data Extraction & Web Scraping Specialist** (`scraping-data-extractor`) [v1.0.0 — code]: Extração estruturada de dados da web: requisições HTTP seguras, parsing de HTML/JSON, rotação de headers (User-Agent), extração via Regex/Seletores e gravação em CSV/JSON no sandbox.\n  *Atribuída a:* `*`\n\n**Disponíveis no Catálogo para Download/Instalação:**\nTodas as skills do catálogo já estão instaladas.\n\n---\n**Comandos Rápidos de Skills:**\n- `*skill-install <id|url>`: Baixa e instala skill do catálogo ou URL externa (GitHub/Web).\n- `*skill-assign <id> <@handle|squad_id|*>`: Atribui skill a um agente ou departamento.\n- `*skill-remove <id>`: Remove uma skill instalada.\n",
+        "timestamp": 1790967898.7687085
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*skill-install scraping-data-extractor",
+        "timestamp": 1790967898.798924
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "✅ Claude Skill **'Data Extraction & Web Scraping Specialist'** (`scraping-data-extractor`) instalada com sucesso e atribuída para `*`!",
+        "timestamp": 1790967898.809376
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*help",
+        "timestamp": 1790967904.7431488
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "### 👑 Matriz Executiva AIOX — Pax (@aiox-master) (Diretoria Geral)\n- **Cargo:** Diretor Geral e Orquestrador Supremo do AgentOffice 2D\n- **Sala:** `room_sudo` (Sala da Diretoria / Presidência)\n- **Mesa:** `desk-sudo`\n- **Governança:** AIOX Multi-Tier Architecture & Inter-Squad Delegations\n\n**Squads Corporativos Subordinados:**\n- 🏛️ **Squad Core Engineering** (`room_dev`): Arquitetura e desenvolvimento de software, APIs e persistência.\n- 🏛️ **Squad Segurança Cibernética** (`room_sec`): Auditoria de código, sanitização, hardening e segurança ofensiva/defensiva.\n- 🏛️ **Squad Documentação & QA** (`room_doc`): Documentação técnica, especificações OpenAPI e Quality Gates (AST + ADE).\n- 🏛️ **Squad Data & Analytics** (`room_doc`): Squad especializado em pipelines de dados e analytics.\n\n**Comandos Executivos AIOX:**\n- `*help`: Exibe esta matriz de governança corporativa.\n- `*status`: Exibe o painel corporativo e integridade dos squads.\n- `*qa` ou `*test`: Executa auditoria global de Quality Gate em todo o sandbox.\n- `*critique`: Executa auditoria de auto-crítica ADE em todos os módulos.\n- `*decisions`: Lista as Decisões Arquiteturais Registradas (ADRs).\n- `*gotchas`: Lista as armadilhas e edge cases corporativos.\n- `*insights`: Lista os insights corporativos aprendidos.\n- `*skills`: Lista as Claude Skills instaladas e disponíveis no catálogo.\n- `*skill-install <id|url>`: Baixa e instala uma Claude Skill.\n- `*skill-assign <id> <@handle|squad>`: Concede uma Claude Skill a um agente/squad.\n- `*remember <categoria> <texto>`: Salva nova regra na governança imutável.\n- `*rules` ou `*manifest`: Exibe o estatuto de governança e Definition of Done corporativo.\n- `*plan <meta>`: Simula a decomposição estratégica de uma meta macro.\n",
+        "timestamp": 1790967904.7550917
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*status",
+        "timestamp": 1790967904.765838
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "### 📊 Painel Corporativo AIOX — Diretoria Executiva\n- **Agentes em Operação:** 7 agentes\n- **Departamentos Ativos:** 4 squads\n- **Tickets Inter-Squad Ativos:** 17 tickets\n- **Claude Skills Habilitadas:** 7 skills ativas\n- **Sandbox Root:** `C:\\Users\\jeffb\\OneDrive\\Desktop\\agentoffice\\workspace`\n- **Status da Governança:** 🟢 Operação Normal (Todos os sistemas conformes)\n",
+        "timestamp": 1790967904.7788575
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "Desenvolva uma API simples de usuários com banco SQLite e rotas FastAPI",
+        "timestamp": 1790967904.8075132
+      },
+      {
+        "sender": "agent-sudo",
+        "role": "assistant",
+        "text": "👑 **[Diretoria Executiva — Sudo Agent]**\nMeta macro recebida:\n> *\"Desenvolva uma API simples de usuários com banco SQLite e rotas FastAPI\"*\n\n🏛️ Iniciando decomposição estratégica e despacho de épicos para os squads competentes...\n\n📋 **Épico Despachado:** *'Implementar API de Usuários com FastAPI e SQLite'*\n\n📋 **Épico Despachado:** *'Garantir a Segurança da API de Usuários'*\n\n📋 **Épico Despachado:** *'Documentar e Validar a API de Usuários'*\n\n---\n\n# 🏛️ PARECER EXECUTIVO — DIRETORIA AGENTOFFICE 2D\n\n**Meta Solicitada:** Desenvolva uma API simples de usuários com banco SQLite e rotas FastAPI\n**Orquestrador Responsável:** Pax (@aiox-master) (Sudo Agent)\n**Status da Operação:** Concluído com Sucesso e Auditoria Inter-Squad Conforme\n**Claude Skills Mobilizadas no Escritório:** `Claude Frontend Craftsman`, `Claude System Architect`, `Python Security & OWASP Auditor`, `2D Canvas & Arcade Game Engine`, `Automated QA & ADE Quality Gatekeeper`, `Technical Documentation & Story Writer`, `Data Extraction & Web Scraping Specialist`\n\n---\n\n## Entregas Departamentais Validadas:\n\n### Squad Core Engineering (Líder: Aria (@architect))\n**Squad Squad Core Engineering — Relatório de Entrega (AIOX):**\n- Épico: Implementar API de Usuários com FastAPI e SQLite\n- Especificação AIOX: `stories/STORY-squad-core-engineering.md` (Critérios de Aceite)\n- Entregáveis Criados no Sandbox: `src/app.py`, `src/db.py`, `src/models/user.py`\n- Claude Skills Mobilizadas: `Claude Frontend Craftsman`, `Claude System Architect`, `Python Security & OWASP Auditor`, `2D Canvas & Arcade Game Engine`, `Automated QA & ADE Quality Gatekeeper`, `Technical Documentation & Story Writer`, `Data Extraction & Web Scraping Specialist`\n- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-squad-core-engineering.md`)\n- Auto-Crítica ADE: Score 100/100 em `reports/CRITIQUE-LATEST.md`\n\n\n### Squad Segurança Cibernética (Líder: Cipher (@sec))\n**Squad Squad Segurança Cibernética — Relatório de Entrega (AIOX):**\n- Épico: Garantir a Segurança da API de Usuários\n- Especificação AIOX: `stories/STORY-squad-security.md` (Critérios de Aceite)\n- Entregáveis Criados no Sandbox: `src/db.py`, `src/models/user.py`, `src/services/auth.py`\n- Claude Skills Mobilizadas: `Claude Frontend Craftsman`, `Claude System Architect`, `Python Security & OWASP Auditor`, `2D Canvas & Arcade Game Engine`, `Automated QA & ADE Quality Gatekeeper`, `Technical Documentation & Story Writer`, `Data Extraction & Web Scraping Specialist`\n- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-squad-security.md`)\n- Auto-Crítica ADE: Score 100/100 em `reports/CRITIQUE-LATEST.md`\n\n\n### Squad Documentação & QA (Líder: Echo (@doc))\n**Squad Squad Documentação & QA — Relatório de Entrega (AIOX):**\n- Épico: Documentar e Validar a API de Usuários\n- Especificação AIOX: `stories/STORY-squad-documentation.md` (Critérios de Aceite)\n- Entregáveis Criados no Sandbox: `docs/architecture.md`, `docs/api_spec.md`\n- Claude Skills Mobilizadas: `Claude Frontend Craftsman`, `Claude System Architect`, `Python Security & OWASP Auditor`, `2D Canvas & Arcade Game Engine`, `Automated QA & ADE Quality Gatekeeper`, `Technical Documentation & Story Writer`, `Data Extraction & Web Scraping Specialist`\n- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-squad-documentation.md`)\n- Auto-Crítica ADE: Score 100/100 em `reports/CRITIQUE-LATEST.md`\n\n\n---\n**Avaliação da Diretoria:** Todas as metas foram decompostas, executadas no sandbox seguro com reforço das Claude Skills e auditadas entre os departamentos conforme o protocolo corporativo multinível.",
+        "timestamp": 1790967925.5269306
       }
     ],
     "agent-1c137c": [
@@ -1914,6 +2259,294 @@
         "role": "user",
         "text": "@architect valide o blueprint",
         "timestamp": 1790965530.7904658
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*skills",
+        "timestamp": 1790967409.2125494
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "### ⚡ Central de Claude Skills — AIOX Agent Hub\n\n**Skills Atualmente Instaladas (7):**\n- ⚡ **Claude Frontend Craftsman** (`frontend-craftsman`) [v1.2.0 — frontend]: Especialista em interfaces web modernas, responsivas e visualmente ricas com HTML5 semântico, CSS avançado (glassmorphism, gradientes, tipografia moderna) e JavaScript nativo.\n  *Atribuída a:* `*`\n- ⚡ **Claude System Architect** (`claude-code-architect`) [v1.1.0 — architecture]: Engenharia de software de alta fidelidade: arquitetura limpa, separação de camadas (Clean Architecture), contratos tipados com Pydantic, resiliência assíncrona e desacoplamento de storage.\n  *Atribuída a:* `*`\n- ⚡ **Python Security & OWASP Auditor** (`python-security-auditor`) [v1.3.0 — security]: Hardening corporativo e auditoria estática contra OWASP Top 10: prevenção a SQL Injection, XSS, Path Traversal em sandboxes, sanitização de inputs e mitigação de DoS.\n  *Atribuída a:* `*`\n- ⚡ **2D Canvas & Arcade Game Engine** (`game-engine-2d`) [v1.0.0 — code]: Especialista em desenvolvimento de jogos 2D nativos: game loop estável em 60 FPS, detecção de colisão AABB, física vetorial (gravidade, aceleração, atrito), partículas e HUD de pontuação.\n  *Atribuída a:* `*`\n- ⚡ **Automated QA & ADE Quality Gatekeeper** (`qa-quality-gatekeeper`) [v1.2.0 — qa]: Garantia de qualidade autônoma: inspeção via AST (Abstract Syntax Tree), cobertura de critérios de aceite (ACs), prevenção de TODOs/placeholders e auto-crítica ADE com score 100/100.\n  *Atribuída a:* `*`\n- ⚡ **Technical Documentation & Story Writer** (`api-doc-story-writer`) [v1.0.0 — docs]: Documentação técnica corporativa de alta precisão: especificações OpenAPI 3.0, redação de Histórias formais de desenvolvimento (AIOX Stories) e resumos executivos.\n  *Atribuída a:* `*`\n- ⚡ **Data Extraction & Web Scraping Specialist** (`scraping-data-extractor`) [v1.0.0 — code]: Extração estruturada de dados da web: requisições HTTP seguras, parsing de HTML/JSON, rotação de headers (User-Agent), extração via Regex/Seletores e gravação em CSV/JSON no sandbox.\n  *Atribuída a:* `*`\n\n**Disponíveis no Catálogo para Download/Instalação:**\nTodas as skills do catálogo já estão instaladas.\n\n---\n**Comandos Rápidos de Skills:**\n- `*skill-install <id|url>`: Baixa e instala skill do catálogo ou URL externa.\n- `*skill-assign <id> <@handle|squad_id|*>`: Atribui skill a um agente ou departamento.\n- `*skill-remove <id>`: Remove uma skill instalada.\n",
+        "timestamp": 1790967409.2367697
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*help",
+        "timestamp": 1790967418.8895905
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "### 🤖 Matriz de Recursos AIOX — Aria (@architect)\n- **Cargo:** Software Architect & Tech Lead\n- **Tier:** `squad_leader`\n- **Squad / Sala:** `squad-core-engineering` (Sala: `room_dev`)\n- **Mesa Atribuída:** `desk-1`\n- **Ferramentas Habilitadas:** `fs_read_file`, `fs_write_file`, `fs_list_directory`, `fs_create_directory`\n\n**Comandos Rápidos AIOX (CLI First):**\n- `*help`: Exibe esta matriz de recursos e comandos do agente.\n- `*status`: Exibe o estado operacional, ocupação e tickets inter-squad.\n- `*qa` ou `*test`: Executa o Quality Gate estático e validação de sintaxe (AST) no sandbox.\n- `*critique`: Executa auto-crítica ADE (Autonomous Development Engine) do código.\n- `*decisions`: Lista as Decisões Arquiteturais Registradas (ADRs).\n- `*gotchas`: Lista as armadilhas e edge cases conhecidos.\n- `*insights`: Lista os insights aprendidos entre sessões.\n- `*skills`: Lista as Claude Skills instaladas e catálogo disponível.\n- `*skill-install <id|url>`: Baixa e instala uma Claude Skill.\n- `*skill-assign <id> <@handle|squad>`: Concede uma Claude Skill.\n- `*remember <categoria> <texto>`: Salva nova regra na memória persistente.\n- `*rules` ou `*manifest`: Exibe o manifesto e as regras de Definition of Done (DoD) do squad.\n- `*export-squad`: Gera manifesto YAML compatível com o ecossistema AIOX.\n- `*plan <meta>`: Gera documento estruturado de planejamento técnico.\n",
+        "timestamp": 1790967418.896508
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*status",
+        "timestamp": 1790967418.9273047
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "### 📊 Status Operacional AIOX — Aria (@architect)\n- **Estado do Agente:** `idle`\n- **Squad / Sala:** `squad-core-engineering` (Sala: `room_dev`)\n- **Subordinados:** 2 agentes sob liderança\n- **Mesa Física:** `desk-1`\n- **Tickets Inter-Squad Ativos:** 17\n- **Claude Skills Habilitadas:** 7 skills (Claude Frontend Craftsman, Claude System Architect, Python Security & OWASP Auditor, 2D Canvas & Arcade Game Engine, Automated QA & ADE Quality Gatekeeper, Technical Documentation & Story Writer, Data Extraction & Web Scraping Specialist)\n- **Sandbox Root:** `C:\\Users\\jeffb\\OneDrive\\Desktop\\agentoffice\\workspace`\n",
+        "timestamp": 1790967418.9333935
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*rules",
+        "timestamp": 1790967418.979056
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "### 📜 Manifesto do Squad — Squad Core Engineering\n- **Sala:** `room_dev`\n- **Domínio Técnico:** python, fastapi, sqlite, architecture, scrum, backend\n- **Descrição:** Arquitetura e desenvolvimento de software, APIs e persistência.\n- **Líder Atual:** `agent-1c137c`\n- **Membros:** 3 agentes\n\n**Diretrizes de Qualidade AIOX (Definition of Done):**\n1. Código executável e validado via AST check (`*qa`).\n2. Nenhuma credencial ou segredo gravado em arquivos de código.\n3. Isolamento restrito ao workspace sandbox sem path traversal.\n4. Auto-crítica ADE aprovada sem TODOs pendentes (`*critique`).\n",
+        "timestamp": 1790967418.9859786
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*help",
+        "timestamp": 1790967522.9788675
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "### 🤖 Matriz de Recursos AIOX — Aria (@architect)\n- **Cargo:** Software Architect & Tech Lead\n- **Tier:** `squad_leader`\n- **Squad / Sala:** `squad-core-engineering` (Sala: `room_dev`)\n- **Mesa Atribuída:** `desk-1`\n- **Ferramentas Habilitadas:** `fs_read_file`, `fs_write_file`, `fs_list_directory`, `fs_create_directory`\n\n**Comandos Rápidos AIOX (CLI First):**\n- `*help`: Exibe esta matriz de recursos e comandos do agente.\n- `*status`: Exibe o estado operacional, ocupação e tickets inter-squad.\n- `*qa` ou `*test`: Executa o Quality Gate estático e validação de sintaxe (AST) no sandbox.\n- `*critique`: Executa auto-crítica ADE (Autonomous Development Engine) do código.\n- `*decisions`: Lista as Decisões Arquiteturais Registradas (ADRs).\n- `*gotchas`: Lista as armadilhas e edge cases conhecidos.\n- `*insights`: Lista os insights aprendidos entre sessões.\n- `*skills`: Lista as Claude Skills instaladas e catálogo disponível.\n- `*skill-install <id|url>`: Baixa e instala uma Claude Skill.\n- `*skill-assign <id> <@handle|squad>`: Concede uma Claude Skill.\n- `*remember <categoria> <texto>`: Salva nova regra na memória persistente.\n- `*rules` ou `*manifest`: Exibe o manifesto e as regras de Definition of Done (DoD) do squad.\n- `*export-squad`: Gera manifesto YAML compatível com o ecossistema AIOX.\n- `*plan <meta>`: Gera documento estruturado de planejamento técnico.\n",
+        "timestamp": 1790967522.984688
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*status",
+        "timestamp": 1790967523.0190165
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "### 📊 Status Operacional AIOX — Aria (@architect)\n- **Estado do Agente:** `idle`\n- **Squad / Sala:** `squad-core-engineering` (Sala: `room_dev`)\n- **Subordinados:** 2 agentes sob liderança\n- **Mesa Física:** `desk-1`\n- **Tickets Inter-Squad Ativos:** 17\n- **Claude Skills Habilitadas:** 7 skills (Claude Frontend Craftsman, Claude System Architect, Python Security & OWASP Auditor, 2D Canvas & Arcade Game Engine, Automated QA & ADE Quality Gatekeeper, Technical Documentation & Story Writer, Data Extraction & Web Scraping Specialist)\n- **Sandbox Root:** `C:\\Users\\jeffb\\OneDrive\\Desktop\\agentoffice\\workspace`\n",
+        "timestamp": 1790967523.026198
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*rules",
+        "timestamp": 1790967523.0550587
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "### 📜 Manifesto do Squad — Squad Core Engineering\n- **Sala:** `room_dev`\n- **Domínio Técnico:** python, fastapi, sqlite, architecture, scrum, backend\n- **Descrição:** Arquitetura e desenvolvimento de software, APIs e persistência.\n- **Líder Atual:** `agent-1c137c`\n- **Membros:** 3 agentes\n\n**Diretrizes de Qualidade AIOX (Definition of Done):**\n1. Código executável e validado via AST check (`*qa`).\n2. Nenhuma credencial ou segredo gravado em arquivos de código.\n3. Isolamento restrito ao workspace sandbox sem path traversal.\n4. Auto-crítica ADE aprovada sem TODOs pendentes (`*critique`).\n",
+        "timestamp": 1790967523.062845
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*help",
+        "timestamp": 1790967598.3382423
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "### 🤖 Matriz de Recursos AIOX — Aria (@architect)\n- **Cargo:** Software Architect & Tech Lead\n- **Tier:** `squad_leader`\n- **Squad / Sala:** `squad-core-engineering` (Sala: `room_dev`)\n- **Mesa Atribuída:** `desk-1`\n- **Ferramentas Habilitadas:** `fs_read_file`, `fs_write_file`, `fs_list_directory`, `fs_create_directory`\n\n**Comandos Rápidos AIOX (CLI First):**\n- `*help`: Exibe esta matriz de recursos e comandos do agente.\n- `*status`: Exibe o estado operacional, ocupação e tickets inter-squad.\n- `*qa` ou `*test`: Executa o Quality Gate estático e validação de sintaxe (AST) no sandbox.\n- `*critique`: Executa auto-crítica ADE (Autonomous Development Engine) do código.\n- `*decisions`: Lista as Decisões Arquiteturais Registradas (ADRs).\n- `*gotchas`: Lista as armadilhas e edge cases conhecidos.\n- `*insights`: Lista os insights aprendidos entre sessões.\n- `*skills`: Lista as Claude Skills instaladas e catálogo disponível.\n- `*skill-install <id|url>`: Baixa e instala uma Claude Skill.\n- `*skill-assign <id> <@handle|squad>`: Concede uma Claude Skill.\n- `*remember <categoria> <texto>`: Salva nova regra na memória persistente.\n- `*rules` ou `*manifest`: Exibe o manifesto e as regras de Definition of Done (DoD) do squad.\n- `*export-squad`: Gera manifesto YAML compatível com o ecossistema AIOX.\n- `*plan <meta>`: Gera documento estruturado de planejamento técnico.\n",
+        "timestamp": 1790967598.3477163
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*status",
+        "timestamp": 1790967598.3906791
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "### 📊 Status Operacional AIOX — Aria (@architect)\n- **Estado do Agente:** `idle`\n- **Squad / Sala:** `squad-core-engineering` (Sala: `room_dev`)\n- **Subordinados:** 2 agentes sob liderança\n- **Mesa Física:** `desk-1`\n- **Tickets Inter-Squad Ativos:** 17\n- **Claude Skills Habilitadas:** 7 skills (Claude Frontend Craftsman, Claude System Architect, Python Security & OWASP Auditor, 2D Canvas & Arcade Game Engine, Automated QA & ADE Quality Gatekeeper, Technical Documentation & Story Writer, Data Extraction & Web Scraping Specialist)\n- **Sandbox Root:** `C:\\Users\\jeffb\\OneDrive\\Desktop\\agentoffice\\workspace`\n",
+        "timestamp": 1790967598.4126272
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*rules",
+        "timestamp": 1790967598.4537075
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "### 📜 Manifesto do Squad — Squad Core Engineering\n- **Sala:** `room_dev`\n- **Domínio Técnico:** python, fastapi, sqlite, architecture, scrum, backend\n- **Descrição:** Arquitetura e desenvolvimento de software, APIs e persistência.\n- **Líder Atual:** `agent-1c137c`\n- **Membros:** 3 agentes\n\n**Diretrizes de Qualidade AIOX (Definition of Done):**\n1. Código executável e validado via AST check (`*qa`).\n2. Nenhuma credencial ou segredo gravado em arquivos de código.\n3. Isolamento restrito ao workspace sandbox sem path traversal.\n4. Auto-crítica ADE aprovada sem TODOs pendentes (`*critique`).\n",
+        "timestamp": 1790967598.4617567
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "ola amigo, como estao as coisas no squad?",
+        "timestamp": 1790967612.3445504
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*decisions",
+        "timestamp": 1790967613.2933652
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "### 🏛️ Decisões Arquiteturais Registradas (AIOX ADRs)\n- **[ADR-001] Persistência com SQLite e SQLAlchemy 2.0:** Utilizar create_engine('sqlite:///...') com connect_args={'check_same_thread': False} e sessionmaker assíncrono para operações de banco. *(Por: Alex Tech Lead)*\n- **[ADR-002] Arquitetura Modular com FastAPI APIRouter:** Todas as rotas HTTP devem ser agrupadas em routers prefixados dentro de src/routers/ com validação estrita via esquemas Pydantic. *(Por: Alex Tech Lead)*\n- **[ADR-003] Governança Multinível e Comunicação Lateral AIOX:** Sudo Agent coordena a governança macro. Squad Leaders possuem autonomia técnica e cooperam lateralmente via tickets de assistência técnica. *(Por: Sudo Agent)*\n- **[ADR-004] JWT Auth com Algoritmo EdDSA:** Utilizar tokens JWT assinados com chaves assimétricas EdDSA. *(Por: Roberto do cyber)*\n- **[ADR-005] JWT Auth com Algoritmo EdDSA:** Utilizar tokens JWT assinados com chaves assimétricas EdDSA. *(Por: Roberto do cyber)*\n- **[ADR-006] JWT Auth com Algoritmo EdDSA:** Utilizar tokens JWT assinados com chaves assimétricas EdDSA. *(Por: Roberto do cyber)*\n- **[ADR-007] JWT Auth com Algoritmo EdDSA:** Utilizar tokens JWT assinados com chaves assimétricas EdDSA. *(Por: Roberto do cyber)*\n- **[ADR-008] JWT Auth com Algoritmo EdDSA:** Utilizar tokens JWT assinados com chaves assimétricas EdDSA. *(Por: Roberto do cyber)*\n- **[ADR-009] JWT Auth com Algoritmo EdDSA:** Utilizar tokens JWT assinados com chaves assimétricas EdDSA. *(Por: Roberto do cyber)*\n- **[ADR-010] JWT Auth com Algoritmo EdDSA:** Utilizar tokens JWT assinados com chaves assimétricas EdDSA. *(Por: Roberto do cyber)*\n- **[ADR-011] JWT Auth com Algoritmo EdDSA:** Utilizar tokens JWT assinados com chaves assimétricas EdDSA. *(Por: Roberto do cyber)*",
+        "timestamp": 1790967613.3156228
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*gotchas",
+        "timestamp": 1790967613.3540988
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "### ⚠️ Armadilhas Conhecidas (AIOX Gotchas)\n- ⚠️ **[GOTCHA-001] Groq JSON Mode em Mensagens Conversacionais:** Provedores com json_mode estrito retornam HTTP 400 se o prompt contiver saudação ou texto livre. Deve-se interceptar com fallback automático. *(Por: Sudo Agent)*\n- ⚠️ **[GOTCHA-002] Path Traversal e Symlinks no Sandbox:** Todo acesso a arquivos deve validar target.relative_to(ws_root) e proibir links simbólicos para evitar evasão de sandbox. *(Por: Roberto do cyber)*\n- ⚠️ **[GOTCHA-003] SQLite Concurrency:** Usar timeout de conexao *(Por: Alex Tech Lead)*\n- ⚠️ **[GOTCHA-004] SQLite Concurrency:** Usar timeout de conexao *(Por: Alex Tech Lead)*\n- ⚠️ **[GOTCHA-005] SQLite Concurrency:** Usar timeout de conexao *(Por: Alex Tech Lead)*\n- ⚠️ **[GOTCHA-006] SQLite Concurrency:** Usar timeout de conexao *(Por: Aria (@architect))*\n- ⚠️ **[GOTCHA-007] SQLite Concurrency:** Usar timeout de conexao *(Por: Aria (@architect))*\n- ⚠️ **[GOTCHA-008] SQLite Concurrency:** Usar timeout de conexao *(Por: Aria (@architect))*\n- ⚠️ **[GOTCHA-009] SQLite Concurrency:** Usar timeout de conexao *(Por: Aria (@architect))*",
+        "timestamp": 1790967613.364466
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*critique",
+        "timestamp": 1790967613.406077
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "# 🔍 ADE SELF-CRITIQUE REPORT (AIOX)\n\n- **Data:** 2026-10-02 16:00:13\n- **Diretório Analisado:** `src`\n- **Arquivos Inspecionados:** 15 módulos Python\n- **Score:** 100/100\n- **Veredito:** ✅ APROVADO\n\n## Itens da Auto-Crítica:\n- ✅ Zero placeholders ou TODOs pendentes no código.\n- ✅ `src\\db\\database.py`: Conexão SQLite conforme com ADR-001.\n\n---\n*Gerado automaticamente pelo motor ADE (Autonomous Development Engine) do AgentOffice 2D.*",
+        "timestamp": 1790967613.4257953
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*remember gotcha SQLite Concurrency: Usar timeout de conexao",
+        "timestamp": 1790967613.4626048
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "⚠️ Armadilha `GOTCHA-010` registrada na memória persistente!",
+        "timestamp": 1790967613.476194
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "@architect valide o blueprint",
+        "timestamp": 1790967613.7522557
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*skills",
+        "timestamp": 1790967898.844331
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "### ⚡ Central de Claude Skills — AIOX Agent Hub\n\n**Skills Atualmente Instaladas (7):**\n- ⚡ **Claude Frontend Craftsman** (`frontend-craftsman`) [v1.2.0 — frontend]: Especialista em interfaces web modernas, responsivas e visualmente ricas com HTML5 semântico, CSS avançado (glassmorphism, gradientes, tipografia moderna) e JavaScript nativo.\n  *Atribuída a:* `*`\n- ⚡ **Claude System Architect** (`claude-code-architect`) [v1.1.0 — architecture]: Engenharia de software de alta fidelidade: arquitetura limpa, separação de camadas (Clean Architecture), contratos tipados com Pydantic, resiliência assíncrona e desacoplamento de storage.\n  *Atribuída a:* `*`\n- ⚡ **Python Security & OWASP Auditor** (`python-security-auditor`) [v1.3.0 — security]: Hardening corporativo e auditoria estática contra OWASP Top 10: prevenção a SQL Injection, XSS, Path Traversal em sandboxes, sanitização de inputs e mitigação de DoS.\n  *Atribuída a:* `*`\n- ⚡ **2D Canvas & Arcade Game Engine** (`game-engine-2d`) [v1.0.0 — code]: Especialista em desenvolvimento de jogos 2D nativos: game loop estável em 60 FPS, detecção de colisão AABB, física vetorial (gravidade, aceleração, atrito), partículas e HUD de pontuação.\n  *Atribuída a:* `*`\n- ⚡ **Automated QA & ADE Quality Gatekeeper** (`qa-quality-gatekeeper`) [v1.2.0 — qa]: Garantia de qualidade autônoma: inspeção via AST (Abstract Syntax Tree), cobertura de critérios de aceite (ACs), prevenção de TODOs/placeholders e auto-crítica ADE com score 100/100.\n  *Atribuída a:* `*`\n- ⚡ **Technical Documentation & Story Writer** (`api-doc-story-writer`) [v1.0.0 — docs]: Documentação técnica corporativa de alta precisão: especificações OpenAPI 3.0, redação de Histórias formais de desenvolvimento (AIOX Stories) e resumos executivos.\n  *Atribuída a:* `*`\n- ⚡ **Data Extraction & Web Scraping Specialist** (`scraping-data-extractor`) [v1.0.0 — code]: Extração estruturada de dados da web: requisições HTTP seguras, parsing de HTML/JSON, rotação de headers (User-Agent), extração via Regex/Seletores e gravação em CSV/JSON no sandbox.\n  *Atribuída a:* `*`\n\n**Disponíveis no Catálogo para Download/Instalação:**\nTodas as skills do catálogo já estão instaladas.\n\n---\n**Comandos Rápidos de Skills:**\n- `*skill-install <id|url>`: Baixa e instala skill do catálogo ou URL externa.\n- `*skill-assign <id> <@handle|squad_id|*>`: Atribui skill a um agente ou departamento.\n- `*skill-remove <id>`: Remove uma skill instalada.\n",
+        "timestamp": 1790967898.8709457
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*help",
+        "timestamp": 1790967904.5942137
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "### 🤖 Matriz de Recursos AIOX — Aria (@architect)\n- **Cargo:** Software Architect & Tech Lead\n- **Tier:** `squad_leader`\n- **Squad / Sala:** `squad-core-engineering` (Sala: `room_dev`)\n- **Mesa Atribuída:** `desk-1`\n- **Ferramentas Habilitadas:** `fs_read_file`, `fs_write_file`, `fs_list_directory`, `fs_create_directory`\n\n**Comandos Rápidos AIOX (CLI First):**\n- `*help`: Exibe esta matriz de recursos e comandos do agente.\n- `*status`: Exibe o estado operacional, ocupação e tickets inter-squad.\n- `*qa` ou `*test`: Executa o Quality Gate estático e validação de sintaxe (AST) no sandbox.\n- `*critique`: Executa auto-crítica ADE (Autonomous Development Engine) do código.\n- `*decisions`: Lista as Decisões Arquiteturais Registradas (ADRs).\n- `*gotchas`: Lista as armadilhas e edge cases conhecidos.\n- `*insights`: Lista os insights aprendidos entre sessões.\n- `*skills`: Lista as Claude Skills instaladas e catálogo disponível.\n- `*skill-install <id|url>`: Baixa e instala uma Claude Skill.\n- `*skill-assign <id> <@handle|squad>`: Concede uma Claude Skill.\n- `*remember <categoria> <texto>`: Salva nova regra na memória persistente.\n- `*rules` ou `*manifest`: Exibe o manifesto e as regras de Definition of Done (DoD) do squad.\n- `*export-squad`: Gera manifesto YAML compatível com o ecossistema AIOX.\n- `*plan <meta>`: Gera documento estruturado de planejamento técnico.\n",
+        "timestamp": 1790967904.600929
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*status",
+        "timestamp": 1790967904.6347919
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "### 📊 Status Operacional AIOX — Aria (@architect)\n- **Estado do Agente:** `idle`\n- **Squad / Sala:** `squad-core-engineering` (Sala: `room_dev`)\n- **Subordinados:** 2 agentes sob liderança\n- **Mesa Física:** `desk-1`\n- **Tickets Inter-Squad Ativos:** 17\n- **Claude Skills Habilitadas:** 7 skills (Claude Frontend Craftsman, Claude System Architect, Python Security & OWASP Auditor, 2D Canvas & Arcade Game Engine, Automated QA & ADE Quality Gatekeeper, Technical Documentation & Story Writer, Data Extraction & Web Scraping Specialist)\n- **Sandbox Root:** `C:\\Users\\jeffb\\OneDrive\\Desktop\\agentoffice\\workspace`\n",
+        "timestamp": 1790967904.6451454
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*rules",
+        "timestamp": 1790967904.6773436
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "### 📜 Manifesto do Squad — Squad Core Engineering\n- **Sala:** `room_dev`\n- **Domínio Técnico:** python, fastapi, sqlite, architecture, scrum, backend\n- **Descrição:** Arquitetura e desenvolvimento de software, APIs e persistência.\n- **Líder Atual:** `agent-1c137c`\n- **Membros:** 3 agentes\n\n**Diretrizes de Qualidade AIOX (Definition of Done):**\n1. Código executável e validado via AST check (`*qa`).\n2. Nenhuma credencial ou segredo gravado em arquivos de código.\n3. Isolamento restrito ao workspace sandbox sem path traversal.\n4. Auto-crítica ADE aprovada sem TODOs pendentes (`*critique`).\n",
+        "timestamp": 1790967904.693537
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "ola amigo, como estao as coisas no squad?",
+        "timestamp": 1790967925.5740376
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*decisions",
+        "timestamp": 1790967926.4680352
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "### 🏛️ Decisões Arquiteturais Registradas (AIOX ADRs)\n- **[ADR-001] Persistência com SQLite e SQLAlchemy 2.0:** Utilizar create_engine('sqlite:///...') com connect_args={'check_same_thread': False} e sessionmaker assíncrono para operações de banco. *(Por: Alex Tech Lead)*\n- **[ADR-002] Arquitetura Modular com FastAPI APIRouter:** Todas as rotas HTTP devem ser agrupadas em routers prefixados dentro de src/routers/ com validação estrita via esquemas Pydantic. *(Por: Alex Tech Lead)*\n- **[ADR-003] Governança Multinível e Comunicação Lateral AIOX:** Sudo Agent coordena a governança macro. Squad Leaders possuem autonomia técnica e cooperam lateralmente via tickets de assistência técnica. *(Por: Sudo Agent)*\n- **[ADR-004] JWT Auth com Algoritmo EdDSA:** Utilizar tokens JWT assinados com chaves assimétricas EdDSA. *(Por: Roberto do cyber)*\n- **[ADR-005] JWT Auth com Algoritmo EdDSA:** Utilizar tokens JWT assinados com chaves assimétricas EdDSA. *(Por: Roberto do cyber)*\n- **[ADR-006] JWT Auth com Algoritmo EdDSA:** Utilizar tokens JWT assinados com chaves assimétricas EdDSA. *(Por: Roberto do cyber)*\n- **[ADR-007] JWT Auth com Algoritmo EdDSA:** Utilizar tokens JWT assinados com chaves assimétricas EdDSA. *(Por: Roberto do cyber)*\n- **[ADR-008] JWT Auth com Algoritmo EdDSA:** Utilizar tokens JWT assinados com chaves assimétricas EdDSA. *(Por: Roberto do cyber)*\n- **[ADR-009] JWT Auth com Algoritmo EdDSA:** Utilizar tokens JWT assinados com chaves assimétricas EdDSA. *(Por: Roberto do cyber)*\n- **[ADR-010] JWT Auth com Algoritmo EdDSA:** Utilizar tokens JWT assinados com chaves assimétricas EdDSA. *(Por: Roberto do cyber)*\n- **[ADR-011] JWT Auth com Algoritmo EdDSA:** Utilizar tokens JWT assinados com chaves assimétricas EdDSA. *(Por: Roberto do cyber)*\n- **[ADR-012] JWT Auth com Algoritmo EdDSA:** Utilizar tokens JWT assinados com chaves assimétricas EdDSA. *(Por: Roberto do cyber)*",
+        "timestamp": 1790967926.4830303
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*gotchas",
+        "timestamp": 1790967926.517515
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "### ⚠️ Armadilhas Conhecidas (AIOX Gotchas)\n- ⚠️ **[GOTCHA-001] Groq JSON Mode em Mensagens Conversacionais:** Provedores com json_mode estrito retornam HTTP 400 se o prompt contiver saudação ou texto livre. Deve-se interceptar com fallback automático. *(Por: Sudo Agent)*\n- ⚠️ **[GOTCHA-002] Path Traversal e Symlinks no Sandbox:** Todo acesso a arquivos deve validar target.relative_to(ws_root) e proibir links simbólicos para evitar evasão de sandbox. *(Por: Roberto do cyber)*\n- ⚠️ **[GOTCHA-003] SQLite Concurrency:** Usar timeout de conexao *(Por: Alex Tech Lead)*\n- ⚠️ **[GOTCHA-004] SQLite Concurrency:** Usar timeout de conexao *(Por: Alex Tech Lead)*\n- ⚠️ **[GOTCHA-005] SQLite Concurrency:** Usar timeout de conexao *(Por: Alex Tech Lead)*\n- ⚠️ **[GOTCHA-006] SQLite Concurrency:** Usar timeout de conexao *(Por: Aria (@architect))*\n- ⚠️ **[GOTCHA-007] SQLite Concurrency:** Usar timeout de conexao *(Por: Aria (@architect))*\n- ⚠️ **[GOTCHA-008] SQLite Concurrency:** Usar timeout de conexao *(Por: Aria (@architect))*\n- ⚠️ **[GOTCHA-009] SQLite Concurrency:** Usar timeout de conexao *(Por: Aria (@architect))*\n- ⚠️ **[GOTCHA-010] SQLite Concurrency:** Usar timeout de conexao *(Por: Aria (@architect))*",
+        "timestamp": 1790967926.5245824
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*critique",
+        "timestamp": 1790967926.5601938
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "# 🔍 ADE SELF-CRITIQUE REPORT (AIOX)\n\n- **Data:** 2026-10-02 16:05:26\n- **Diretório Analisado:** `src`\n- **Arquivos Inspecionados:** 18 módulos Python\n- **Score:** 100/100\n- **Veredito:** ✅ APROVADO\n\n## Itens da Auto-Crítica:\n- ✅ Zero placeholders ou TODOs pendentes no código.\n- ✅ `src\\db\\database.py`: Conexão SQLite conforme com ADR-001.\n\n---\n*Gerado automaticamente pelo motor ADE (Autonomous Development Engine) do AgentOffice 2D.*",
+        "timestamp": 1790967926.5711243
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "*remember gotcha SQLite Concurrency: Usar timeout de conexao",
+        "timestamp": 1790967926.6178837
+      },
+      {
+        "sender": "agent-1c137c",
+        "role": "assistant",
+        "text": "⚠️ Armadilha `GOTCHA-011` registrada na memória persistente!",
+        "timestamp": 1790967926.6259253
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "@architect valide o blueprint",
+        "timestamp": 1790967926.9185848
       }
     ],
     "agent-97c7df": [
@@ -1978,6 +2611,18 @@
         "role": "user",
         "text": "@dev implemente rota de ping",
         "timestamp": 1790965530.537427
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "@dev implemente rota de ping",
+        "timestamp": 1790967613.509413
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "@dev implemente rota de ping",
+        "timestamp": 1790967926.667382
       }
     ],
     "agent-ce2916": [
@@ -2072,6 +2717,18 @@
         "role": "user",
         "text": "@qa audite os relatórios",
         "timestamp": 1790965531.0537152
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "@qa audite os relatórios",
+        "timestamp": 1790967613.997407
+      },
+      {
+        "sender": "user",
+        "role": "user",
+        "text": "@qa audite os relatórios",
+        "timestamp": 1790967927.1599617
       }
     ]
   },

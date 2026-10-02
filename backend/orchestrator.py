@@ -19,9 +19,13 @@ from backend.models import (
     Desk,
     SpawnSubagentParams,
     WorkspaceData,
+    ClaudeSkill,
+    SkillInstallRequest,
+    SkillAssignRequest,
 )
 from backend.memory_layer import memory_layer
 from backend.storage import storage
+from backend.tools.skill_manager import skill_manager
 from backend.tools.filesystem import (
     SecuritySandboxError,
     _get_workspace_dir,
@@ -201,6 +205,9 @@ class Orchestrator:
                 "- `*decisions`: Lista as Decisões Arquiteturais Registradas (ADRs).\n"
                 "- `*gotchas`: Lista as armadilhas e edge cases conhecidos.\n"
                 "- `*insights`: Lista os insights aprendidos entre sessões.\n"
+                "- `*skills`: Lista as Claude Skills instaladas e catálogo disponível.\n"
+                "- `*skill-install <id|url>`: Baixa e instala uma Claude Skill.\n"
+                "- `*skill-assign <id> <@handle|squad>`: Concede uma Claude Skill.\n"
                 "- `*remember <categoria> <texto>`: Salva nova regra na memória persistente.\n"
                 "- `*rules` ou `*manifest`: Exibe o manifesto e as regras de Definition of Done (DoD) do squad.\n"
                 "- `*export-squad`: Gera manifesto YAML compatível com o ecossistema AIOX.\n"
@@ -209,6 +216,7 @@ class Orchestrator:
         elif cmd in ("*status", "*estado"):
             tickets_count = len(getattr(workspace, "active_tickets", []) or [])
             sub_count = len(getattr(agent, "subordinate_ids", []) or [])
+            active_skills = skill_manager.get_active_skills_for_agent(agent)
             reply = (
                 f"### 📊 Status Operacional AIOX — {agent.name}\n"
                 f"- **Estado do Agente:** `{agent.state.value if hasattr(agent.state, 'value') else agent.state}`\n"
@@ -216,8 +224,58 @@ class Orchestrator:
                 f"- **Subordinados:** {sub_count} agentes sob liderança\n"
                 f"- **Mesa Física:** `{agent.desk_id}`\n"
                 f"- **Tickets Inter-Squad Ativos:** {tickets_count}\n"
+                f"- **Claude Skills Habilitadas:** {len(active_skills)} skills ({', '.join([s.name for s in active_skills]) or 'Nenhuma'})\n"
                 f"- **Sandbox Root:** `{storage.load_config().workspace_dir or 'sandbox ativo'}`\n"
             )
+        elif cmd in ("*skills", "*skills-list"):
+            installed = skill_manager.list_installed_skills()
+            catalog = skill_manager.list_catalog()
+            installed_txt = "\n".join([
+                f"- ⚡ **{s.name}** (`{s.id}`) [v{s.version} — {s.category}]: {s.description}\n  *Atribuída a:* `{', '.join(s.assigned_to)}`"
+                for s in installed
+            ]) if installed else "Nenhuma skill instalada no momento."
+
+            uninstalled_catalog = [c for c in catalog if not c.get("is_installed")]
+            catalog_txt = ", ".join([f"`{c['id']}`" for c in uninstalled_catalog]) if uninstalled_catalog else "Todas as skills do catálogo já estão instaladas."
+
+            reply = (
+                f"### ⚡ Central de Claude Skills — AIOX Agent Hub\n\n"
+                f"**Skills Atualmente Instaladas ({len(installed)}):**\n{installed_txt}\n\n"
+                f"**Disponíveis no Catálogo para Download/Instalação:**\n{catalog_txt}\n\n"
+                f"---\n"
+                f"**Comandos Rápidos de Skills:**\n"
+                f"- `*skill-install <id|url>`: Baixa e instala skill do catálogo ou URL externa.\n"
+                f"- `*skill-assign <id> <@handle|squad_id|*>`: Atribui skill a um agente ou departamento.\n"
+                f"- `*skill-remove <id>`: Remove uma skill instalada.\n"
+            )
+        elif cmd == "*skill-install":
+            if not args:
+                reply = "⚠️ Especifique o ID da skill do catálogo ou uma URL de download. Exemplo: `*skill-install frontend-craftsman` ou `*skill-install https://.../SKILL.md`"
+            else:
+                try:
+                    is_url = args.startswith("http://") or args.startswith("https://")
+                    req = SkillInstallRequest(url=args if is_url else None, skill_id=None if is_url else args)
+                    skill = asyncio.run(skill_manager.download_or_install_skill(req, requester_agent_id=agent.id))
+                    reply = f"✅ Claude Skill **'{skill.name}'** (`{skill.id}`) instalada com sucesso e atribuída para `{', '.join(skill.assigned_to)}`!"
+                except Exception as err:
+                    reply = f"❌ Erro ao instalar Claude Skill: {err}"
+        elif cmd == "*skill-assign":
+            if not args or len(args.split()) < 2:
+                reply = "⚠️ Formato esperado: `*skill-assign <skill_id> <alvo>`\nExemplo: `*skill-assign frontend-craftsman @dev`"
+            else:
+                parts = args.split()
+                s_id, target = parts[0], parts[1]
+                try:
+                    skill = asyncio.run(skill_manager.assign_skill(s_id, target, "assign"))
+                    reply = f"✅ Claude Skill **'{skill.name}'** atribuída com sucesso para `{target}`!"
+                except Exception as err:
+                    reply = f"❌ Erro ao atribuir skill: {err}"
+        elif cmd == "*skill-remove":
+            if not args:
+                reply = "⚠️ Especifique o ID da skill a ser removida. Exemplo: `*skill-remove frontend-craftsman`"
+            else:
+                ok = asyncio.run(skill_manager.remove_skill(args))
+                reply = f"✅ Claude Skill `{args}` removida com sucesso do escritório." if ok else f"⚠️ Skill `{args}` não foi encontrada."
         elif cmd in ("*qa", "*test", "*teste"):
             ws_root = _get_workspace_dir()
             py_files = list(ws_root.glob("**/*.py"))

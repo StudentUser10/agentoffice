@@ -241,6 +241,7 @@ class Agent(BaseModel):
     is_temporary: bool = False
     aiox_handle: Optional[str] = None       # Ex: "@aiox-master", "@architect", "@dev", "@sm", "@qa", "@sec", "@doc"
     aiox_role: Optional[str] = None         # Ex: "master", "architect", "dev", "sm", "qa", "sec", "doc"
+    skills: List[str] = Field(default_factory=list) # IDs de Claude Skills habilitadas para este agente
 
 
 class AgentConfig(BaseModel):
@@ -256,6 +257,7 @@ class AgentConfig(BaseModel):
     status: str = "idle"
     aiox_handle: Optional[str] = None
     aiox_role: Optional[str] = None
+    skills: List[str] = Field(default_factory=list)
 
 
 class CrossSquadTicket(BaseModel):
@@ -299,6 +301,7 @@ class AgentCreateRequest(BaseModel):
     model_name: Optional[str] = None
     aiox_handle: Optional[str] = None
     aiox_role: Optional[str] = None
+    skills: Optional[List[str]] = None
 
 
 class AgentUpdateRequest(BaseModel):
@@ -315,6 +318,7 @@ class AgentUpdateRequest(BaseModel):
     model_name: Optional[str] = None
     aiox_handle: Optional[str] = None
     aiox_role: Optional[str] = None
+    skills: Optional[List[str]] = None
 
 
 class ChatMessage(BaseModel):
@@ -349,6 +353,7 @@ class AgentTemplate(BaseModel):
     default_model: str = ""
     aiox_handle: Optional[str] = None
     aiox_role: Optional[str] = None
+    skills: List[str] = Field(default_factory=list)
 
 
 class Squad(BaseModel):
@@ -359,6 +364,7 @@ class Squad(BaseModel):
     member_ids: List[str] = Field(default_factory=list)
     agent_ids: List[str] = Field(default_factory=list) # Compatibilidade legada
     domain_tags: List[str] = Field(default_factory=list) # Ex: ["python", "api", "database", "fastapi"]
+    skills: List[str] = Field(default_factory=list)      # IDs de Claude Skills atribuídas a este Squad
     color_theme: str = "#38bdf8"    # Cor distintiva do crachá/balão (hex)
     description: str = ""
     created_at: float = Field(default_factory=time.time)
@@ -542,4 +548,46 @@ class DiagnosticResult(BaseModel):
     timestamp: float = Field(default_factory=time.time)
     items: List[DiagnosticItem] = Field(default_factory=list)
     system_info: Dict[str, Any] = Field(default_factory=dict)
+
+
+# --- Claude Skills Models ---
+
+class ClaudeSkill(BaseModel):
+    id: str                                # Ex: "frontend-craftsman", "python-security-auditor"
+    name: str                              # Nome humano da skill
+    description: str                       # Breve descrição da skill e quando usá-la
+    version: str = "1.0.0"
+    author: str = "Anthropic / Community"
+    category: str = "code"                 # "code", "security", "qa", "frontend", "architecture", "devops", "docs"
+    tags: List[str] = Field(default_factory=list)
+    instructions: str                      # Corpo de instruções / diretrizes (SKILL.md)
+    allowed_roles: List[str] = Field(default_factory=lambda: ["master", "architect", "dev", "qa", "sec", "doc", "sm"])
+    assigned_to: List[str] = Field(default_factory=list) # IDs de agentes ou squads autorizados, ou "*" para todos
+    source: str = "catalog"                # "catalog", "url", "custom"
+    source_url: Optional[str] = None
+    enabled: bool = True
+    created_at: float = Field(default_factory=time.time)
+
+
+class SkillInstallRequest(BaseModel):
+    skill_id: Optional[str] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    url: Optional[str] = None
+    instructions: Optional[str] = None
+    category: Optional[str] = "code"
+    tags: Optional[List[str]] = None
+    assigned_to: Optional[List[str]] = None
+
+
+class SkillAssignRequest(BaseModel):
+    skill_id: str
+    target_id: str                         # ID do agente, ID do squad ou "*"
+    action: str = "assign"                 # "assign" ou "unassign"
+
+
+class SkillRegistryData(BaseModel):
+    version: str = "1.0"
+    skills: List[ClaudeSkill] = Field(default_factory=list)
+
 

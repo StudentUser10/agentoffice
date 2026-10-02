@@ -58,10 +58,14 @@ from backend.models import (
     WorkflowUpdateRequest,
     WorkflowsData,
     WorkspaceData,
+    ClaudeSkill,
+    SkillInstallRequest,
+    SkillAssignRequest,
 )
 from backend.orchestrator import orchestrator
 from backend.orchestrator_multi_tier import multi_tier_orchestrator
 from backend.tools.squad_tools import resolve_cross_squad_ticket
+from backend.tools.skill_manager import skill_manager
 import yaml
 from backend.memory_layer import memory_layer
 from backend.diagnostics import run_system_diagnostics
@@ -1310,6 +1314,61 @@ async def import_squad_yaml(payload: Dict[str, Any]):
     storage.save_squads(squads_data, backup=False)
     await hub.broadcast_system_notice(f"📦 [AIOX:SQUAD] Squad '{squad_name}' importado com sucesso via squad.yaml!")
     return {"status": "imported", "squad": saved_squad.model_dump()}
+
+
+# --- Rotas de Claude Skills ---
+
+@app.get("/api/skills")
+async def list_skills():
+    """Lista as Claude Skills instaladas no workspace e o catálogo disponível."""
+    installed = skill_manager.list_installed_skills()
+    catalog = skill_manager.list_catalog()
+    return {
+        "installed": [s.model_dump() for s in installed],
+        "catalog": catalog,
+        "total_installed": len(installed)
+    }
+
+
+@app.post("/api/skills/install")
+async def install_skill(req: SkillInstallRequest):
+    """Baixa ou instala uma Claude Skill a partir de URL, do Catálogo ou definição customizada."""
+    try:
+        skill = await skill_manager.download_or_install_skill(req, requester_agent_id="user_api")
+        return {"status": "installed", "skill": skill.model_dump()}
+    except Exception as e:
+        logger.error(f"[API] Erro ao instalar skill: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/skills/assign")
+async def assign_skill_endpoint(req: SkillAssignRequest):
+    """Atribui ou revoga uma Claude Skill para um agente ou squad."""
+    try:
+        skill = await skill_manager.assign_skill(req.skill_id, req.target_id, req.action)
+        return {"status": "success", "skill": skill.model_dump()}
+    except Exception as e:
+        logger.error(f"[API] Erro ao atribuir skill: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/api/skills/{skill_id}")
+async def get_skill_details(skill_id: str):
+    """Obtém detalhes de uma skill instalada."""
+    skill = skill_manager.get_skill(skill_id)
+    if not skill:
+        raise HTTPException(status_code=404, detail="Skill não encontrada.")
+    return skill.model_dump()
+
+
+@app.delete("/api/skills/{skill_id}")
+async def remove_skill_endpoint(skill_id: str):
+    """Remove uma skill instalada."""
+    success = await skill_manager.remove_skill(skill_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Skill não encontrada para remoção.")
+    return {"status": "removed", "skill_id": skill_id}
+
 
 
 

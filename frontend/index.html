@@ -24,6 +24,9 @@
       <button class="btn-icon" id="openSudoModalBtn" type="button" title="Sala da Diretoria (Sudo Agent)" style="background: rgba(245, 158, 11, 0.15); border-color: #f59e0b; color: #fbbf24;">
         👑 Diretoria (Sudo)
       </button>
+      <button class="btn-icon header-badge-btn" id="openSkillsModalBtn" type="button" title="Gestão de Claude Skills (Habilidades Especializadas)" style="background: rgba(147, 51, 234, 0.15); border-color: #9333ea; color: #c084fc;">
+        ⚡ Skills Claude <span class="badge-count" id="skillsActiveBadge" style="background: #9333ea;">7</span>
+      </button>
       <button class="btn-icon header-badge-btn" id="openHierarchyBtn" type="button" title="Organograma Corporativo e Tickets Inter-Squad">
         🏛️ Organograma & Tickets <span class="badge-count" id="ticketsActiveBadge" style="display: none; background: #a855f7;">0</span>
       </button>
@@ -137,6 +140,7 @@
 
     <!-- AIOX Quick Actions Pill Bar (CLI First) -->
     <div class="aiox-quick-bar" id="aioxQuickBar" style="display: flex; gap: 6px; padding: 6px 12px; background: rgba(15, 23, 42, 0.7); border-top: 1px solid rgba(255, 255, 255, 0.08); overflow-x: auto;">
+      <button type="button" class="btn-aiox-chip" data-cmd="*skills" title="Listar e mobilizar Skills Claude" style="border-color: #a855f7; color: #c084fc;">⚡ *skills</button>
       <button type="button" class="btn-aiox-chip" data-cmd="*help" title="Ajuda e matriz de comandos do agente">📋 *help</button>
       <button type="button" class="btn-aiox-chip" data-cmd="*status" title="Status operacional e tickets">📊 *status</button>
       <button type="button" class="btn-aiox-chip" data-cmd="*qa" title="Executar Quality Gate e validação AST">🛡️ *qa</button>
@@ -234,6 +238,14 @@
               System Prompt (Instruções e Especialidade)
             </label>
             <textarea class="form-textarea" id="agentPromptInput" rows="3" placeholder="Instruções para o comportamento e área de atuação do agente..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="agentSkillsInput">
+              Habilidades Claude (IDs separados por vírgula)
+              <span class="label-hint">Ex: frontend-craftsman, python-security-auditor</span>
+            </label>
+            <input type="text" class="form-input" id="agentSkillsInput" placeholder="Ex: frontend-craftsman, python-security-auditor">
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -567,6 +579,94 @@
     </div>
   </div>
 
+  <!-- Modal de Gestão de Claude Skills (Anthropic SKILL.md Architecture) -->
+  <div class="modal-overlay" id="skillsModal">
+    <div class="modal-card skills-modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon" style="background: rgba(147, 51, 234, 0.2); border: 1px solid #9333ea; color: #c084fc;">⚡</div>
+          <div>
+            <div class="modal-title">Claude Skills Engine & Delegador Corporativo</div>
+            <div class="modal-subtitle">Habilidades no formato Anthropic SKILL.md — Pax (@aiox-master) e Líderes de Squad</div>
+          </div>
+        </div>
+        <button class="btn-close" id="closeSkillsModalBtn" type="button">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 18px 24px; max-height: 75vh; overflow-y: auto;">
+        
+        <!-- Info Banner de Autonomia Hierárquica -->
+        <div class="skills-info-banner">
+          <span class="info-icon">🧠</span>
+          <div>
+            <strong>Autonomia Hierárquica AIOX:</strong> Pax (<code>@aiox-master</code>) tem autoridade suprema para baixar, auto-atribuir ou delegar skills para qualquer subordinado. Durante épicos, as skills ativas de cada squad são <em>automaticamente injetadas nos prompts</em> dos agentes executores.
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="skills-tabs">
+          <button class="skills-tab-btn active" id="tabInstalledSkillsBtn" type="button">📦 Habilidades Instaladas (<span id="installedSkillsCount">0</span>)</button>
+          <button class="skills-tab-btn" id="tabCatalogSkillsBtn" type="button">🌟 Catálogo Claude (1-Clique)</button>
+          <button class="skills-tab-btn" id="tabDownloadCustomSkillBtn" type="button">🌐 Baixar URL / Customizar</button>
+        </div>
+
+        <!-- Tab 1: Installed Skills -->
+        <div class="skills-tab-content active" id="tabContentInstalledSkills">
+          <div class="skills-toolbar" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 12px; color: var(--text-muted);">Skills ativas no escritório e atribuídas aos squads/subagentes:</div>
+            <button class="btn-action btn-sm" id="refreshSkillsBtn" type="button">🔄 Atualizar</button>
+          </div>
+          <div class="skills-grid" id="installedSkillsGrid">
+            <!-- Renderizado dinamicamente via JS -->
+          </div>
+        </div>
+
+        <!-- Tab 2: Catalog Skills -->
+        <div class="skills-tab-content" id="tabContentCatalogSkills" style="display: none;">
+          <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+            Catálogo curado de Habilidades Oficiais Claude prontas para ativação imediata no escritório:
+          </div>
+          <div class="skills-grid" id="catalogSkillsGrid">
+            <!-- Renderizado dinamicamente via JS -->
+          </div>
+        </div>
+
+        <!-- Tab 3: Download from URL / Create Custom -->
+        <div class="skills-tab-content" id="tabContentDownloadCustomSkill" style="display: none;">
+          <div class="custom-skill-form-box">
+            <div style="font-weight: 700; font-size: 13px; margin-bottom: 8px; color: #38bdf8;">📥 Baixar Skill Externa via URL (GitHub Raw / Web)</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px;">
+              Insira o link para um arquivo <code>SKILL.md</code> remoto com frontmatter YAML (compatível com Anthropic Claude Skills).
+            </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 18px;">
+              <input type="url" class="form-input" id="skillUrlInput" placeholder="https://raw.githubusercontent.com/user/repo/main/skills/my-skill/SKILL.md" style="flex: 1;">
+              <button class="btn-primary" id="downloadSkillUrlBtn" type="button">⚡ Baixar & Instalar</button>
+            </div>
+
+            <div style="border-top: 1px dashed var(--border-color); padding-top: 16px; margin-top: 16px;">
+              <div style="font-weight: 700; font-size: 13px; margin-bottom: 8px; color: #a855f7;">✍️ Criar Habilidade Claude Customizada</div>
+              <div class="form-group">
+                <label class="form-label" for="customSkillNameInput">Nome da Habilidade</label>
+                <input type="text" class="form-input" id="customSkillNameInput" placeholder="Ex: Microservices Architect">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="customSkillDescInput">Descrição Curta</label>
+                <input type="text" class="form-input" id="customSkillDescInput" placeholder="Ex: Padrões de mensageria, eventos e isolamento de domínio">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="customSkillContentInput">Instruções da Skill (Markdown / Diretrizes)</label>
+                <textarea class="form-textarea" id="customSkillContentInput" rows="5" placeholder="## Diretrizes da Habilidade&#10;1. Use Event-Driven Architecture&#10;2. Implemente Sagas distribuídas..."></textarea>
+              </div>
+              <button class="btn-action" id="createCustomSkillBtn" type="button" style="background: rgba(147, 51, 234, 0.25); border-color: #9333ea; color: #c084fc;">
+                💾 Salvar & Ativar no Escritório
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <div class="toast-container" id="toastContainer"></div>
 
   <!-- Scripts Modulares -->
@@ -591,6 +691,7 @@
       // 3. Carregar Configurações e Workspace iniciais
       await loadInitialSystemConfig();
       await loadInitialWorkspace();
+      await window.officeUI.loadSkillsBadge();
     });
 
     // Configurações do Sistema (Modal Wizard)

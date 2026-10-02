@@ -1,0 +1,208 @@
+{
+  "version": "1.0",
+  "skills": [
+    {
+      "id": "frontend-craftsman",
+      "name": "Claude Frontend Craftsman",
+      "description": "Especialista em interfaces web modernas, responsivas e visualmente ricas com HTML5 semântico, CSS avançado (glassmorphism, gradientes, tipografia moderna) e JavaScript nativo.",
+      "version": "1.2.0",
+      "author": "Anthropic Claude / Community",
+      "category": "frontend",
+      "tags": [
+        "frontend",
+        "html5",
+        "css3",
+        "ui",
+        "ux",
+        "responsive",
+        "glassmorphism"
+      ],
+      "instructions": "DIRETRIZES DA SKILL CLAUDE FRONTEND CRAFTSMAN:\n1. Crie interfaces web que impressionem visualmente (efeito 'WOW'): cores harmoniosas, contraste refinado e tipografia moderna (ex: Inter, Segoe UI, Roboto).\n2. Utilize Vanilla CSS rico: glassmorphism suave (backdrop-filter: blur(8px)), gradientes lineares sutis, bordas translúcidas (rgba(255,255,255,0.1)) e sombras multicamadas (box-shadow).\n3. Layouts 100% responsivos utilizando CSS Grid (repeat(auto-fit, minmax(...))) e Flexbox moderno.\n4. Adicione micro-interações elegantes em hover, active e focus em botões e cards.\n5. Estrutura semântica rigorosa: <header>, <nav>, <main>, <section>, <article>, <footer> e um único <h1> por página.\n6. JavaScript nativo limpo, modular, com listeners após DOMContentLoaded e sem dependências externas desnecessárias.",
+      "allowed_roles": [
+        "dev",
+        "architect",
+        "master"
+      ],
+      "assigned_to": [
+        "*"
+      ],
+      "source": "catalog",
+      "source_url": null,
+      "enabled": true,
+      "created_at": 1790967081.7597044
+    },
+    {
+      "id": "claude-code-architect",
+      "name": "Claude System Architect",
+      "description": "Engenharia de software de alta fidelidade: arquitetura limpa, separação de camadas (Clean Architecture), contratos tipados com Pydantic, resiliência assíncrona e desacoplamento de storage.",
+      "version": "1.1.0",
+      "author": "Anthropic Claude / Community",
+      "category": "architecture",
+      "tags": [
+        "architecture",
+        "clean-code",
+        "solid",
+        "rest",
+        "pydantic",
+        "asyncio"
+      ],
+      "instructions": "DIRETRIZES DA SKILL CLAUDE SYSTEM ARCHITECT:\n1. Separação rigorosa de responsabilidades: Models (Pydantic), Routers/Controllers (HTTP), Services/Business Logic e Storage/Data Access.\n2. Proibido misturar lógica de banco de dados diretamente em endpoints de rota.\n3. Tipagem estática rigorosa em todas as assinaturas de funções e retornos assíncronos (async/await).\n4. Tratamento defensivo de exceções: capturar erros específicos, registrar logs com contexto e retornar status codes HTTP semanticamente corretos (200, 201, 400, 404, 422, 500).\n5. Código auto-documentado com docstrings em Markdown e comentários explicativos nas decisões não-triviais.",
+      "allowed_roles": [
+        "architect",
+        "master",
+        "dev"
+      ],
+      "assigned_to": [
+        "*"
+      ],
+      "source": "catalog",
+      "source_url": null,
+      "enabled": true,
+      "created_at": 1790967081.760697
+    },
+    {
+      "id": "python-security-auditor",
+      "name": "Python Security & OWASP Auditor",
+      "description": "Hardening corporativo e auditoria estática contra OWASP Top 10: prevenção a SQL Injection, XSS, Path Traversal em sandboxes, sanitização de inputs e mitigação de DoS.",
+      "version": "1.3.0",
+      "author": "Anthropic Claude / Community",
+      "category": "security",
+      "tags": [
+        "security",
+        "owasp",
+        "hardening",
+        "audit",
+        "sanitization",
+        "rate-limiting"
+      ],
+      "instructions": "DIRETRIZES DA SKILL PYTHON SECURITY AUDITOR:\n1. Sanitização obrigatória de todas as entradas de usuário utilizando escape HTML (html.escape) e remoção de caracteres de controle invisíveis.\n2. NUNCA execute concatenação de strings em comandos de sistema operacional (subprocess/os.system) ou queries SQL brutas. Use sempre ORMs ou query parameters parametrizados.\n3. Isolamento rigoroso de arquivos em Sandbox: valide se o caminho canônico do arquivo (Path.resolve()) reside obrigatoriamente dentro do diretório de workspace permitido.\n4. Imponha limites de taxa (Rate Limiting) e timeouts em chamadas externas para evitar exaustão de conexões ou negação de serviço (DoS).\n5. Bloqueie exposição de segredos, tokens ou senhas em logs ou retornos de APIs.",
+      "allowed_roles": [
+        "sec",
+        "master",
+        "architect"
+      ],
+      "assigned_to": [
+        "*"
+      ],
+      "source": "catalog",
+      "source_url": null,
+      "enabled": true,
+      "created_at": 1790967081.7616808
+    },
+    {
+      "id": "game-engine-2d",
+      "name": "2D Canvas & Arcade Game Engine",
+      "description": "Especialista em desenvolvimento de jogos 2D nativos: game loop estável em 60 FPS, detecção de colisão AABB, física vetorial (gravidade, aceleração, atrito), partículas e HUD de pontuação.",
+      "version": "1.0.0",
+      "author": "Anthropic Claude / Community",
+      "category": "code",
+      "tags": [
+        "game",
+        "canvas",
+        "physics",
+        "2d",
+        "arcade",
+        "collision",
+        "gameloop"
+      ],
+      "instructions": "DIRETRIZES DA SKILL 2D GAME ENGINE:\n1. Implemente o clássico loop de jogo desacoplado (update e render/draw) com base em requestAnimationFrame e cálculo de delta time (dt).\n2. Detecção de colisão eficiente: Axis-Aligned Bounding Box (AABB) ou cálculo de distância euclidiana para círculos/projéteis.\n3. Gerenciamento estruturado de entidades: Player, Inimigos/Obstáculos, Projéteis e Efeitos Particulados com arrays de vida útil.\n4. Suporte nativo a controles de teclado (WASD, setas, espaço) com captura suave de teclas pressionadas (key state dictionary).\n5. HUD em Canvas integrado exibindo pontuação, vidas restantes e tela de Game Over com botão de restart.",
+      "allowed_roles": [
+        "dev",
+        "master"
+      ],
+      "assigned_to": [
+        "*"
+      ],
+      "source": "catalog",
+      "source_url": null,
+      "enabled": true,
+      "created_at": 1790967081.7628543
+    },
+    {
+      "id": "qa-quality-gatekeeper",
+      "name": "Automated QA & ADE Quality Gatekeeper",
+      "description": "Garantia de qualidade autônoma: inspeção via AST (Abstract Syntax Tree), cobertura de critérios de aceite (ACs), prevenção de TODOs/placeholders e auto-crítica ADE com score 100/100.",
+      "version": "1.2.0",
+      "author": "Anthropic Claude / Community",
+      "category": "qa",
+      "tags": [
+        "qa",
+        "ast",
+        "testing",
+        "quality-gate",
+        "acceptance-criteria",
+        "dod"
+      ],
+      "instructions": "DIRETRIZES DA SKILL QA QUALITY GATEKEEPER:\n1. Todo arquivo Python gerado deve ser auditado via AST (ast.parse) antes de ser considerado pronto para entrega.\n2. Valide se a implementação atende a 100% dos Critérios de Aceite definidos na História AIOX.\n3. PROIBIDO aceitar código com comentários como '# TODO', '# placeholder' ou funções vazias que apenas contenham 'pass'.\n4. Verifique a conformidade com as ADRs (Decisões Arquiteturais) corporativas registradas na camada de memória.\n5. Emita relatórios formais em Markdown detalhando o veredito por arquivo e a nota final da auto-crítica (Score 100).",
+      "allowed_roles": [
+        "qa",
+        "master",
+        "sm"
+      ],
+      "assigned_to": [
+        "*"
+      ],
+      "source": "catalog",
+      "source_url": null,
+      "enabled": true,
+      "created_at": 1790967081.76408
+    },
+    {
+      "id": "api-doc-story-writer",
+      "name": "Technical Documentation & Story Writer",
+      "description": "Documentação técnica corporativa de alta precisão: especificações OpenAPI 3.0, redação de Histórias formais de desenvolvimento (AIOX Stories) e resumos executivos.",
+      "version": "1.0.0",
+      "author": "Anthropic Claude / Community",
+      "category": "docs",
+      "tags": [
+        "docs",
+        "openapi",
+        "markdown",
+        "stories",
+        "spec",
+        "architecture"
+      ],
+      "instructions": "DIRETRIZES DA SKILL TECHNICAL DOCUMENTATION & STORY WRITER:\n1. Redija histórias no padrão AIOX contendo Contexto, Objetivo de Engenharia, Critérios de Aceite (ACs) numerados e Definition of Done (DoD).\n2. Crie documentações com exemplos claros de requisição (JSON payloads), respostas de sucesso e respostas de erro.\n3. Use tabelas em Markdown e diagramas conceituais estruturados para facilitar a leitura.\n4. Mantenha sincronizados os manuais de arquitetura com os arquivos reais existentes no sandbox do projeto.",
+      "allowed_roles": [
+        "doc",
+        "sm",
+        "master"
+      ],
+      "assigned_to": [
+        "*"
+      ],
+      "source": "catalog",
+      "source_url": null,
+      "enabled": true,
+      "created_at": 1790967081.7650077
+    },
+    {
+      "id": "scraping-data-extractor",
+      "name": "Data Extraction & Web Scraping Specialist",
+      "description": "Extração estruturada de dados da web: requisições HTTP seguras, parsing de HTML/JSON, rotação de headers (User-Agent), extração via Regex/Seletores e gravação em CSV/JSON no sandbox.",
+      "version": "1.0.0",
+      "author": "Anthropic Claude / Community",
+      "category": "code",
+      "tags": [
+        "scraper",
+        "data",
+        "extraction",
+        "parser",
+        "httpx",
+        "json"
+      ],
+      "instructions": "DIRETRIZES DA SKILL DATA EXTRACTION & SCRAPING:\n1. Utilize headers HTTP realistas e respeite o robots.txt e limites de requisições por segundo.\n2. Valide e sanitize os dados extraídos antes de persistir em disco.\n3. Salve os resultados em JSON estruturado ou CSV bem formatado dentro do diretório sandbox autorizado.\n4. Isole o tratamento de erros para links quebrados ou payloads malformados sem derrubar o pipeline.",
+      "allowed_roles": [
+        "dev",
+        "master"
+      ],
+      "assigned_to": [
+        "*"
+      ],
+      "source": "catalog",
+      "source_url": null,
+      "enabled": true,
+      "created_at": 1790967898.8071804
+    }
+  ]
+}
