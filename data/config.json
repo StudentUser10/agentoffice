@@ -4,7 +4,7 @@
   "model": "openai/gpt-oss-120b",
   "api_keys": {
     "ollama": "sk-temp-testing-key",
-    "groq": "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"
+    "groq": ""
   },
   "workspace_dir": "C:\\Users\\jeffb\\OneDrive\\Desktop\\agentoffice\\workspace",
   "ui_preferences": {
