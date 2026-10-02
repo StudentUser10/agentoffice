@@ -1,0 +1,80 @@
+[
+  {
+    "id": "ADR-001",
+    "category": "decision",
+    "title": "Persistência com SQLite e SQLAlchemy 2.0",
+    "content": "Utilizar create_engine('sqlite:///...') com connect_args={'check_same_thread': False} e sessionmaker assíncrono para operações de banco.",
+    "author": "Alex Tech Lead",
+    "timestamp": 1790956006.6822674,
+    "tags": [
+      "sqlite",
+      "sqlalchemy",
+      "database"
+    ]
+  },
+  {
+    "id": "ADR-002",
+    "category": "decision",
+    "title": "Arquitetura Modular com FastAPI APIRouter",
+    "content": "Todas as rotas HTTP devem ser agrupadas em routers prefixados dentro de src/routers/ com validação estrita via esquemas Pydantic.",
+    "author": "Alex Tech Lead",
+    "timestamp": 1790956006.6822684,
+    "tags": [
+      "fastapi",
+      "pydantic",
+      "api"
+    ]
+  },
+  {
+    "id": "ADR-003",
+    "category": "decision",
+    "title": "Governança Multinível e Comunicação Lateral AIOX",
+    "content": "Sudo Agent coordena a governança macro. Squad Leaders possuem autonomia técnica e cooperam lateralmente via tickets de assistência técnica.",
+    "author": "Sudo Agent",
+    "timestamp": 1790956006.682269,
+    "tags": [
+      "governance",
+      "squads",
+      "aiox"
+    ]
+  },
+  {
+    "id": "ADR-004",
+    "category": "decision",
+    "title": "JWT Auth com Algoritmo EdDSA",
+    "content": "Utilizar tokens JWT assinados com chaves assimétricas EdDSA.",
+    "author": "Roberto do cyber",
+    "timestamp": 1790956336.2952251,
+    "tags": [
+      "auth",
+      "security",
+      "jwt"
+    ]
+  },
+  {
+    "id": "ADR-005",
+    "category": "decision",
+    "title": "JWT Auth com Algoritmo EdDSA",
+    "content": "Utilizar tokens JWT assinados com chaves assimétricas EdDSA.",
+    "author": "Roberto do cyber",
+    "timestamp": 1790956404.065842,
+    "tags": [
+      "auth",
+      "security",
+      "jwt"
+    ]
+  },
+  {
+    "id": "ADR-006",
+    "category": "decision",
+    "title": "JWT Auth com Algoritmo EdDSA",
+    "content": "Utilizar tokens JWT assinados com chaves assimétricas EdDSA.",
+    "author": "Roberto do cyber",
+    "timestamp": 1790956433.6801343,
+    "tags": [
+      "auth",
+      "security",
+      "jwt"
+    ]
+  }
+]

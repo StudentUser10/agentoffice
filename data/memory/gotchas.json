@@ -1,0 +1,55 @@
+[
+  {
+    "id": "GOTCHA-001",
+    "category": "gotcha",
+    "title": "Groq JSON Mode em Mensagens Conversacionais",
+    "content": "Provedores com json_mode estrito retornam HTTP 400 se o prompt contiver saudação ou texto livre. Deve-se interceptar com fallback automático.",
+    "author": "Sudo Agent",
+    "timestamp": 1790956006.685014,
+    "tags": [
+      "groq",
+      "llm",
+      "json_mode"
+    ]
+  },
+  {
+    "id": "GOTCHA-002",
+    "category": "gotcha",
+    "title": "Path Traversal e Symlinks no Sandbox",
+    "content": "Todo acesso a arquivos deve validar target.relative_to(ws_root) e proibir links simbólicos para evitar evasão de sandbox.",
+    "author": "Roberto do cyber",
+    "timestamp": 1790956006.685015,
+    "tags": [
+      "security",
+      "sandbox",
+      "filesystem"
+    ]
+  },
+  {
+    "id": "GOTCHA-003",
+    "category": "gotcha",
+    "title": "SQLite Concurrency",
+    "content": "Usar timeout de conexao",
+    "author": "Alex Tech Lead",
+    "timestamp": 1790956336.4084597,
+    "tags": []
+  },
+  {
+    "id": "GOTCHA-004",
+    "category": "gotcha",
+    "title": "SQLite Concurrency",
+    "content": "Usar timeout de conexao",
+    "author": "Alex Tech Lead",
+    "timestamp": 1790956404.1749413,
+    "tags": []
+  },
+  {
+    "id": "GOTCHA-005",
+    "category": "gotcha",
+    "title": "SQLite Concurrency",
+    "content": "Usar timeout de conexao",
+    "author": "Alex Tech Lead",
+    "timestamp": 1790956433.8133733,
+    "tags": []
+  }
+]

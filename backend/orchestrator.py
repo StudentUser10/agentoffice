@@ -20,6 +20,7 @@ from backend.models import (
     SpawnSubagentParams,
     WorkspaceData,
 )
+from backend.memory_layer import memory_layer
 from backend.storage import storage
 from backend.tools.filesystem import (
     SecuritySandboxError,
@@ -196,7 +197,13 @@ class Orchestrator:
                 "- `*help`: Exibe esta matriz de recursos e comandos do agente.\n"
                 "- `*status`: Exibe o estado operacional, ocupação e tickets inter-squad.\n"
                 "- `*qa` ou `*test`: Executa o Quality Gate estático e validação de sintaxe (AST) no sandbox.\n"
+                "- `*critique`: Executa auto-crítica ADE (Autonomous Development Engine) do código.\n"
+                "- `*decisions`: Lista as Decisões Arquiteturais Registradas (ADRs).\n"
+                "- `*gotchas`: Lista as armadilhas e edge cases conhecidos.\n"
+                "- `*insights`: Lista os insights aprendidos entre sessões.\n"
+                "- `*remember <categoria> <texto>`: Salva nova regra na memória persistente.\n"
                 "- `*rules` ou `*manifest`: Exibe o manifesto e as regras de Definition of Done (DoD) do squad.\n"
+                "- `*export-squad`: Gera manifesto YAML compatível com o ecossistema AIOX.\n"
                 "- `*plan <meta>`: Gera documento estruturado de planejamento técnico.\n"
             )
         elif cmd in ("*status", "*estado"):
@@ -243,6 +250,73 @@ class Orchestrator:
                 (reports_dir / "QA-REPORT-LATEST.md").write_text(reply, encoding="utf-8")
             except Exception as e:
                 logger.debug(f"Erro ao salvar QA report: {e}")
+        elif cmd in ("*critique", "*autocritica", "*auto-critica"):
+            critique_res = memory_layer.perform_ade_self_critique("src")
+            reply = critique_res["report_markdown"]
+        elif cmd in ("*decisions", "*adrs"):
+            adrs = memory_layer.list_decisions()
+            adrs_txt = "\n".join([f"- **[{d['id']}] {d['title']}:** {d['content']} *(Por: {d['author']})*" for d in adrs])
+            reply = f"### 🏛️ Decisões Arquiteturais Registradas (AIOX ADRs)\n{adrs_txt}"
+        elif cmd in ("*gotchas", "*armadilhas"):
+            gotchas = memory_layer.list_gotchas()
+            gotchas_txt = "\n".join([f"- ⚠️ **[{g['id']}] {g['title']}:** {g['content']} *(Por: {g['author']})*" for g in gotchas])
+            reply = f"### ⚠️ Armadilhas Conhecidas (AIOX Gotchas)\n{gotchas_txt}"
+        elif cmd in ("*insights", "*aprendizados"):
+            insights = memory_layer.list_insights()
+            insights_txt = "\n".join([f"- 💡 **[{i['id']}] {i['title']}:** {i['content']} *(Por: {i['author']})*" for i in insights])
+            reply = f"### 💡 Insights do Projeto (AIOX Knowledge)\n{insights_txt}"
+        elif cmd in ("*patterns", "*padroes"):
+            patterns = memory_layer.list_patterns()
+            patterns_txt = "\n".join([f"- 📐 **[{p['id']}] {p['title']}:** {p['content']} *(Por: {p['author']})*" for p in patterns])
+            reply = f"### 📐 Padrões Arquiteturais Registrados\n{patterns_txt}"
+        elif cmd == "*remember":
+            if not args:
+                reply = "⚠️ Formato esperado: `*remember <decision|gotcha|insight|pattern> <Título>: <Conteúdo>`\nExemplo: `*remember gotcha SQLite Lock: Sempre utilizar check_same_thread=False`"
+            else:
+                parts = args.split(maxsplit=1)
+                cat = parts[0].lower()
+                text = parts[1] if len(parts) > 1 else ""
+                
+                title = text.split(":", 1)[0].strip() if ":" in text else "Nota Registrada"
+                content = text.split(":", 1)[1].strip() if ":" in text else text
+
+                if cat in ("decision", "adr", "decisao", "decisão"):
+                    entry = memory_layer.record_decision(title, content, author=agent.name)
+                    reply = f"✅ Decisão `{entry['id']}` registrada com sucesso na memória persistente!"
+                elif cat in ("gotcha", "armadilha"):
+                    entry = memory_layer.record_gotcha(title, content, author=agent.name)
+                    reply = f"⚠️ Armadilha `{entry['id']}` registrada na memória persistente!"
+                elif cat in ("pattern", "padrao", "padrão"):
+                    entry = memory_layer.record_pattern(title, content, author=agent.name)
+                    reply = f"📐 Padrão `{entry['id']}` registrado na memória persistente!"
+                else:
+                    entry = memory_layer.record_insight(title, content, author=agent.name)
+                    reply = f"💡 Insight `{entry['id']}` registrado na memória persistente!"
+        elif cmd in ("*export-squad", "*exportsquad"):
+            squads_data = storage.load_squads()
+            squad_obj = next((s for s in squads_data.squads if s.id == agent.squad_id), None)
+            if squad_obj:
+                import yaml
+                squad_dict = {
+                    "version": "1.0",
+                    "kind": "aiox-squad",
+                    "metadata": {
+                        "name": squad_obj.name,
+                        "id": squad_obj.id,
+                        "room_id": squad_obj.room_id,
+                        "tags": squad_obj.domain_tags,
+                        "description": squad_obj.description
+                    },
+                    "spec": {
+                        "leader": squad_obj.leader_id,
+                        "members": squad_obj.member_ids,
+                        "quality_gates": ["ast_syntax", "security_audit", "story_dod"]
+                    }
+                }
+                yaml_str = yaml.dump(squad_dict, sort_keys=False, allow_unicode=True)
+                reply = f"### 📦 Manifesto AIOX (`squad.yaml`)\n```yaml\n{yaml_str}```"
+            else:
+                reply = f"Nenhum squad específico atribuído a {agent.name} para exportação."
         elif cmd in ("*rules", "*manifest"):
             squads_data = storage.load_squads()
             squad_obj = next((s for s in squads_data.squads if s.id == agent.squad_id), None)
@@ -259,6 +333,7 @@ class Orchestrator:
                     f"1. Código executável e validado via AST check (`*qa`).\n"
                     f"2. Nenhuma credencial ou segredo gravado em arquivos de código.\n"
                     f"3. Isolamento restrito ao workspace sandbox sem path traversal.\n"
+                    f"4. Auto-crítica ADE aprovada sem TODOs pendentes (`*critique`).\n"
                 )
             else:
                 reply = f"Manifesto AIOX: Agente {agent.name} comprometido com entregas seguras e conformidade técnica."
@@ -271,7 +346,7 @@ class Orchestrator:
                     f"**Objetivo:** {args}\n\n"
                     f"**Fase 1: Especificação & Histórias** ➔ Gerar `workspace/stories/STORY-001.md` com critérios de aceite.\n"
                     f"**Fase 2: Implementação** ➔ Criar rotas e persistência no sandbox.\n"
-                    f"**Fase 3: Quality Gate** ➔ Executar validação estática de sintaxe e testes de conformidade.\n"
+                    f"**Fase 3: Quality Gate & ADE Critique** ➔ Executar validação estática de sintaxe e self-critique.\n"
                     f"**Fase 4: DoD Sign-off** ➔ Emissão do relatório final e entrega ao Sudo Agent.\n"
                 )
         else:
@@ -297,13 +372,15 @@ class Orchestrator:
 
         history = self._get_conversation_context(workspace, agent.id)
         
-        # Injetar identidade precisa do agente e diretivas de ferramentas
+        # Injetar identidade precisa do agente, memória persistente e diretivas de ferramentas
         role_label = agent.title or "Especialista"
         squad_label = f"no Squad '{agent.squad_id}'" if agent.squad_id else ""
+        memory_context = memory_layer.get_memory_context_prompt()
         system_prompt = (
             f"Você é {agent.name}, {role_label} {squad_label} no AgentOffice 2D (sala {getattr(agent, 'room_id', 'escritório')}).\n"
             f"Sua especialidade e diretrizes: {agent.system_prompt}\n"
             f"IMPORTANTE: Você NÃO é o Sudo Agent nem o Diretor Geral supremo. Responda sempre diretamente com a sua própria identidade ({agent.name}, {role_label}), especialidade técnica e tom profissional e colaborativo.\n\n"
+            f"{memory_context}\n\n"
             f"{SUBAGENT_TOOL_DIRECTIVE}"
         )
         
@@ -644,9 +721,11 @@ class Orchestrator:
             for w in subordinates
         ) if subordinates else "Nenhum subordinado atualmente contratado."
 
+        memory_context = memory_layer.get_memory_context_prompt()
         planner_system = (
             f"Você é {supervisor.name}, {supervisor.title} no AgentOffice 2D.\n"
             f"{SUPERVISOR_PROTOCOL_DIRECTIVE}\n\n"
+            f"{memory_context}\n\n"
             f"Subordinados existentes sob sua liderança:\n{workers_desc}\n\n"
             "Instruções:\n"
             "1. Analise o objetivo do usuário com profundidade técnica.\n"

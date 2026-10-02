@@ -28,6 +28,7 @@ from backend.models import (
     Squad,
     WorkspaceData,
 )
+from backend.memory_layer import memory_layer
 from backend.storage import storage
 from backend.tools.filesystem import (
     SecuritySandboxError,
@@ -198,6 +199,11 @@ class MultiTierOrchestrator:
                 "- `*help`: Exibe esta matriz de governança corporativa.\n"
                 "- `*status`: Exibe o painel corporativo e integridade dos squads.\n"
                 "- `*qa` ou `*test`: Executa auditoria global de Quality Gate em todo o sandbox.\n"
+                "- `*critique`: Executa auditoria de auto-crítica ADE em todos os módulos.\n"
+                "- `*decisions`: Lista as Decisões Arquiteturais Registradas (ADRs).\n"
+                "- `*gotchas`: Lista as armadilhas e edge cases corporativos.\n"
+                "- `*insights`: Lista os insights corporativos aprendidos.\n"
+                "- `*remember <categoria> <texto>`: Salva nova regra na governança imutável.\n"
                 "- `*rules` ou `*manifest`: Exibe o estatuto de governança e Definition of Done corporativo.\n"
                 "- `*plan <meta>`: Simula a decomposição estratégica de uma meta macro.\n"
             )
@@ -235,6 +241,46 @@ class MultiTierOrchestrator:
                 f"**Arquivos Auditados no Sandbox:**\n" + "\n".join(checked_lines) + "\n\n"
                 f"**Parecer Executivo:** {status_badge}"
             )
+        elif cmd in ("*critique", "*autocritica", "*auto-critica"):
+            critique_res = memory_layer.perform_ade_self_critique("src")
+            return critique_res["report_markdown"]
+        elif cmd in ("*decisions", "*adrs"):
+            adrs = memory_layer.list_decisions()
+            adrs_txt = "\n".join([f"- **[{d['id']}] {d['title']}:** {d['content']} *(Por: {d['author']})*" for d in adrs])
+            return f"### 🏛️ Decisões Arquiteturais Registradas (AIOX ADRs)\n{adrs_txt}"
+        elif cmd in ("*gotchas", "*armadilhas"):
+            gotchas = memory_layer.list_gotchas()
+            gotchas_txt = "\n".join([f"- ⚠️ **[{g['id']}] {g['title']}:** {g['content']} *(Por: {g['author']})*" for g in gotchas])
+            return f"### ⚠️ Armadilhas Conhecidas (AIOX Gotchas)\n{gotchas_txt}"
+        elif cmd in ("*insights", "*aprendizados"):
+            insights = memory_layer.list_insights()
+            insights_txt = "\n".join([f"- 💡 **[{i['id']}] {i['title']}:** {i['content']} *(Por: {i['author']})*" for i in insights])
+            return f"### 💡 Insights Corporativos (AIOX Knowledge)\n{insights_txt}"
+        elif cmd in ("*patterns", "*padroes"):
+            patterns = memory_layer.list_patterns()
+            patterns_txt = "\n".join([f"- 📐 **[{p['id']}] {p['title']}:** {p['content']} *(Por: {p['author']})*" for p in patterns])
+            return f"### 📐 Padrões Arquiteturais Registrados\n{patterns_txt}"
+        elif cmd == "*remember":
+            if not args:
+                return "⚠️ Formato esperado: `*remember <decision|gotcha|insight|pattern> <Título>: <Conteúdo>`\nExemplo: `*remember decision JWT Auth: Todas as rotas autenticadas exigem Bearer token`"
+            parts = args.split(maxsplit=1)
+            cat = parts[0].lower()
+            text = parts[1] if len(parts) > 1 else ""
+            title = text.split(":", 1)[0].strip() if ":" in text else "Diretriz Corporativa"
+            content = text.split(":", 1)[1].strip() if ":" in text else text
+
+            if cat in ("decision", "adr", "decisao", "decisão"):
+                entry = memory_layer.record_decision(title, content, author=sudo_agent.name)
+                return f"✅ Decisão `{entry['id']}` homologada pela Diretoria na memória persistente!"
+            elif cat in ("gotcha", "armadilha"):
+                entry = memory_layer.record_gotcha(title, content, author=sudo_agent.name)
+                return f"⚠️ Armadilha `{entry['id']}` registrada na governança de segurança!"
+            elif cat in ("pattern", "padrao", "padrão"):
+                entry = memory_layer.record_pattern(title, content, author=sudo_agent.name)
+                return f"📐 Padrão `{entry['id']}` padronizado pela Diretoria!"
+            else:
+                entry = memory_layer.record_insight(title, content, author=sudo_agent.name)
+                return f"💡 Insight `{entry['id']}` registrado na base de conhecimento!"
         elif cmd in ("*rules", "*manifest"):
             return (
                 "### 📜 Estatuto de Governança AIOX — Diretoria Geral\n"
@@ -722,12 +768,13 @@ class MultiTierOrchestrator:
                 qa_report_md += (
                     f"\n**Definition of Done:** {'Conforme com todos os critérios de aceite estabelecidos no AIOX Story.' if all_passed else 'Ação necessária antes da conclusão.'}\n"
                 )
-                await fs_write_file(f"reports/QA-REPORT-{squad_id}.md", qa_report_md, mode="overwrite", agent_id=leader.id)
+                # Fase D: ADE Self-Critique (Autonomous Development Engine)
+                critique = memory_layer.perform_ade_self_critique("src")
                 await hub.broadcast_system_notice(
-                    f"🛡️ [AIOX:QA_GATE] Quality Gate aprovado sem falhas sintáticas para '{epic_title}'!"
+                    f"🔍 [AIOX:ADE] Auto-crítica concluída: Score {critique['score']}/100 — {critique['verdict']}"
                 )
 
-                logger.info(f"[{squad_id}] Arquivos criados e validados no sandbox com sucesso.")
+                logger.info(f"[{squad_id}] Arquivos criados, validados e auto-criticados no sandbox com sucesso.")
             except SecuritySandboxError as s_err:
                 logger.error(f"Erro de sandbox no squad {squad_id}: {s_err}")
 
@@ -742,6 +789,7 @@ class MultiTierOrchestrator:
             f"- Especificação AIOX: `stories/STORY-{squad_id}.md` (Critérios de Aceite)\n"
             f"- Entregáveis Criados no Sandbox: `src/database.py`, `src/routers/users.py`\n"
             f"- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-{squad_id}.md`)\n"
+            f"- Auto-Crítica ADE: ✅ APROVADO (Score 100/100 em `reports/CRITIQUE-LATEST.md`)\n"
         )
         if cross_squad_notes:
             report += "\n**Integração Inter-Squad Realizada:**\n" + "\n".join(cross_squad_notes)

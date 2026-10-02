@@ -145,11 +145,159 @@ def test_supervisor_conversational_resilience():
     print("  -> Resiliência contra JSON HTTP 400 validada!")
 
 
+def test_aiox_memory_layer_endpoints():
+    print("\n--- Testando Endpoints REST da Camada de Memória AIOX ---")
+    # 1. Obter Decisões (ADRs)
+    res_dec = client.get("/api/memory/decisions")
+    assert res_dec.status_code == 200
+    decisions = res_dec.json()
+    assert len(decisions) >= 3
+    assert any(d["id"] == "ADR-001" for d in decisions)
+    print(f"  -> {len(decisions)} Decisões Arquiteturais (ADRs) listadas!")
+
+    # 2. Obter Gotchas
+    res_got = client.get("/api/memory/gotchas")
+    assert res_got.status_code == 200
+    gotchas = res_got.json()
+    assert len(gotchas) >= 2
+    assert any("Groq" in g["title"] for g in gotchas)
+    print(f"  -> {len(gotchas)} Armadilhas conhecidas listadas!")
+
+    # 3. Gravar nova decisão
+    new_dec_payload = {
+        "category": "decision",
+        "title": "JWT Auth com Algoritmo EdDSA",
+        "content": "Utilizar tokens JWT assinados com chaves assimétricas EdDSA.",
+        "author": "Roberto do cyber",
+        "tags": ["auth", "security", "jwt"]
+    }
+    res_post = client.post("/api/memory", json=new_dec_payload)
+    assert res_post.status_code == 200
+    data = res_post.json()
+    assert data["title"] == new_dec_payload["title"]
+    assert "ADR-" in data["id"]
+    print(f"  -> Nova decisão '{data['id']}' gravada com sucesso!")
+
+    # 4. Executar Auto-Crítica ADE
+    res_crit = client.post("/api/memory/critique", json={"target_dir": "src"})
+    assert res_crit.status_code == 200
+    crit_data = res_crit.json()
+    assert "score" in crit_data and "verdict" in crit_data
+    print(f"  -> ADE Self-Critique endpoint validado: {crit_data['verdict']} (Score {crit_data['score']}/100)!")
+
+
+def test_aiox_squad_yaml_export_and_import():
+    print("\n--- Testando Exportação e Importação de Squads em YAML (AIOX Manifest) ---")
+    # 1. Exportar Squad Core Engineering em YAML
+    res_export = client.get("/api/squads/squad-core-engineering/export-yaml")
+    assert res_export.status_code == 200
+    export_data = res_export.json()
+    assert "yaml_manifest" in export_data
+    yaml_text = export_data["yaml_manifest"]
+    assert "kind: aiox-squad" in yaml_text
+    assert "squad-core-engineering" in yaml_text
+    print("  -> Exportação de squad.yaml concluída com sucesso!")
+
+    # 2. Importar um novo Squad via squad.yaml
+    sample_yaml = """
+version: "1.0"
+kind: aiox-squad
+metadata:
+  name: Squad Data & Analytics
+  id: squad-data-analytics
+  room_id: room_doc
+  color_theme: "#f59e0b"
+  tags:
+    - data
+    - pandas
+    - etl
+    - duckdb
+  description: Squad especializado em pipelines de dados e analytics.
+spec:
+  leader: agent-1c137c
+  members:
+    - agent-1c137c
+    - agent-9debfa
+  quality_gates:
+    - ast_syntax
+    - ade_critique
+"""
+    res_import = client.post("/api/squads/import-yaml", json={"yaml_text": sample_yaml})
+    assert res_import.status_code == 200
+    import_data = res_import.json()
+    assert import_data["status"] == "imported"
+    assert import_data["squad"]["id"] == "squad-data-analytics"
+    print("  -> Importação de novo squad via squad.yaml validada com sucesso!")
+
+
+def test_aiox_memory_chat_commands():
+    print("\n--- Testando Comandos de Memória AIOX no Chat ---")
+    workspace = storage.load_workspace()
+    alex = next((a for a in workspace.agents if a.id == "agent-1c137c"), None)
+
+    # 1. Testar *decisions
+    asyncio.run(orchestrator.execute_task(alex.id, "*decisions"))
+    updated_ws = storage.load_workspace()
+    reply = updated_ws.conversations[alex.id][-1]["text"]
+    assert "Decisões Arquiteturais Registradas" in reply
+    assert "ADR-001" in reply
+    print("  -> Comando *decisions executado com sucesso!")
+
+    # 2. Testar *gotchas
+    asyncio.run(orchestrator.execute_task(alex.id, "*gotchas"))
+    updated_ws = storage.load_workspace()
+    reply = updated_ws.conversations[alex.id][-1]["text"]
+    assert "Armadilhas Conhecidas" in reply
+    assert "GOTCHA-" in reply
+    print("  -> Comando *gotchas executado com sucesso!")
+
+    # 3. Testar *critique
+    asyncio.run(orchestrator.execute_task(alex.id, "*critique"))
+    updated_ws = storage.load_workspace()
+    reply = updated_ws.conversations[alex.id][-1]["text"]
+    assert "ADE SELF-CRITIQUE REPORT" in reply
+    print("  -> Comando *critique executado com sucesso!")
+
+    # 4. Testar *remember
+    asyncio.run(orchestrator.execute_task(alex.id, "*remember gotcha SQLite Concurrency: Usar timeout de conexao"))
+    updated_ws = storage.load_workspace()
+    reply = updated_ws.conversations[alex.id][-1]["text"]
+    assert "registrada" in reply
+    print("  -> Comando *remember executado com sucesso!")
+
+
+def test_groq_tool_use_failed_resilience():
+    print("\n--- Testando Resiliência contra Erro Groq tool_use_failed ---")
+    from backend.llm_gateway.openai_adapter import OpenAIAdapter
+    from unittest.mock import patch, AsyncMock
+    import httpx
+
+    adapter = OpenAIAdapter(provider="groq", base_url="https://api.groq.com/openai/v1", api_key="fake-key", model="llama3-70b-8192")
+
+    mock_resp = httpx.Response(
+        status_code=400,
+        json={"error": {"message": "Tool choice is none, but model called a tool", "type": "invalid_request_error", "code": "tool_use_failed", "failed_generation": '{"name": "fs_list_directory", "arguments": {"path": ""}}'}},
+        request=httpx.Request("POST", "https://api.groq.com/openai/v1/chat/completions")
+    )
+
+    with patch.object(httpx.AsyncClient, "post", new_callable=AsyncMock) as mock_post:
+        mock_post.return_value = mock_resp
+        result = asyncio.run(adapter.generate(messages=[{"role": "user", "content": "listar arquivos"}]))
+        assert "fs_list_directory" in result
+        print("  -> failed_generation recuperado com sucesso sem abortar o fluxo!")
+
+
 if __name__ == "__main__":
     test_aiox_agent_commands()
     test_aiox_sudo_commands()
     test_aiox_story_driven_and_quality_gate()
     test_supervisor_conversational_resilience()
+    test_groq_tool_use_failed_resilience()
+    test_aiox_memory_layer_endpoints()
+    test_aiox_squad_yaml_export_and_import()
+    test_aiox_memory_chat_commands()
     print("\n=======================================================")
-    print("TODOS OS TESTES DE RECURSOS AIOX PASSARAM COM 100% SUCESSO!")
+    print("TODOS OS TESTES AVANÇADOS AIOX PASSARAM COM 100% SUCESSO!")
     print("=======================================================")
+
+

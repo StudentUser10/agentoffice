@@ -145,6 +145,19 @@ class OpenAIAdapter(BaseLLMAdapter):
                     payload_fallback.pop("response_format", None)
                     res = await client.post(endpoint, json=payload_fallback, headers=headers)
 
+                # Tratamento de erro Groq tool_use_failed (quando o modelo gera chamada de tool sem tools habilitado no endpoint)
+                if res.status_code == 400 and "tool_use_failed" in res.text:
+                    try:
+                        err_payload = res.json().get("error", {})
+                        if failed_gen := err_payload.get("failed_generation"):
+                            logger.info(
+                                f"Provedor '{self.provider}' retornou HTTP 400 (tool_use_failed). "
+                                "Recuperando failed_generation diretamente do corpo do erro."
+                            )
+                            return str(failed_gen)
+                    except Exception:
+                        pass
+
                 if res.status_code in (401, 403):
                     raise LLMAuthenticationError(
                         f"Autenticação recusada por '{self.provider}' (HTTP {res.status_code}). Verifique a chave de API configurada."

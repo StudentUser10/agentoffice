@@ -62,6 +62,8 @@ from backend.models import (
 from backend.orchestrator import orchestrator
 from backend.orchestrator_multi_tier import multi_tier_orchestrator
 from backend.tools.squad_tools import resolve_cross_squad_ticket
+import yaml
+from backend.memory_layer import memory_layer
 from backend.diagnostics import run_system_diagnostics
 from backend.storage import storage
 from backend.websocket_hub import hub
@@ -1109,6 +1111,166 @@ async def get_task_report(task_id: str):
         "report_filename": clean_name,
         "content": content
     }
+
+
+# ===================================================================
+# --- AIOX Memory Layer & ADE Endpoints (Epic 7 Architecture) ---
+# ===================================================================
+
+@app.get("/api/memory/summary")
+async def get_memory_summary():
+    """Retorna o resumo contextual da memória persistente AIOX."""
+    return {"prompt_context": memory_layer.get_memory_context_prompt()}
+
+
+@app.get("/api/memory/decisions")
+async def get_memory_decisions():
+    """Retorna todas as decisões arquiteturais (ADRs) registradas."""
+    return memory_layer.list_decisions()
+
+
+@app.get("/api/memory/gotchas")
+async def get_memory_gotchas():
+    """Retorna as armadilhas e edge cases conhecidos."""
+    return memory_layer.list_gotchas()
+
+
+@app.get("/api/memory/insights")
+async def get_memory_insights():
+    """Retorna os insights aprendidos entre sessões."""
+    return memory_layer.list_insights()
+
+
+@app.get("/api/memory/patterns")
+async def get_memory_patterns():
+    """Retorna os padrões de código e arquitetura registrados."""
+    return memory_layer.list_patterns()
+
+
+@app.post("/api/memory")
+async def record_memory_item(payload: Dict[str, Any]):
+    """Registra uma nova entrada na memória persistente AIOX."""
+    cat = payload.get("category", "insight").lower()
+    title = payload.get("title", "Nota Registrada")
+    content = payload.get("content", "")
+    author = payload.get("author", "User")
+    tags = payload.get("tags", [])
+
+    if not content:
+        raise HTTPException(status_code=400, detail="O campo 'content' é obrigatório.")
+
+    if cat in ("decision", "adr"):
+        entry = memory_layer.record_decision(title, content, author, tags)
+    elif cat in ("gotcha", "armadilha"):
+        entry = memory_layer.record_gotcha(title, content, author, tags)
+    elif cat in ("pattern", "padrao"):
+        entry = memory_layer.record_pattern(title, content, author, tags)
+    else:
+        entry = memory_layer.record_insight(title, content, author, tags)
+
+    await hub.broadcast_system_notice(
+        f"🧠 [AIOX:MEMORY] Nova entrada '{entry['id']}' ({cat}) gravada na memória persistente!"
+    )
+    return entry
+
+
+@app.post("/api/memory/critique")
+async def trigger_ade_self_critique(payload: Optional[Dict[str, Any]] = None):
+    """Executa a auto-crítica ADE (Autonomous Development Engine) sobre o código no sandbox."""
+    target_dir = payload.get("target_dir", "src") if payload else "src"
+    critique = memory_layer.perform_ade_self_critique(target_dir)
+    await hub.broadcast_system_notice(
+        f"🔍 [AIOX:ADE] Auto-crítica concluída: Score {critique['score']}/100 — {critique['verdict']}"
+    )
+    return critique
+
+
+# ===================================================================
+# --- AIOX Squad Manifest (YAML Import/Export) ---
+# ===================================================================
+
+@app.get("/api/squads/{squad_id}/export-yaml")
+async def export_squad_yaml(squad_id: str):
+    """Exporta manifesto do squad no formato padrão squad.yaml do ecossistema AIOX."""
+    squads_data = storage.load_squads()
+    squad = next((s for s in squads_data.squads if s.id == squad_id), None)
+    if not squad:
+        raise HTTPException(status_code=404, detail=f"Squad '{squad_id}' não encontrado.")
+
+    manifest = {
+        "version": "1.0",
+        "kind": "aiox-squad",
+        "metadata": {
+            "name": squad.name,
+            "id": squad.id,
+            "room_id": squad.room_id,
+            "color_theme": squad.color_theme,
+            "tags": squad.domain_tags,
+            "description": squad.description
+        },
+        "spec": {
+            "leader": squad.leader_id,
+            "members": squad.member_ids,
+            "quality_gates": ["ast_syntax", "security_audit", "ade_critique", "story_dod"]
+        }
+    }
+    yaml_text = yaml.dump(manifest, sort_keys=False, allow_unicode=True)
+    return {"squad_id": squad_id, "yaml_manifest": yaml_text}
+
+
+@app.post("/api/squads/import-yaml")
+async def import_squad_yaml(payload: Dict[str, Any]):
+    """Importa e registra um Squad a partir de um manifesto AIOX squad.yaml."""
+    yaml_text = payload.get("yaml_text", "")
+    if not yaml_text:
+        raise HTTPException(status_code=400, detail="Campo 'yaml_text' é obrigatório.")
+
+    try:
+        data = yaml.safe_load(yaml_text)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"YAML inválido: {str(e)}")
+
+    metadata = data.get("metadata", {})
+    spec = data.get("spec", {})
+
+    squad_id = metadata.get("id") or f"squad-{uuid.uuid4().hex[:6]}"
+    squad_name = metadata.get("name", "Imported Squad")
+    room_id = metadata.get("room_id", "room_dev")
+    color_theme = metadata.get("color_theme", "#38bdf8")
+    tags = metadata.get("tags", [])
+    desc = metadata.get("description", "")
+    leader_id = spec.get("leader", "")
+    members = spec.get("members", [])
+
+    squads_data = storage.load_squads()
+    existing = next((s for s in squads_data.squads if s.id == squad_id), None)
+    if existing:
+        existing.name = squad_name
+        existing.room_id = room_id
+        existing.color_theme = color_theme
+        existing.domain_tags = tags
+        existing.description = desc
+        existing.leader_id = leader_id
+        existing.member_ids = members
+        saved_squad = existing
+    else:
+        new_squad = Squad(
+            id=squad_id,
+            name=squad_name,
+            room_id=room_id,
+            color_theme=color_theme,
+            domain_tags=tags,
+            description=desc,
+            leader_id=leader_id,
+            member_ids=members
+        )
+        squads_data.squads.append(new_squad)
+        saved_squad = new_squad
+
+    storage.save_squads(squads_data, backup=False)
+    await hub.broadcast_system_notice(f"📦 [AIOX:SQUAD] Squad '{squad_name}' importado com sucesso via squad.yaml!")
+    return {"status": "imported", "squad": saved_squad.model_dump()}
+
 
 
 

@@ -1,0 +1,28 @@
+[
+  {
+    "id": "PATTERN-001",
+    "category": "pattern",
+    "title": "AIOX Spec Pipeline (Story-Driven)",
+    "content": "Antes de escrever código, gerar stories/STORY-<id>.md contendo User Story, Critérios de Aceite (Given/When/Then) e Definition of Done.",
+    "author": "Alex Tech Lead",
+    "timestamp": 1790956006.687813,
+    "tags": [
+      "agile",
+      "story",
+      "spec"
+    ]
+  },
+  {
+    "id": "PATTERN-002",
+    "category": "pattern",
+    "title": "Quality Gate com AST Check Estático",
+    "content": "Antes do sign-off de entrega, validar syntax via ast.parse em todos os arquivos .py gerados e emitir relatório reports/QA-REPORT-<id>.md.",
+    "author": "Roberto do cyber",
+    "timestamp": 1790956006.6878157,
+    "tags": [
+      "qa",
+      "ast",
+      "testing"
+    ]
+  }
+]
