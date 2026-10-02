@@ -102,5 +102,31 @@
       "security",
       "jwt"
     ]
+  },
+  {
+    "id": "ADR-009",
+    "category": "decision",
+    "title": "JWT Auth com Algoritmo EdDSA",
+    "content": "Utilizar tokens JWT assinados com chaves assimétricas EdDSA.",
+    "author": "Roberto do cyber",
+    "timestamp": 1790965399.197379,
+    "tags": [
+      "auth",
+      "security",
+      "jwt"
+    ]
+  },
+  {
+    "id": "ADR-010",
+    "category": "decision",
+    "title": "JWT Auth com Algoritmo EdDSA",
+    "content": "Utilizar tokens JWT assinados com chaves assimétricas EdDSA.",
+    "author": "Roberto do cyber",
+    "timestamp": 1790965530.3525107,
+    "tags": [
+      "auth",
+      "security",
+      "jwt"
+    ]
   }
 ]

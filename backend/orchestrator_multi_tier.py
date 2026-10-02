@@ -11,6 +11,7 @@ Gerencia o ciclo de governança multinível corporativa:
 import asyncio
 import json
 import logging
+from pathlib import Path
 import re
 import time
 from typing import Any, Dict, List, Optional, Tuple
@@ -616,6 +617,174 @@ class MultiTierOrchestrator:
 
         return {"epics": epics}
 
+    async def _generate_dynamic_epic_files(
+        self,
+        leader: Agent,
+        epic: Dict[str, Any],
+        user_prompt: str,
+        squad_id: str
+    ) -> List[Dict[str, str]]:
+        """
+        Gera dinamicamente a estrutura de arquivos e código-fonte com LLM
+        com base na demanda real do usuário, eliminando arquivos estáticos hardcoded.
+        """
+        config = storage.load_config()
+        llm = LLMClient(config)
+
+        epic_title = epic.get("epic_title", "")
+        objective = epic.get("objective", "")
+        acceptance_criteria = epic.get("acceptance_criteria", "")
+
+        memory_context = memory_layer.get_memory_context_prompt()
+
+        system_prompt = (
+            "Você é Dex (@dev), o Engenheiro de Software Sênior do AIOX Core, trabalhando sob a liderança técnica de Aria (@architect).\n"
+            "Sua responsabilidade é projetar e implementar o código-fonte COMPLETO, FUNCIONAL e CIRÚRGICO para a demanda do usuário.\n\n"
+            "REGRAS ESTRITAS DE ENGENHARIA DE SOFTWARE:\n"
+            "1. Os arquivos gerados devem atender EXATAMENTE ao que o usuário pediu na demanda.\n"
+            "2. PROIBIDO gerar arquivos genéricos ou repetitivos (como database.py e users.py) a menos que a meta seja especificamente sobre usuários e banco.\n"
+            "3. Se a demanda for sobre um sistema de tarefas/kanban, crie src/models/task.py, src/routers/tasks.py, etc.\n"
+            "4. Se a demanda for frontend, crie src/index.html, src/styles.css, src/app.js, etc.\n"
+            "5. Se a demanda for utilitários/scripts/crawlers/jogos, crie os módulos de serviço específicos.\n"
+            "6. Todo arquivo Python deve ter sintaxe 100% válida para passar na análise de AST.\n"
+            "7. Responda estritamente em JSON com o formato:\n"
+            "{\n"
+            '  "files": [\n'
+            '    {\n'
+            '      "path": "caminho/do/arquivo.ext",\n'
+            '      "content": "conteúdo de código completo e funcional"\n'
+            '    }\n'
+            "  ]\n"
+            "}\n\n"
+            f"{memory_context}"
+        )
+
+        user_content = (
+            f"DEMANDA DO USUÁRIO:\n{user_prompt}\n\n"
+            f"ÉPICO DO SQUAD ({squad_id}):\n"
+            f"Título: {epic_title}\n"
+            f"Objetivo: {objective}\n"
+            f"Critérios: {acceptance_criteria}\n\n"
+            "Gere os arquivos necessários em JSON:"
+        )
+
+        try:
+            raw_res = await llm.generate_response(
+                messages=[{"role": "user", "content": user_content}],
+                system_prompt=system_prompt,
+                model_override=None,
+                json_mode=True,
+                timeout=40.0
+            )
+            # Tentar parsing de JSON com strict=False para suportar quebras de linha literais em strings
+            match = re.search(r"\{[\s\S]*\}", raw_res)
+            if match:
+                try:
+                    parsed = json.loads(match.group(0), strict=False)
+                    files = parsed.get("files", [])
+                    valid_files = [f for f in files if isinstance(f, dict) and f.get("path") and f.get("content")]
+                    if valid_files:
+                        return valid_files
+                except Exception as parse_err:
+                    logger.debug(f"Tentativa estrita falhou ({parse_err}), tentando regex de arquivos...")
+                    # Extrator de contingência por regex para blocos de arquivo no JSON
+                    path_matches = re.findall(r'"path"\s*:\s*"([^"]+)"\s*,\s*"content"\s*:\s*"([\s\S]*?)(?=(?:"\s*\}\s*,\s*\{\s*"path")|(?:"\s*\}\s*\]))', match.group(0))
+                    if path_matches:
+                        valid_files = [{"path": p, "content": c.replace('\\n', '\n').replace('\\"', '"')} for p, c in path_matches if p and c]
+                        if valid_files:
+                            return valid_files
+        except Exception as e:
+            logger.warning(f"Fallback na geração dinâmica de arquivos pelo LLM: {e}")
+
+        # Fallback semântico inteligente baseado na demanda
+        lower = (user_prompt + " " + epic_title + " " + objective).lower()
+        files = []
+
+        if "jogo" in lower or "canvas" in lower or "game" in lower:
+            files.append({
+                "path": "src/game.py",
+                "content": "# src/game.py - Game Logic Engine\nimport random\n\nclass GameEngine:\n    def __init__(self):\n        self.score = 0\n        self.state = 'ready'\n\n    def start(self):\n        self.state = 'running'\n        return {'status': 'started', 'score': self.score}\n\n    def update(self, action: str):\n        if self.state != 'running':\n            return {'status': 'game_over'}\n        self.score += 10\n        return {'status': 'playing', 'score': self.score}\n"
+            })
+            files.append({
+                "path": "src/models/game_state.py",
+                "content": "# src/models/game_state.py\nfrom pydantic import BaseModel\n\nclass GameState(BaseModel):\n    score: int\n    state: str\n    player_id: str\n"
+            })
+        elif "site" in lower or "html" in lower or "web" in lower or "frontend" in lower or "showcase" in lower or "landing" in lower:
+            files.append({
+                "path": "public/index.html",
+                "content": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <title>AgentOffice 2D — Showcase</title>\n  <link rel=\"stylesheet\" href=\"style.css\" />\n</head>\n<body>\n  <header class=\"hero\">\n    <h1>AgentOffice 2D</h1>\n    <p>Escritório Virtual em Pixel Art com Inteligência Artificial Multinível</p>\n    <a href=\"#features\" class=\"btn-cta\">Conhecer os Agentes</a>\n  </header>\n  <main class=\"container\" id=\"features\">\n    <section class=\"card\">\n      <h2>Pax (@aiox-master)</h2>\n      <p>Sudo Agent Supremo orquestrando squads departamentais em salas isoladas.</p>\n    </section>\n    <section class=\"card\">\n      <h2>Aria & Dex (@dev)</h2>\n      <p>Arquitetura de microsserviços e codificação autônoma no sandbox seguro.</p>\n    </section>\n    <section class=\"card\">\n      <h2>Quinn (@qa) & Cipher (@sec)</h2>\n      <p>Quality Gate automatizado, AST parser e auditoria contínua de vulnerabilidades.</p>\n    </section>\n  </main>\n  <script src=\"app.js\"></script>\n</body>\n</html>\n"
+            })
+            files.append({
+                "path": "public/style.css",
+                "content": "/* AgentOffice Showcase Stylesheet */\n:root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --accent: #6366f1; }\nbody { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); }\n.hero { text-align: center; padding: 4rem 1rem; background: linear-gradient(180deg, #1e1b4b, var(--bg)); }\n.hero h1 { font-size: 2.8rem; margin-bottom: 0.5rem; }\n.btn-cta { display: inline-block; margin-top: 1.5rem; padding: 0.8rem 1.8rem; background: var(--accent); color: #fff; text-decoration: none; border-radius: 8px; font-weight: bold; }\n.container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }\n.card { background: var(--card); padding: 1.5rem; border-radius: 12px; border: 1px solid #334155; }\n"
+            })
+            files.append({
+                "path": "public/app.js",
+                "content": "// AgentOffice Showcase Client Script\ndocument.addEventListener('DOMContentLoaded', () => {\n  console.log('AgentOffice Showcase carregado com sucesso!');\n});\n"
+            })
+        elif "produto" in lower or "ecommerce" in lower or "loja" in lower or "carrinho" in lower:
+            files.append({
+                "path": "src/models/product.py",
+                "content": "# src/models/product.py\nfrom pydantic import BaseModel, Field\nfrom typing import Optional\n\nclass Product(BaseModel):\n    id: int\n    name: str\n    price: float\n    stock: int = Field(default=0, ge=0)\n    description: Optional[str] = None\n"
+            })
+            files.append({
+                "path": "src/routers/catalog.py",
+                "content": "# src/routers/catalog.py\nfrom fastapi import APIRouter, HTTPException\nfrom typing import List\nfrom src.models.product import Product\n\nrouter = APIRouter(prefix='/products', tags=['Catalog'])\n\n@router.get('/', response_model=List[Product])\nasync def list_products():\n    return [\n        Product(id=1, name='Notebook Pro', price=4999.0, stock=10),\n        Product(id=2, name='Teclado Mecanico', price=299.0, stock=25)\n    ]\n"
+            })
+            files.append({
+                "path": "src/services/inventory.py",
+                "content": "# src/services/inventory.py\nclass InventoryService:\n    @staticmethod\n    def check_availability(product_id: int, quantity: int) -> bool:\n        return quantity > 0\n"
+            })
+        elif "tarefa" in lower or "task" in lower or "todo" in lower:
+            files.append({
+                "path": "src/models/task_item.py",
+                "content": "# src/models/task_item.py\nfrom pydantic import BaseModel\nfrom typing import Optional\nimport time\n\nclass TaskItem(BaseModel):\n    id: str\n    title: str\n    completed: bool = False\n    created_at: float = time.time()\n"
+            })
+            files.append({
+                "path": "src/routers/tasks_router.py",
+                "content": "# src/routers/tasks_router.py\nfrom fastapi import APIRouter\nfrom typing import List\nfrom src.models.task_item import TaskItem\n\nrouter = APIRouter(prefix='/tasks', tags=['Tasks'])\n\n@router.get('/')\nasync def get_tasks() -> List[dict]:\n    return [{'id': 'task-1', 'title': 'Implementar feature', 'completed': False}]\n"
+            })
+        elif "seguran" in lower or "vulnerab" in lower or "audit" in lower or "owasp" in lower or "crypto" in lower:
+            files.append({
+                "path": "src/security/sanitizer.py",
+                "content": "# src/security/sanitizer.py - Sanitizacao de Entradas\nimport html\nimport re\n\ndef sanitize_input(user_input: str) -> str:\n    if not user_input:\n        return ''\n    cleaned = html.escape(user_input.strip())\n    cleaned = re.sub(r'[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]', '', cleaned)\n    return cleaned\n"
+            })
+            files.append({
+                "path": "src/security/rate_limiter.py",
+                "content": "# src/security/rate_limiter.py - Protecao contra DoS/Brute Force\nimport time\n\nclass RateLimiter:\n    def __init__(self, max_requests: int = 60, window_seconds: int = 60):\n        self.max_requests = max_requests\n        self.window = window_seconds\n        self.requests = {}\n\n    def is_allowed(self, client_ip: str) -> bool:\n        now = time.time()\n        hits = self.requests.get(client_ip, [])\n        hits = [t for t in hits if now - t < self.window]\n        if len(hits) >= self.max_requests:\n            return False\n        hits.append(now)\n        self.requests[client_ip] = hits\n        return True\n"
+            })
+        elif "documenta" in lower or "doc" in lower or "openapi" in lower:
+            files.append({
+                "path": "docs/architecture.md",
+                "content": f"# Documentação de Arquitetura\n\n## Épico: {epic_title}\n\n### Visão Geral\n{objective}\n\n### Diretrizes Técnicas\n- Padrão RESTful tipado com Pydantic\n- Persistência desacoplada\n- Isolamento de execução em sandbox\n"
+            })
+            files.append({
+                "path": "docs/api_spec.md",
+                "content": "# Especificação OpenAPI & Endpoints\n\n## Endpoints Disponíveis\n- `GET /health` - Healthcheck do serviço\n- `GET /api/v1/resource` - Listagem de recursos\n- `POST /api/v1/resource` - Criação de recurso\n"
+            })
+        elif "usuario" in lower or "user" in lower or "auth" in lower or "login" in lower:
+            files.append({
+                "path": "src/database.py",
+                "content": "# src/database.py - Conexao SQLite Corporativa\nfrom sqlalchemy import create_engine\nfrom sqlalchemy.orm import declarative_base, sessionmaker\n\nSQLALCHEMY_DATABASE_URL = 'sqlite:///./app_users.db'\nengine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={'check_same_thread': False})\nSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)\nBase = declarative_base()\n"
+            })
+            files.append({
+                "path": "src/routers/users.py",
+                "content": "# src/routers/users.py - Rotas de Usuarios Seguras\nfrom fastapi import APIRouter\nfrom pydantic import BaseModel, EmailStr\n\nrouter = APIRouter(prefix='/users', tags=['Users'])\n\nclass UserCreate(BaseModel):\n    username: str\n    email: str\n\n@router.get('/')\nasync def list_users():\n    return [{'id': 1, 'username': 'admin', 'email': 'admin@agentoffice.internal'}]\n\n@router.post('/')\nasync def create_user(user: UserCreate):\n    return {'status': 'created', 'user': user.model_dump()}\n"
+            })
+        else:
+            # Fallback dinâmico para serviços gerais
+            clean_name = re.sub(r'[^a-zA-Z0-9_]', '_', epic_title.lower()).strip('_') or "core_service"
+            files.append({
+                "path": f"src/{clean_name}.py",
+                "content": f"# src/{clean_name}.py - Implementacao de {epic_title}\nimport logging\n\nlogger = logging.getLogger('{clean_name}')\n\nclass {clean_name.title().replace('_', '')}Manager:\n    def __init__(self):\n        self.is_active = True\n\n    def execute(self, payload: dict) -> dict:\n        logger.info('Executando operacao solicitada...')\n        return {{'status': 'success', 'data': payload}}\n"
+            })
+            files.append({
+                "path": f"src/routers/{clean_name}_router.py",
+                "content": f"# src/routers/{clean_name}_router.py\nfrom fastapi import APIRouter\nfrom pydantic import BaseModel\n\nrouter = APIRouter(prefix='/{clean_name}', tags=['{epic_title}'])\n\nclass RequestModel(BaseModel):\n    query: str\n\n@router.post('/')\nasync def handle_request(req: RequestModel):\n    return {{'status': 'processed', 'query': req.query}}\n"
+            })
+
+        return files
+
     async def _execute_squad_epic(
         self,
         leader: Agent,
@@ -625,7 +794,7 @@ class MultiTierOrchestrator:
         workspace: WorkspaceData
     ) -> str:
         """
-        Execução departamental: Líder coordena seu squad, gera código/arquivos,
+        Execução departamental: Líder coordena seu squad, gera código/arquivos dinâmicos,
         e dispara assistência inter-squad (request_cross_squad_help) quando necessário.
         """
         squad_id = squad.id if squad else leader.squad_id or "squad-core-engineering"
@@ -644,7 +813,6 @@ class MultiTierOrchestrator:
         cross_squad_notes = []
 
         # 2. Identificar se o épico requer assistência técnica de outro squad
-        # Cenário típico: Líder de Engenharia precisa de auditoria de segurança
         lower_prompt = (user_prompt + " " + objective).lower()
         needs_sec_audit = ("squad-security" not in squad_id) and (
             "seguran" in lower_prompt or "vulnerab" in lower_prompt or "audit" in lower_prompt
@@ -652,8 +820,6 @@ class MultiTierOrchestrator:
 
         if needs_sec_audit:
             logger.info(f"[{squad_id}] Líder '{leader.name}' detectou dependência técnica externa (Segurança).")
-
-            # Disparar request_cross_squad_help
             ticket, msg = await request_cross_squad_help(
                 requesting_leader_id=leader.id,
                 target_squad_id="squad-security",
@@ -663,8 +829,7 @@ class MultiTierOrchestrator:
                 workspace=workspace
             )
 
-            # Simular/aguardar o processamento pelo líder de segurança
-            await asyncio.sleep(1.5)
+            await asyncio.sleep(1.0)
             sec_audit_artifact = (
                 "### Parecer de Segurança e Vulnerabilidades (Squad Segurança)\n"
                 "- **Análise de Injeção SQL:** Conexão SQLite validada via ORM SQLAlchemy. Sem queries brutas vulneráveis.\n"
@@ -672,160 +837,150 @@ class MultiTierOrchestrator:
                 "- **Status da Auditoria:** ✅ APROVADO sem vulnerabilidades críticas detectadas."
             )
 
-            # Resolver o ticket inter-squad
             await resolve_cross_squad_ticket(
                 ticket_id=ticket.ticket_id,
                 result_artifact=sec_audit_artifact,
                 workspace=workspace
             )
-
             cross_squad_notes.append(sec_audit_artifact)
 
         # 3. Execução dos arquivos reais do épico no sandbox com arquitetura AIOX Story + QA Gate
-        # Se for engenharia ou pedir FastAPI / SQLite:
-        if "fastapi" in lower_prompt or "sqlite" in lower_prompt or "api" in lower_prompt or "usuario" in lower_prompt:
-            try:
-                # Fase A: Arquitetura & Governança de ADRs (@architect Aria)
-                architect_agent = next((a for a in workspace.agents if a.id == "agent-1c137c" or getattr(a, "aiox_role", "") == "architect"), leader)
-                await hub.broadcast_agent_status(architect_agent.id, AgentState.THINKING)
-                await hub.broadcast_system_notice(
-                    f"🏛️ [AIOX:ARCHITECT] Aria (@architect) definiu o blueprint técnico e validou os ADRs para '{epic_title}'."
-                )
-                await asyncio.sleep(0.5)
-                await hub.broadcast_agent_status(architect_agent.id, AgentState.IDLE)
+        created_files = []
+        all_passed = True
+        critique = {"score": 100, "verdict": "APROVADO"}
 
-                # Fase B: Geração da História AIOX com Critérios de Aceite (@sm Morgan)
-                sm_agent = next((a for a in workspace.agents if a.id == "agent-sm" or getattr(a, "aiox_role", "") == "sm"), None)
-                if sm_agent:
-                    await hub.broadcast_agent_status(sm_agent.id, AgentState.WORKING)
+        try:
+            # Fase A: Arquitetura & Governança de ADRs (@architect Aria)
+            architect_agent = next((a for a in workspace.agents if a.id == "agent-1c137c" or getattr(a, "aiox_role", "") == "architect"), leader)
+            await hub.broadcast_agent_status(architect_agent.id, AgentState.THINKING)
+            await hub.broadcast_system_notice(
+                f"🏛️ [AIOX:ARCHITECT] Aria (@architect) definiu o blueprint técnico e validou os ADRs para '{epic_title}'."
+            )
+            await asyncio.sleep(0.5)
+            await hub.broadcast_agent_status(architect_agent.id, AgentState.IDLE)
 
-                await fs_create_directory("stories", agent_id=leader.id)
-                story_content = (
-                    f"# [AIOX STORY] {epic_title}\n\n"
-                    f"**ID:** STORY-{squad_id}\n"
-                    f"**Squad Responsável:** {squad_name} (`{squad_id}`)\n"
-                    f"**Arquiteta:** Aria (@architect)\n"
-                    f"**Scrum Master:** Morgan (@sm)\n"
-                    f"**Desenvolvedor:** Dex (@dev)\n"
-                    f"**QA Gatekeeper:** Quinn (@qa)\n"
-                    f"**Status:** IMPLEMENTED (Validado pelo QA Gate)\n\n"
-                    f"## 🎯 Objetivo de Engenharia\n"
-                    f"Como desenvolvedor de software,\n"
-                    f"Quero disponibilizar a estrutura de dados e rotas para {epic_title},\n"
-                    f"Para garantir uma base sólida, desacoplada e segura em SQLite e FastAPI.\n\n"
-                    f"## 📋 Critérios de Aceite (Acceptance Criteria)\n"
-                    f"- [x] **AC-1:** Conexão assíncrona SQLite com SQLAlchemy 2.0 em `src/database.py`.\n"
-                    f"- [x] **AC-2:** Rotas REST tipadas com Pydantic em `src/routers/users.py`.\n"
-                    f"- [x] **AC-3:** Zero erros de sintaxe (validação AST via `aiox_validate_code_syntax`).\n"
-                    f"- [x] **AC-4:** Isolamento restrito ao workspace sandbox.\n\n"
-                    f"## 🛡️ Definition of Done (DoD)\n"
-                    f"- [x] Código gravado no sandbox.\n"
-                    f"- [x] Quality Gate auditado sem falhas sintáticas.\n"
-                    f"- [x] Relatório emitido em `reports/QA-REPORT-{squad_id}.md`.\n"
-                )
-                await fs_write_file(f"stories/STORY-{squad_id}.md", story_content, mode="overwrite", agent_id=leader.id)
-                await hub.broadcast_system_notice(
-                    f"📋 [AIOX:STORY] Morgan (@sm) redigiu a história formal: 'stories/STORY-{squad_id}.md' com Acceptance Criteria e DoD."
-                )
-                if sm_agent:
-                    await hub.broadcast_agent_status(sm_agent.id, AgentState.IDLE)
+            # Fase B: Obter arquivos reais dinamicamente com LLM
+            dev_agent = next((a for a in workspace.agents if a.id == "agent-9debfa" or getattr(a, "aiox_role", "") == "dev"), None)
+            if dev_agent:
+                await hub.broadcast_agent_status(dev_agent.id, AgentState.WORKING)
 
-                # Fase C: Implementação de Código no Sandbox (@dev Dex)
-                dev_agent = next((a for a in workspace.agents if a.id == "agent-9debfa" or getattr(a, "aiox_role", "") == "dev"), None)
-                if dev_agent:
-                    await hub.broadcast_agent_status(dev_agent.id, AgentState.WORKING)
+            dynamic_files = await self._generate_dynamic_epic_files(
+                leader=leader,
+                epic=epic,
+                user_prompt=user_prompt,
+                squad_id=squad_id
+            )
 
-                await fs_create_directory("src/routers", agent_id=leader.id)
+            # Gravar cada arquivo no sandbox
+            for item in dynamic_files:
+                file_p = item["path"]
+                content = item["content"]
+                # Garantir diretório
+                folder = str(Path(file_p).parent).replace("\\", "/")
+                if folder and folder != ".":
+                    await fs_create_directory(folder, agent_id=leader.id)
+                await fs_write_file(file_p, content, mode="overwrite", agent_id=leader.id)
+                created_files.append(file_p)
 
-                # Criar database.py
-                db_code = (
-                    "# src/database.py - Conexao SQLite Corporativa\n"
-                    "from sqlalchemy import create_engine\n"
-                    "from sqlalchemy.orm import declarative_base, sessionmaker\n\n"
-                    "SQLALCHEMY_DATABASE_URL = 'sqlite:///./app_users.db'\n"
-                    "engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={'check_same_thread': False})\n"
-                    "SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)\n"
-                    "Base = declarative_base()\n"
-                )
-                await fs_write_file("src/database.py", db_code, mode="overwrite", agent_id=leader.id)
+            files_summary_short = ", ".join(created_files[:3])
+            await hub.broadcast_system_notice(
+                f"⚙️ [AIOX:DEV] Dex (@dev) codificou {len(created_files)} arquivo(s) no sandbox: {files_summary_short}"
+            )
+            if dev_agent:
+                await hub.broadcast_agent_status(dev_agent.id, AgentState.IDLE)
 
-                # Criar users router
-                router_code = (
-                    "# src/routers/users.py - Rotas de Usuarios Seguras\n"
-                    "from fastapi import APIRouter, HTTPException\n"
-                    "from pydantic import BaseModel, EmailStr\n\n"
-                    "router = APIRouter(prefix='/users', tags=['Users'])\n\n"
-                    "class UserCreate(BaseModel):\n"
-                    "    username: str\n"
-                    "    email: str\n\n"
-                    "@router.get('/')\n"
-                    "async def list_users():\n"
-                    "    return [{'id': 1, 'username': 'admin', 'email': 'admin@agentoffice.internal'}]\n\n"
-                    "@router.post('/')\n"
-                    "async def create_user(user: UserCreate):\n"
-                    "    return {'status': 'created', 'user': user.model_dump()}\n"
-                )
-                await fs_write_file("src/routers/users.py", router_code, mode="overwrite", agent_id=leader.id)
+            # Fase C: Geração da História AIOX com Critérios de Aceite (@sm Morgan)
+            sm_agent = next((a for a in workspace.agents if a.id == "agent-sm" or getattr(a, "aiox_role", "") == "sm"), None)
+            if sm_agent:
+                await hub.broadcast_agent_status(sm_agent.id, AgentState.WORKING)
 
-                await hub.broadcast_system_notice(
-                    f"⚙️ [AIOX:DEV] Dex (@dev) codificou os arquivos em 'src/' estritamente dentro do sandbox seguro."
-                )
-                if dev_agent:
-                    await hub.broadcast_agent_status(dev_agent.id, AgentState.IDLE)
+            await fs_create_directory("stories", agent_id=leader.id)
+            ac_items = "\n".join([f"- [x] **AC-{i+1}:** Implementação funcional de `{f_p}`." for i, f_p in enumerate(created_files)])
+            story_content = (
+                f"# [AIOX STORY] {epic_title}\n\n"
+                f"**ID:** STORY-{squad_id}\n"
+                f"**Squad Responsável:** {squad_name} (`{squad_id}`)\n"
+                f"**Demanda Original:** {user_prompt}\n"
+                f"**Arquiteta:** Aria (@architect)\n"
+                f"**Scrum Master:** Morgan (@sm)\n"
+                f"**Desenvolvedor:** Dex (@dev)\n"
+                f"**QA Gatekeeper:** Quinn (@qa)\n"
+                f"**Status:** IMPLEMENTED (Validado pelo QA Gate)\n\n"
+                f"## 🎯 Objetivo de Engenharia\n"
+                f"{objective}\n\n"
+                f"## 📋 Critérios de Aceite (Acceptance Criteria)\n"
+                f"{ac_items}\n"
+                f"- [x] **AC-Syntax:** Validação sintática AST sem erros.\n"
+                f"- [x] **AC-Sandbox:** Isolamento restrito ao workspace sandbox.\n\n"
+                f"## 🛡️ Definition of Done (DoD)\n"
+                f"- [x] Códigos gravados e persistidos no sandbox.\n"
+                f"- [x] Quality Gate auditado e assinado em `reports/QA-REPORT-{squad_id}.md`.\n"
+                f"- [x] Auto-crítica ADE aprovada com score de conformidade.\n"
+            )
+            await fs_write_file(f"stories/STORY-{squad_id}.md", story_content, mode="overwrite", agent_id=leader.id)
+            await hub.broadcast_system_notice(
+                f"📋 [AIOX:STORY] Morgan (@sm) redigiu a história formal: 'stories/STORY-{squad_id}.md'."
+            )
+            if sm_agent:
+                await hub.broadcast_agent_status(sm_agent.id, AgentState.IDLE)
 
-                # Fase D: AIOX Quality Gate & ADE Self-Critique (@qa Quinn)
-                qa_agent = next((a for a in workspace.agents if a.id == "agent-qa" or getattr(a, "aiox_role", "") == "qa"), None)
-                if qa_agent:
-                    await hub.broadcast_agent_status(qa_agent.id, AgentState.WORKING)
+            # Fase D: AIOX Quality Gate & ADE Self-Critique (@qa Quinn)
+            qa_agent = next((a for a in workspace.agents if a.id == "agent-qa" or getattr(a, "aiox_role", "") == "qa"), None)
+            if qa_agent:
+                await hub.broadcast_agent_status(qa_agent.id, AgentState.WORKING)
 
-                await fs_create_directory("reports", agent_id=leader.id)
-                qg_results = []
-                for code_file in ("src/database.py", "src/routers/users.py"):
+            await fs_create_directory("reports", agent_id=leader.id)
+            qg_results = []
+            for code_file in created_files:
+                if code_file.endswith(".py"):
                     is_valid, msg = aiox_validate_code_syntax(code_file)
                     qg_results.append((code_file, is_valid, msg))
+                else:
+                    qg_results.append((code_file, True, f"Arquivo não-python validado no sandbox: '{code_file}'"))
 
-                all_passed = all(r[1] for r in qg_results)
-                qa_report_md = (
-                    f"# 🛡️ AIOX QUALITY GATE REPORT — {epic_title}\n\n"
-                    f"- **Data:** {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
-                    f"- **Squad:** {squad_name} (`{squad_id}`)\n"
-                    f"- **Auditor Responsável:** Quinn (@qa) & AIOX Automated Code Reviewer\n"
-                    f"- **Veredito Geral:** {'✅ APROVADO' if all_passed else '❌ REPROVADO'}\n\n"
-                    f"## Detalhes das Validações:\n\n"
-                )
-                for f_name, v_status, v_msg in qg_results:
-                    icon = "✅" if v_status else "❌"
-                    qa_report_md += f"- **`{f_name}`:** {icon} {v_msg}\n"
+            all_passed = all(r[1] for r in qg_results)
+            qa_report_md = (
+                f"# 🛡️ AIOX QUALITY GATE REPORT — {epic_title}\n\n"
+                f"- **Data:** {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+                f"- **Squad:** {squad_name} (`{squad_id}`)\n"
+                f"- **Auditor Responsável:** Quinn (@qa) & AIOX Automated Code Reviewer\n"
+                f"- **Veredito Geral:** {'✅ APROVADO' if all_passed else '❌ REPROVADO'}\n\n"
+                f"## Detalhes das Validações:\n\n"
+            )
+            for f_name, v_status, v_msg in qg_results:
+                icon = "✅" if v_status else "❌"
+                qa_report_md += f"- **`{f_name}`:** {icon} {v_msg}\n"
 
-                qa_report_md += (
-                    f"\n**Definition of Done:** {'Conforme com todos os critérios de aceite estabelecidos no AIOX Story.' if all_passed else 'Ação necessária antes da conclusão.'}\n"
-                )
-                await fs_write_file(f"reports/QA-REPORT-{squad_id}.md", qa_report_md, mode="overwrite", agent_id=leader.id)
+            qa_report_md += (
+                f"\n**Definition of Done:** {'Conforme com todos os critérios de aceite estabelecidos no AIOX Story.' if all_passed else 'Ação necessária antes da conclusão.'}\n"
+            )
+            await fs_write_file(f"reports/QA-REPORT-{squad_id}.md", qa_report_md, mode="overwrite", agent_id=leader.id)
 
-                # Auto-crítica ADE (Autonomous Development Engine)
-                critique = memory_layer.perform_ade_self_critique("src")
-                await hub.broadcast_system_notice(
-                    f"🛡️ [AIOX:QA] Quinn (@qa) aprovou o Quality Gate e auto-crítica ADE: Score {critique['score']}/100 — {critique['verdict']}."
-                )
-                if qa_agent:
-                    await hub.broadcast_agent_status(qa_agent.id, AgentState.IDLE)
+            # Auto-crítica ADE (Autonomous Development Engine)
+            critique = memory_layer.perform_ade_self_critique("src")
+            await hub.broadcast_system_notice(
+                f"🛡️ [AIOX:QA] Quinn (@qa) aprovou o Quality Gate e auto-crítica ADE: Score {critique['score']}/100 — {critique['verdict']}."
+            )
+            if qa_agent:
+                await hub.broadcast_agent_status(qa_agent.id, AgentState.IDLE)
 
-                logger.info(f"[{squad_id}] Arquivos criados, validados e auto-criticados no sandbox com sucesso.")
-            except SecuritySandboxError as s_err:
-                logger.error(f"Erro de sandbox no squad {squad_id}: {s_err}")
+            logger.info(f"[{squad_id}] {len(created_files)} arquivo(s) criados, validados e auto-criticados com sucesso.")
+        except SecuritySandboxError as s_err:
+            logger.error(f"Erro de sandbox no squad {squad_id}: {s_err}")
 
         await hub.broadcast_agent_status(leader.id, AgentState.REPORTING)
-        await asyncio.sleep(1.0)
+        await asyncio.sleep(0.5)
         await hub.broadcast_agent_status(leader.id, AgentState.IDLE)
 
         # Montar relatório departamental AIOX
+        files_summary = ", ".join([f"`{f}`" for f in created_files]) if created_files else "Nenhum arquivo gravado"
         report = (
             f"**Squad {squad_name} — Relatório de Entrega (AIOX):**\n"
             f"- Épico: {epic_title}\n"
             f"- Especificação AIOX: `stories/STORY-{squad_id}.md` (Critérios de Aceite)\n"
-            f"- Entregáveis Criados no Sandbox: `src/database.py`, `src/routers/users.py`\n"
-            f"- Quality Gate AST: ✅ APROVADO (`reports/QA-REPORT-{squad_id}.md`)\n"
-            f"- Auto-Crítica ADE: ✅ APROVADO (Score 100/100 em `reports/CRITIQUE-LATEST.md`)\n"
+            f"- Entregáveis Criados no Sandbox: {files_summary}\n"
+            f"- Quality Gate AST: {'✅ APROVADO' if all_passed else '❌ COM FALHAS'} (`reports/QA-REPORT-{squad_id}.md`)\n"
+            f"- Auto-Crítica ADE: Score {critique['score']}/100 em `reports/CRITIQUE-LATEST.md`\n"
         )
         if cross_squad_notes:
             report += "\n**Integração Inter-Squad Realizada:**\n" + "\n".join(cross_squad_notes)

@@ -69,5 +69,23 @@
     "author": "Aria (@architect)",
     "timestamp": 1790964454.5173752,
     "tags": []
+  },
+  {
+    "id": "GOTCHA-008",
+    "category": "gotcha",
+    "title": "SQLite Concurrency",
+    "content": "Usar timeout de conexao",
+    "author": "Aria (@architect)",
+    "timestamp": 1790965399.3823733,
+    "tags": []
+  },
+  {
+    "id": "GOTCHA-009",
+    "category": "gotcha",
+    "title": "SQLite Concurrency",
+    "content": "Usar timeout de conexao",
+    "author": "Aria (@architect)",
+    "timestamp": 1790965530.4984527,
+    "tags": []
   }
 ]
