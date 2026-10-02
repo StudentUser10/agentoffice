@@ -275,24 +275,26 @@ class OfficeUI {
     });
 
     socket.on('chat.delta', (data) => {
-      if (this.activeChatAgent) {
+      if (this.activeChatAgent && (!data.agent_id || data.agent_id === this.activeChatAgent.id)) {
         this.appendChatDelta(data.delta);
       }
     });
 
     socket.on('chat.completed', (data) => {
-      if (this.currentAssistantMessageElem) {
-        if (this.currentAssistantMessageElem.querySelector('.typing-indicator')) {
-          this.currentAssistantMessageElem.innerHTML = '';
+      if (this.activeChatAgent && (!data.agent_id || data.agent_id === this.activeChatAgent.id)) {
+        if (this.currentAssistantMessageElem) {
+          if (this.currentAssistantMessageElem.querySelector('.typing-indicator')) {
+            this.currentAssistantMessageElem.innerHTML = '';
+          }
+          if (!this.currentAssistantMessageElem.textContent.trim() && data.message) {
+            this.currentAssistantMessageElem.textContent = data.message;
+          }
         }
-        if (!this.currentAssistantMessageElem.textContent.trim() && data.message) {
-          this.currentAssistantMessageElem.textContent = data.message;
-        }
+        this.finalizeChatMessage();
+        this.sendChatBtn.disabled = false;
+        this.chatInput.disabled = false;
+        this.chatInput.focus();
       }
-      this.finalizeChatMessage();
-      this.sendChatBtn.disabled = false;
-      this.chatInput.disabled = false;
-      this.chatInput.focus();
     });
 
     // Eventos da Arquitetura Multinível (Etapa 7: Sudo Agent & Inter-Squad)
@@ -318,17 +320,20 @@ class OfficeUI {
     socket.on('sudo.final_delivery', (data) => {
       this.logActivity(`🏆 [Sudo Agent] Parecer Executivo consolidado!`, 'notice');
       this.handleSudoDelivery(data);
-      if (this.currentAssistantMessageElem) {
-        if (this.currentAssistantMessageElem.querySelector('.typing-indicator')) {
-          this.currentAssistantMessageElem.innerHTML = '';
+      // Atualizar balão de chat somente se a conversa aberta for especificamente com o Sudo Agent
+      if (this.activeChatAgent && (this.activeChatAgent.tier === 'sudo' || this.activeChatAgent.id === 'agent-sudo')) {
+        if (this.currentAssistantMessageElem) {
+          if (this.currentAssistantMessageElem.querySelector('.typing-indicator')) {
+            this.currentAssistantMessageElem.innerHTML = '';
+          }
+          if (!this.currentAssistantMessageElem.textContent.trim() && data.final_summary) {
+            this.currentAssistantMessageElem.textContent = data.final_summary;
+          }
+          this.finalizeChatMessage();
         }
-        if (!this.currentAssistantMessageElem.textContent.trim() && data.final_summary) {
-          this.currentAssistantMessageElem.textContent = data.final_summary;
-        }
-        this.finalizeChatMessage();
+        this.sendChatBtn.disabled = false;
+        this.chatInput.disabled = false;
       }
-      this.sendChatBtn.disabled = false;
-      this.chatInput.disabled = false;
     });
 
     socket.on('chat.error', (data) => {

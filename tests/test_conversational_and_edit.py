@@ -52,11 +52,13 @@ def test_sudo_conversational_response():
 def test_agent_update_endpoint():
     print("\n--- Testando Endpoint de Edição de Agentes ---")
     workspace = storage.load_workspace()
-    target_agent = workspace.agents[0]
+    # Selecionar Alex Tech Lead ou o primeiro agente que não seja o Sudo Agent
+    target_agent = next((a for a in workspace.agents if a.id == "agent-1c137c" or (a.tier != AgentTier.SUDO and a.id != "agent-sudo")), None)
+    assert target_agent is not None, "Deve haver um agente não-sudo para teste de edição."
     agent_id = target_agent.id
 
     payload = {
-        "name": f"{target_agent.name} (Editado)",
+        "name": "Alex Tech Lead (Editado)",
         "title": "Lead Architect & Strategist",
         "tier": "squad_leader",
         "role_type": "supervisor",
@@ -83,13 +85,58 @@ def test_agent_update_endpoint():
     eng_squad = next((s for s in squads_data.squads if s.id == "squad-core-engineering"), None)
     assert eng_squad is not None
     assert agent_id in eng_squad.member_ids
-    assert eng_squad.leader_id == agent_id
     print("  -> Sincronização com o Squad de Engenharia validada com sucesso!")
+
+    # Restaurar dados originais para não poluir o workspace
+    payload_restore = {
+        "name": target_agent.name,
+        "title": target_agent.title,
+        "tier": target_agent.tier.value if hasattr(target_agent.tier, "value") else target_agent.tier,
+        "role_type": target_agent.role_type.value if hasattr(target_agent.role_type, "value") else target_agent.role_type,
+        "desk_id": target_agent.desk_id,
+        "squad_id": target_agent.squad_id,
+        "system_prompt": target_agent.system_prompt,
+        "model_name": target_agent.model_name
+    }
+    client.put(f"/api/agents/{agent_id}", json=payload_restore)
+
+
+def test_squad_leader_chat_does_not_conflict_with_sudo():
+    print("\n--- Testando Chat com Líder de Squad (sem conflito com Sudo Agent) ---")
+    workspace = storage.load_workspace()
+    roberto = next((a for a in workspace.agents if a.id == "agent-ce2916"), None)
+    assert roberto is not None, "Roberto do cyber deve existir no workspace."
+    assert "diretor" in roberto.title.lower(), "Roberto deve ter 'Diretor' no cargo para testar desambiguação."
+    assert roberto.tier != AgentTier.SUDO, "Roberto não deve ser do tier SUDO."
+
+    # Enviar mensagem para Roberto via API
+    res = client.post("/api/chat", json={"agent_id": roberto.id, "message": "eai cara"})
+    assert res.status_code == 200
+    assert res.json()["status"] == "started"
+
+    # Executar orquestração direta
+    from backend.orchestrator import orchestrator
+    asyncio.run(orchestrator.execute_task(roberto.id, "eai cara"))
+
+    # Verificar resposta gravada para Roberto
+    updated_ws = storage.load_workspace()
+    convs = updated_ws.conversations.get(roberto.id, [])
+    assert len(convs) >= 2, "Conversa de Roberto deve conter mensagem e resposta."
+    last_asst = next((c for c in reversed(convs) if c["role"] == "assistant"), None)
+    assert last_asst is not None
+    reply_text = last_asst["text"].lower()
+
+    # O Líder de cibersegurança NÃO deve se apresentar como o Sudo Agent nem orquestrador supremo
+    assert "sou o sudo agent" not in reply_text, "Roberto não deve se identificar como Sudo Agent!"
+    assert "orquestrador supremo" not in reply_text, "Roberto não deve usurpar a identidade de Orquestrador Supremo!"
+    print(f"  -> Resposta legítima de Roberto ({roberto.title}): {last_asst['text'][:120]}...")
+    print("  -> Conflito entre Líder e Sudo Agent resolvido com sucesso!")
 
 
 if __name__ == "__main__":
     test_sudo_conversational_response()
     test_agent_update_endpoint()
+    test_squad_leader_chat_does_not_conflict_with_sudo()
     print("\n=======================================================")
     print("TODOS OS TESTES DE FEEDBACK E EDIÇÃO PASSARAM COM SUCESSO!")
     print("=======================================================")

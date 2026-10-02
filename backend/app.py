@@ -633,11 +633,16 @@ async def send_chat_message(payload: ChatRequest):
     if not agent:
         raise HTTPException(status_code=404, detail="Agente não encontrado.")
 
-    # Se for Sudo Agent, aciona o fluxo corporativo multinível
-    if getattr(agent, "tier", None) == AgentTier.SUDO or "diretor" in agent.title.lower() or "sudo" in agent.name.lower():
+    # Somente o Sudo Agent (tier SUDO ou id agent-sudo na mesa da diretoria) aciona a governança macro corporativa
+    is_sudo = (
+        getattr(agent, "tier", None) == AgentTier.SUDO
+        or agent.id == "agent-sudo"
+        or (agent.desk_id == "desk-sudo" and "sudo" in agent.name.lower())
+    )
+    if is_sudo:
         asyncio.create_task(multi_tier_orchestrator.handle_sudo_macro_goal(payload.message))
     else:
-        # Dispara orquestrador padrão em background
+        # Líderes de Squad, Workers e Especialistas respondem com seu próprio motor e identidade
         asyncio.create_task(orchestrator.execute_task(payload.agent_id, payload.message))
 
     return {"status": "started", "agent_id": payload.agent_id}

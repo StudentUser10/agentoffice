@@ -149,8 +149,15 @@ class Orchestrator:
 
         history = self._get_conversation_context(workspace, agent.id)
         
-        # Injetar diretivas de ferramentas de arquivo
-        system_prompt = f"{agent.system_prompt}\n\n{SUBAGENT_TOOL_DIRECTIVE}"
+        # Injetar identidade precisa do agente e diretivas de ferramentas
+        role_label = agent.title or "Especialista"
+        squad_label = f"no Squad '{agent.squad_id}'" if agent.squad_id else ""
+        system_prompt = (
+            f"Você é {agent.name}, {role_label} {squad_label} no AgentOffice 2D (sala {getattr(agent, 'room_id', 'escritório')}).\n"
+            f"Sua especialidade e diretrizes: {agent.system_prompt}\n"
+            f"IMPORTANTE: Você NÃO é o Sudo Agent nem o Diretor Geral supremo. Responda sempre diretamente com a sua própria identidade ({agent.name}, {role_label}), especialidade técnica e tom profissional e colaborativo.\n\n"
+            f"{SUBAGENT_TOOL_DIRECTIVE}"
+        )
         
         max_turns = 4
         current_prompt = user_prompt
@@ -185,7 +192,8 @@ class Orchestrator:
             if not full_response:
                 full_response = response_text
 
-            # Enviar resposta final em streaming simulado / completude
+            # Enviar deltas e finalizar chat
+            await hub.broadcast_chat_delta(agent.id, full_response)
             await hub.broadcast_chat_completed(agent.id, full_response)
             self._record_message(workspace, agent.id, "assistant", full_response)
         finally:
