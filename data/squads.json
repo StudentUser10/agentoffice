@@ -7,7 +7,9 @@
       "role_type": "supervisor",
       "system_prompt": "Você é um Arquiteto de Software e Tech Lead sênior. Sua responsabilidade é planejar arquiteturas, decompor objetivos em subtarefas claras, definir contratos técnicos e garantir a integridade do sistema.",
       "avatar_id": "avatar_3",
-      "default_model": ""
+      "default_model": "",
+      "aiox_handle": null,
+      "aiox_role": null
     },
     {
       "id": "template-python-dev",
@@ -16,7 +18,9 @@
       "role_type": "worker",
       "system_prompt": "Você é um Engenheiro de Software especialista em Python 3.10+, FastAPI e desenvolvimento orientado a testes. Escreva código limpo, eficiente, seguro e bem documentado.",
       "avatar_id": "avatar_1",
-      "default_model": ""
+      "default_model": "",
+      "aiox_handle": null,
+      "aiox_role": null
     },
     {
       "id": "template-qa",
@@ -25,7 +29,9 @@
       "role_type": "worker",
       "system_prompt": "Você é um Engenheiro de Qualidade e Auditor de Código. Sua missão é inspecionar códigos e artefatos, encontrar potenciais falhas, avaliar conformidade com requisitos e fornecer relatórios de qualidade objetivos.",
       "avatar_id": "avatar_4",
-      "default_model": ""
+      "default_model": "",
+      "aiox_handle": null,
+      "aiox_role": null
     },
     {
       "id": "template-analyst",
@@ -34,7 +40,9 @@
       "role_type": "worker",
       "system_prompt": "Você é um Pesquisador e Analista Técnico. Sua responsabilidade é levantar requisitos, sintetizar dados técnicos, analisar trade-offs e embasar decisões com evidências sólidas.",
       "avatar_id": "avatar_2",
-      "default_model": ""
+      "default_model": "",
+      "aiox_handle": null,
+      "aiox_role": null
     },
     {
       "id": "template-writer",
@@ -43,7 +51,9 @@
       "role_type": "worker",
       "system_prompt": "Você é um Redator Técnico especializado em documentação de software, manuais de API, relatórios de release e guias de arquitetura claros e objetivos.",
       "avatar_id": "avatar_2",
-      "default_model": ""
+      "default_model": "",
+      "aiox_handle": null,
+      "aiox_role": null
     }
   ],
   "squads": [
@@ -54,21 +64,24 @@
       "leader_id": "agent-1c137c",
       "member_ids": [
         "agent-1c137c",
-        "agent-9debfa"
+        "agent-9debfa",
+        "agent-sm"
       ],
       "agent_ids": [
-        "template-tech-lead",
-        "template-python-dev"
+        "template-architect",
+        "template-dev",
+        "template-sm"
       ],
       "domain_tags": [
         "python",
         "fastapi",
         "sqlite",
-        "backend",
-        "api"
+        "architecture",
+        "scrum",
+        "backend"
       ],
       "color_theme": "#10b981",
-      "description": "Engenharia e desenvolvimento de software, APIs e bancos de dados.",
+      "description": "Arquitetura e desenvolvimento de software, APIs e persistência.",
       "created_at": 1790949869.0811787
     },
     {
@@ -80,7 +93,7 @@
         "agent-ce2916"
       ],
       "agent_ids": [
-        "template-qa"
+        "template-sec"
       ],
       "domain_tags": [
         "security",
@@ -97,19 +110,49 @@
       "id": "squad-documentation",
       "name": "Squad Documentação & QA",
       "room_id": "room_doc",
-      "leader_id": "",
-      "member_ids": [],
-      "agent_ids": [],
+      "leader_id": "agent-doc",
+      "member_ids": [
+        "agent-doc",
+        "agent-qa"
+      ],
+      "agent_ids": [
+        "template-doc",
+        "template-qa"
+      ],
       "domain_tags": [
         "documentation",
         "qa",
         "markdown",
         "openapi",
-        "testing"
+        "quality_gates",
+        "ast_linting"
       ],
       "color_theme": "#38bdf8",
-      "description": "Especificações técnicas, relatórios arquiteturais e garantia de conformidade.",
-      "created_at": 1790949869.081198
+      "description": "Documentação técnica, especificações OpenAPI e Quality Gates (AST + ADE).",
+      "created_at": 1790949869.0812
+    },
+    {
+      "id": "squad-data-analytics",
+      "name": "Squad Data & Analytics",
+      "room_id": "room_doc",
+      "leader_id": "agent-1c137c",
+      "member_ids": [
+        "agent-1c137c",
+        "agent-9debfa"
+      ],
+      "agent_ids": [
+        "agent-1c137c",
+        "agent-9debfa"
+      ],
+      "domain_tags": [
+        "data",
+        "pandas",
+        "etl",
+        "duckdb"
+      ],
+      "color_theme": "#f59e0b",
+      "description": "Squad especializado em pipelines de dados e analytics.",
+      "created_at": 1790956336.3179398
     }
   ]
 }

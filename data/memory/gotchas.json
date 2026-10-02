@@ -51,5 +51,23 @@
     "author": "Alex Tech Lead",
     "timestamp": 1790956433.8133733,
     "tags": []
+  },
+  {
+    "id": "GOTCHA-006",
+    "category": "gotcha",
+    "title": "SQLite Concurrency",
+    "content": "Usar timeout de conexao",
+    "author": "Aria (@architect)",
+    "timestamp": 1790964411.9521346,
+    "tags": []
+  },
+  {
+    "id": "GOTCHA-007",
+    "category": "gotcha",
+    "title": "SQLite Concurrency",
+    "content": "Usar timeout de conexao",
+    "author": "Aria (@architect)",
+    "timestamp": 1790964454.5173752,
+    "tags": []
   }
 ]

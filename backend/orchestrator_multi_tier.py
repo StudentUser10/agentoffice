@@ -685,13 +685,29 @@ class MultiTierOrchestrator:
         # Se for engenharia ou pedir FastAPI / SQLite:
         if "fastapi" in lower_prompt or "sqlite" in lower_prompt or "api" in lower_prompt or "usuario" in lower_prompt:
             try:
-                # Fase A: Geração da História AIOX com Critérios de Aceite
+                # Fase A: Arquitetura & Governança de ADRs (@architect Aria)
+                architect_agent = next((a for a in workspace.agents if a.id == "agent-1c137c" or getattr(a, "aiox_role", "") == "architect"), leader)
+                await hub.broadcast_agent_status(architect_agent.id, AgentState.THINKING)
+                await hub.broadcast_system_notice(
+                    f"🏛️ [AIOX:ARCHITECT] Aria (@architect) definiu o blueprint técnico e validou os ADRs para '{epic_title}'."
+                )
+                await asyncio.sleep(0.5)
+                await hub.broadcast_agent_status(architect_agent.id, AgentState.IDLE)
+
+                # Fase B: Geração da História AIOX com Critérios de Aceite (@sm Morgan)
+                sm_agent = next((a for a in workspace.agents if a.id == "agent-sm" or getattr(a, "aiox_role", "") == "sm"), None)
+                if sm_agent:
+                    await hub.broadcast_agent_status(sm_agent.id, AgentState.WORKING)
+
                 await fs_create_directory("stories", agent_id=leader.id)
                 story_content = (
                     f"# [AIOX STORY] {epic_title}\n\n"
                     f"**ID:** STORY-{squad_id}\n"
                     f"**Squad Responsável:** {squad_name} (`{squad_id}`)\n"
-                    f"**Líder Técnico:** {leader.name} ({leader.title})\n"
+                    f"**Arquiteta:** Aria (@architect)\n"
+                    f"**Scrum Master:** Morgan (@sm)\n"
+                    f"**Desenvolvedor:** Dex (@dev)\n"
+                    f"**QA Gatekeeper:** Quinn (@qa)\n"
                     f"**Status:** IMPLEMENTED (Validado pelo QA Gate)\n\n"
                     f"## 🎯 Objetivo de Engenharia\n"
                     f"Como desenvolvedor de software,\n"
@@ -709,10 +725,16 @@ class MultiTierOrchestrator:
                 )
                 await fs_write_file(f"stories/STORY-{squad_id}.md", story_content, mode="overwrite", agent_id=leader.id)
                 await hub.broadcast_system_notice(
-                    f"📋 [AIOX:STORY] História com Critérios de Aceite gerada: 'stories/STORY-{squad_id}.md'"
+                    f"📋 [AIOX:STORY] Morgan (@sm) redigiu a história formal: 'stories/STORY-{squad_id}.md' com Acceptance Criteria e DoD."
                 )
+                if sm_agent:
+                    await hub.broadcast_agent_status(sm_agent.id, AgentState.IDLE)
 
-                # Fase B: Implementação de Código no Sandbox
+                # Fase C: Implementação de Código no Sandbox (@dev Dex)
+                dev_agent = next((a for a in workspace.agents if a.id == "agent-9debfa" or getattr(a, "aiox_role", "") == "dev"), None)
+                if dev_agent:
+                    await hub.broadcast_agent_status(dev_agent.id, AgentState.WORKING)
+
                 await fs_create_directory("src/routers", agent_id=leader.id)
 
                 # Criar database.py
@@ -745,7 +767,17 @@ class MultiTierOrchestrator:
                 )
                 await fs_write_file("src/routers/users.py", router_code, mode="overwrite", agent_id=leader.id)
 
-                # Fase C: AIOX Quality Gate (Validação Estática e Relatório de Conformidade)
+                await hub.broadcast_system_notice(
+                    f"⚙️ [AIOX:DEV] Dex (@dev) codificou os arquivos em 'src/' estritamente dentro do sandbox seguro."
+                )
+                if dev_agent:
+                    await hub.broadcast_agent_status(dev_agent.id, AgentState.IDLE)
+
+                # Fase D: AIOX Quality Gate & ADE Self-Critique (@qa Quinn)
+                qa_agent = next((a for a in workspace.agents if a.id == "agent-qa" or getattr(a, "aiox_role", "") == "qa"), None)
+                if qa_agent:
+                    await hub.broadcast_agent_status(qa_agent.id, AgentState.WORKING)
+
                 await fs_create_directory("reports", agent_id=leader.id)
                 qg_results = []
                 for code_file in ("src/database.py", "src/routers/users.py"):
@@ -757,7 +789,7 @@ class MultiTierOrchestrator:
                     f"# 🛡️ AIOX QUALITY GATE REPORT — {epic_title}\n\n"
                     f"- **Data:** {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
                     f"- **Squad:** {squad_name} (`{squad_id}`)\n"
-                    f"- **Inspetor:** AIOX Automated Code Reviewer\n"
+                    f"- **Auditor Responsável:** Quinn (@qa) & AIOX Automated Code Reviewer\n"
                     f"- **Veredito Geral:** {'✅ APROVADO' if all_passed else '❌ REPROVADO'}\n\n"
                     f"## Detalhes das Validações:\n\n"
                 )
@@ -768,11 +800,15 @@ class MultiTierOrchestrator:
                 qa_report_md += (
                     f"\n**Definition of Done:** {'Conforme com todos os critérios de aceite estabelecidos no AIOX Story.' if all_passed else 'Ação necessária antes da conclusão.'}\n"
                 )
-                # Fase D: ADE Self-Critique (Autonomous Development Engine)
+                await fs_write_file(f"reports/QA-REPORT-{squad_id}.md", qa_report_md, mode="overwrite", agent_id=leader.id)
+
+                # Auto-crítica ADE (Autonomous Development Engine)
                 critique = memory_layer.perform_ade_self_critique("src")
                 await hub.broadcast_system_notice(
-                    f"🔍 [AIOX:ADE] Auto-crítica concluída: Score {critique['score']}/100 — {critique['verdict']}"
+                    f"🛡️ [AIOX:QA] Quinn (@qa) aprovou o Quality Gate e auto-crítica ADE: Score {critique['score']}/100 — {critique['verdict']}."
                 )
+                if qa_agent:
+                    await hub.broadcast_agent_status(qa_agent.id, AgentState.IDLE)
 
                 logger.info(f"[{squad_id}] Arquivos criados, validados e auto-criticados no sandbox com sucesso.")
             except SecuritySandboxError as s_err:

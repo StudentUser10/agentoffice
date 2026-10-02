@@ -287,6 +287,27 @@ def test_groq_tool_use_failed_resilience():
         print("  -> failed_generation recuperado com sucesso sem abortar o fluxo!")
 
 
+def test_aiox_mention_routing():
+    print("\n--- Testando Roteamento Inteligente de Menções AIOX (@handle) ---")
+    # 1. Menção @dev
+    res_dev = client.post("/api/chat", json={"agent_id": "agent-sudo", "message": "@dev implemente rota de ping"})
+    assert res_dev.status_code == 200
+    assert res_dev.json()["agent_id"] == "agent-9debfa"
+    print("  -> Menção @dev roteada cirurgicamente para Dex (agent-9debfa)!")
+
+    # 2. Menção @architect
+    res_arch = client.post("/api/chat", json={"agent_id": "agent-sudo", "message": "@architect valide o blueprint"})
+    assert res_arch.status_code == 200
+    assert res_arch.json()["agent_id"] == "agent-1c137c"
+    print("  -> Menção @architect roteada cirurgicamente para Aria (agent-1c137c)!")
+
+    # 3. Menção @qa
+    res_qa = client.post("/api/chat", json={"agent_id": "agent-sudo", "message": "@qa audite os relatórios"})
+    assert res_qa.status_code == 200
+    assert res_qa.json()["agent_id"] == "agent-qa"
+    print("  -> Menção @qa roteada cirurgicamente para Quinn (agent-qa)!")
+
+
 if __name__ == "__main__":
     test_aiox_agent_commands()
     test_aiox_sudo_commands()
@@ -296,8 +317,10 @@ if __name__ == "__main__":
     test_aiox_memory_layer_endpoints()
     test_aiox_squad_yaml_export_and_import()
     test_aiox_memory_chat_commands()
+    test_aiox_mention_routing()
     print("\n=======================================================")
     print("TODOS OS TESTES AVANÇADOS AIOX PASSARAM COM 100% SUCESSO!")
     print("=======================================================")
+
 
 

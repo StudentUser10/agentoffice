@@ -628,10 +628,50 @@ async def get_agent_conversations(agent_id: str):
 async def send_chat_message(payload: ChatRequest):
     """
     Recebe um comando/mensagem do usuário para o agente e dispara a orquestração assíncrona.
-    Se o agente for do tier SUDO (ou Diretoria), executa a orquestração multinível corporativa.
+    Suporta roteamento de menções AIOX (@architect, @dev, @qa, @sm, @sec, @doc, @aiox-master).
+    Se o agente for do tier SUDO (ou Diretoria), executa a orquestração multinível corporativa (Agentic Agile Handoff).
     """
     workspace = storage.load_workspace()
-    agent = next((a for a in workspace.agents if a.id == payload.agent_id), None)
+    msg = payload.message.strip()
+    target_agent_id = payload.agent_id
+
+    # Roteamento inteligente de menções AIOX (@handle)
+    if msg.startswith("@"):
+        first_token = msg.split()[0].lower()
+        handle_map = {
+            "@aiox-master": "agent-sudo",
+            "@master": "agent-sudo",
+            "@pax": "agent-sudo",
+            "@sudo": "agent-sudo",
+            "@architect": "agent-1c137c",
+            "@aria": "agent-1c137c",
+            "@dev": "agent-9debfa",
+            "@dex": "agent-9debfa",
+            "@sm": "agent-sm",
+            "@scrum": "agent-sm",
+            "@morgan": "agent-sm",
+            "@po": "agent-sm",
+            "@pm": "agent-sm",
+            "@qa": "agent-qa",
+            "@quinn": "agent-qa",
+            "@tester": "agent-qa",
+            "@sec": "agent-ce2916",
+            "@security": "agent-ce2916",
+            "@cipher": "agent-ce2916",
+            "@doc": "agent-doc",
+            "@echo": "agent-doc",
+            "@writer": "agent-doc",
+        }
+        if first_token in handle_map:
+            mapped_id = handle_map[first_token]
+            matched = next(
+                (a for a in workspace.agents if a.id == mapped_id or getattr(a, "aiox_handle", None) == first_token),
+                None
+            )
+            if matched:
+                target_agent_id = matched.id
+
+    agent = next((a for a in workspace.agents if a.id == target_agent_id), None)
     if not agent:
         raise HTTPException(status_code=404, detail="Agente não encontrado.")
 
@@ -645,9 +685,9 @@ async def send_chat_message(payload: ChatRequest):
         asyncio.create_task(multi_tier_orchestrator.handle_sudo_macro_goal(payload.message))
     else:
         # Líderes de Squad, Workers e Especialistas respondem com seu próprio motor e identidade
-        asyncio.create_task(orchestrator.execute_task(payload.agent_id, payload.message))
+        asyncio.create_task(orchestrator.execute_task(target_agent_id, payload.message))
 
-    return {"status": "started", "agent_id": payload.agent_id}
+    return {"status": "started", "agent_id": target_agent_id}
 
 
 @app.post("/api/sudo/chat")

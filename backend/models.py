@@ -239,6 +239,8 @@ class Agent(BaseModel):
     state: AgentState = AgentState.IDLE
     mission: Optional[SpawnSubagentParams] = None
     is_temporary: bool = False
+    aiox_handle: Optional[str] = None       # Ex: "@aiox-master", "@architect", "@dev", "@sm", "@qa", "@sec", "@doc"
+    aiox_role: Optional[str] = None         # Ex: "master", "architect", "dev", "sm", "qa", "sec", "doc"
 
 
 class AgentConfig(BaseModel):
@@ -252,6 +254,8 @@ class AgentConfig(BaseModel):
     model_name: str = ""
     system_prompt: str = ""
     status: str = "idle"
+    aiox_handle: Optional[str] = None
+    aiox_role: Optional[str] = None
 
 
 class CrossSquadTicket(BaseModel):
@@ -293,6 +297,8 @@ class AgentCreateRequest(BaseModel):
     room_id: Optional[str] = "room_dev"
     system_prompt: Optional[str] = None
     model_name: Optional[str] = None
+    aiox_handle: Optional[str] = None
+    aiox_role: Optional[str] = None
 
 
 class AgentUpdateRequest(BaseModel):
@@ -307,6 +313,8 @@ class AgentUpdateRequest(BaseModel):
     room_id: Optional[str] = None
     system_prompt: Optional[str] = None
     model_name: Optional[str] = None
+    aiox_handle: Optional[str] = None
+    aiox_role: Optional[str] = None
 
 
 class ChatMessage(BaseModel):
@@ -339,6 +347,8 @@ class AgentTemplate(BaseModel):
     system_prompt: str
     avatar_id: str = "avatar_1"
     default_model: str = ""
+    aiox_handle: Optional[str] = None
+    aiox_role: Optional[str] = None
 
 
 class Squad(BaseModel):
