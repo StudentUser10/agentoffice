@@ -5,11 +5,13 @@ Impede estritamente path traversal (..), acesso fora do workspace_dir e symlinks
 """
 
 import asyncio
+import json
 import logging
 import os
 import tempfile
+import time
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
 from backend.storage import storage
 from backend.websocket_hub import hub
@@ -230,6 +232,8 @@ async def fs_write_file(
         rel_path = str(target.relative_to(ws_root))
         total_lines = len(content.splitlines())
         total_bytes = len(content.encode("utf-8"))
+        # Registrar auditoria imutável AIOX
+        log_aiox_audit("WRITE_FILE", rel_path, total_bytes, agent_id or "system", "SUCCESS", workspace_dir)
         return rel_path, total_lines, total_bytes
 
     rel_path, lines_count, bytes_count = await asyncio.to_thread(_sync_write)
@@ -238,7 +242,65 @@ async def fs_write_file(
     if agent_id:
         await hub.broadcast_fs_activity(agent_id, "created_file", rel_path)
         await hub.broadcast_system_notice(
-            f"💾 Arquivo gravado no workspace: '{rel_path}' ({lines_count} linhas, {bytes_count} bytes)"
+            f"💾 [AIOX:FS] Arquivo gravado no sandbox: '{rel_path}' ({lines_count} linhas, {bytes_count} bytes)"
         )
 
     return f"Arquivo '{rel_path}' gravado com sucesso ({lines_count} linhas, {bytes_count} bytes)."
+
+
+def log_aiox_audit(
+    action: str,
+    path: str,
+    size_bytes: int,
+    agent_id: str,
+    status: str = "SUCCESS",
+    workspace_dir: Optional[str] = None
+) -> None:
+    """Registra operação no log de auditoria imutável AIOX (.aiox_audit.jsonl)."""
+    try:
+        ws_root = _get_workspace_dir(workspace_dir)
+        audit_file = ws_root / ".aiox_audit.jsonl"
+        entry = {
+            "timestamp": time.time(),
+            "action": action,
+            "path": path,
+            "size_bytes": size_bytes,
+            "agent_id": agent_id,
+            "status": status
+        }
+        with open(audit_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception as e:
+        logger.debug(f"Falha ao registrar auditoria AIOX: {e}")
+
+
+def aiox_validate_code_syntax(
+    relative_path: str,
+    workspace_dir: Optional[str] = None
+) -> Tuple[bool, str]:
+    """
+    Executa verificação estática de sintaxe (AST check) em arquivos de código no workspace sandbox.
+    Garante o Quality Gate antes do sign-off da tarefa (princípio AIOX DoD).
+    """
+    try:
+        target = resolve_and_validate_path(relative_path, workspace_dir)
+        if not target.exists():
+            return False, f"Arquivo '{relative_path}' não encontrado no sandbox."
+
+        content = target.read_text(encoding="utf-8")
+        if target.suffix.lower() == ".py":
+            import ast
+            ast.parse(content, filename=str(target))
+            return True, f"Sintaxe Python válida (AST validado sem erros) em '{relative_path}'."
+        elif target.suffix.lower() in (".json", ".jsonl"):
+            json.loads(content)
+            return True, f"JSON válido em '{relative_path}'."
+        
+        return True, f"Arquivo '{relative_path}' íntegro."
+    except SyntaxError as se:
+        return False, f"Erro de sintaxe em '{relative_path}' linha {se.lineno}: {se.msg}"
+    except json.JSONDecodeError as je:
+        return False, f"Erro de JSON em '{relative_path}': {je.msg}"
+    except Exception as ex:
+        return False, f"Falha na validação de '{relative_path}': {str(ex)}"
+

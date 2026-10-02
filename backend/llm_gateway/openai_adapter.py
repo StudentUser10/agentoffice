@@ -135,6 +135,16 @@ class OpenAIAdapter(BaseLLMAdapter):
             async with httpx.AsyncClient(timeout=timeout) as client:
                 res = await client.post(endpoint, json=payload, headers=headers)
 
+                # Tratamento de fallback para provedores como Groq quando json_mode falha
+                if res.status_code == 400 and json_mode and "json_validate_failed" in res.text:
+                    logger.warning(
+                        f"Provedor '{self.provider}' retornou HTTP 400 (json_validate_failed). "
+                        "Retentando automaticamente sem response_format restritivo..."
+                    )
+                    payload_fallback = dict(payload)
+                    payload_fallback.pop("response_format", None)
+                    res = await client.post(endpoint, json=payload_fallback, headers=headers)
+
                 if res.status_code in (401, 403):
                     raise LLMAuthenticationError(
                         f"Autenticação recusada por '{self.provider}' (HTTP {res.status_code}). Verifique a chave de API configurada."

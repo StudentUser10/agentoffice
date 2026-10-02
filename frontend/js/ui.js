@@ -186,6 +186,21 @@ class OfficeUI {
       }
     });
 
+    // Chips de Comandos Rápidos AIOX (CLI First)
+    document.querySelectorAll('.btn-aiox-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cmd = btn.getAttribute('data-cmd');
+        if (!cmd) return;
+        if (cmd.endsWith(' ')) {
+          this.chatInput.value = cmd;
+          this.chatInput.focus();
+        } else {
+          this.chatInput.value = cmd;
+          this.sendMessage();
+        }
+      });
+    });
+
     // Atalho para editar agente a partir do chat
     this.editCurrentAgentBtn.addEventListener('click', () => {
       if (this.activeChatAgent) {

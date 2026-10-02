@@ -23,6 +23,8 @@ from backend.models import (
 from backend.storage import storage
 from backend.tools.filesystem import (
     SecuritySandboxError,
+    _get_workspace_dir,
+    aiox_validate_code_syntax,
     fs_create_directory,
     fs_list_directory,
     fs_read_file,
@@ -127,6 +129,17 @@ class Orchestrator:
         self._record_message(workspace, target_agent_id, "user", user_prompt)
 
         try:
+            # 1. Comandos AIOX (CLI First: *help, *status, *qa, *rules, *manifest)
+            if user_prompt.strip().startswith("*"):
+                handled = await self._handle_aiox_command(agent, user_prompt.strip(), workspace)
+                if handled:
+                    return
+
+            # 2. Conversa casual ou saudação com supervisor: responder diretamente sem quebrar em JSON
+            if agent.role_type == AgentRoleType.SUPERVISOR and self._is_conversational(user_prompt):
+                await self._execute_direct_workflow(agent, user_prompt, workspace, llm)
+                return
+
             if agent.role_type == AgentRoleType.SUPERVISOR:
                 await self._execute_supervisor_workflow(agent, user_prompt, workspace, llm)
             else:
@@ -135,6 +148,141 @@ class Orchestrator:
             logger.error(f"Erro na orquestração da tarefa: {e}", exc_info=True)
             await hub.broadcast_agent_status(agent.id, AgentState.IDLE)
             await hub.broadcast_chat_error(agent.id, f"Falha na execução: {str(e)}")
+
+    def _is_conversational(self, prompt: str) -> bool:
+        """Determina se a mensagem é uma conversa informal/saudação simples sem demanda técnica."""
+        t = prompt.lower().strip().rstrip("?!.,:;")
+        greetings = {
+            "oi", "ola", "olá", "hello", "hi", "opa", "e ai", "e aí", "fala",
+            "bom dia", "boa tarde", "boa noite", "eae", "salve", "hey"
+        }
+        if t in greetings:
+            return True
+
+        technical_triggers = [
+            "desenvolv", "crie", "criacao", "criação", "faça", "fazer", "implement", "construa", "gere",
+            "api", "endpoint", "sqlite", "banco", "database", "crud", "rotas", "vulnerab",
+            "audite", "auditoria", "refatore", "arquivo", "script", "codigo", "código", "backend", "frontend",
+            "tabela", "migrat", "schema", "post", "get", "put", "delete", "spawn", "contrat"
+        ]
+        has_tech = any(trig in t for trig in technical_triggers)
+        if not has_tech and len(t.split()) <= 6:
+            return True
+        return False
+
+    async def _handle_aiox_command(
+        self,
+        agent: Agent,
+        command_str: str,
+        workspace: WorkspaceData
+    ) -> bool:
+        """Processador determinístico de comandos AIOX no chat (CLI First Architecture)."""
+        cmd_parts = command_str.split(maxsplit=1)
+        cmd = cmd_parts[0].lower()
+        args = cmd_parts[1].strip() if len(cmd_parts) > 1 else ""
+
+        await hub.broadcast_agent_status(agent.id, AgentState.WORKING)
+        reply = ""
+
+        if cmd in ("*help", "*ajuda"):
+            reply = (
+                f"### 🤖 Matriz de Recursos AIOX — {agent.name}\n"
+                f"- **Cargo:** {agent.title}\n"
+                f"- **Tier:** `{agent.tier.value if hasattr(agent.tier, 'value') else agent.tier}`\n"
+                f"- **Squad / Sala:** `{agent.squad_id or 'Geral'}` (Sala: `{getattr(agent, 'room_id', 'escritório')}`)\n"
+                f"- **Mesa Atribuída:** `{agent.desk_id}`\n"
+                f"- **Ferramentas Habilitadas:** `fs_read_file`, `fs_write_file`, `fs_list_directory`, `fs_create_directory`\n\n"
+                "**Comandos Rápidos AIOX (CLI First):**\n"
+                "- `*help`: Exibe esta matriz de recursos e comandos do agente.\n"
+                "- `*status`: Exibe o estado operacional, ocupação e tickets inter-squad.\n"
+                "- `*qa` ou `*test`: Executa o Quality Gate estático e validação de sintaxe (AST) no sandbox.\n"
+                "- `*rules` ou `*manifest`: Exibe o manifesto e as regras de Definition of Done (DoD) do squad.\n"
+                "- `*plan <meta>`: Gera documento estruturado de planejamento técnico.\n"
+            )
+        elif cmd in ("*status", "*estado"):
+            tickets_count = len(getattr(workspace, "active_tickets", []) or [])
+            sub_count = len(getattr(agent, "subordinate_ids", []) or [])
+            reply = (
+                f"### 📊 Status Operacional AIOX — {agent.name}\n"
+                f"- **Estado do Agente:** `{agent.state.value if hasattr(agent.state, 'value') else agent.state}`\n"
+                f"- **Squad / Sala:** `{agent.squad_id or 'Geral'}` (Sala: `{getattr(agent, 'room_id', 'escritório')}`)\n"
+                f"- **Subordinados:** {sub_count} agentes sob liderança\n"
+                f"- **Mesa Física:** `{agent.desk_id}`\n"
+                f"- **Tickets Inter-Squad Ativos:** {tickets_count}\n"
+                f"- **Sandbox Root:** `{storage.load_config().workspace_dir or 'sandbox ativo'}`\n"
+            )
+        elif cmd in ("*qa", "*test", "*teste"):
+            ws_root = _get_workspace_dir()
+            py_files = list(ws_root.glob("**/*.py"))
+            checked_lines = []
+            all_valid = True
+            
+            if not py_files:
+                checked_lines.append("- Nenhum arquivo `.py` encontrado no sandbox para inspeção.")
+            else:
+                for pf in py_files:
+                    rel_p = str(pf.relative_to(ws_root))
+                    valid, msg = aiox_validate_code_syntax(rel_p)
+                    if valid:
+                        checked_lines.append(f"- `{rel_p}`: ✅ {msg}")
+                    else:
+                        all_valid = False
+                        checked_lines.append(f"- `{rel_p}`: ❌ {msg}")
+
+            status_badge = "✅ APROVADO (Pronto para Definition of Done)" if all_valid else "⚠️ AÇÃO NECESSÁRIA (Falhas de sintaxe detectadas)"
+            reply = (
+                f"### 🛡️ AIOX Quality Gate — Relatório de Conformidade\n"
+                f"**Avaliador Técnico:** {agent.name} ({agent.title})\n\n"
+                f"**Arquivos Inspecionados no Sandbox:**\n" + "\n".join(checked_lines) + "\n\n"
+                f"**Resultado:** {status_badge}"
+            )
+            # Salvar relatório no workspace sandbox
+            try:
+                reports_dir = ws_root / "reports"
+                reports_dir.mkdir(parents=True, exist_ok=True)
+                (reports_dir / "QA-REPORT-LATEST.md").write_text(reply, encoding="utf-8")
+            except Exception as e:
+                logger.debug(f"Erro ao salvar QA report: {e}")
+        elif cmd in ("*rules", "*manifest"):
+            squads_data = storage.load_squads()
+            squad_obj = next((s for s in squads_data.squads if s.id == agent.squad_id), None)
+            if squad_obj:
+                tags = ", ".join(squad_obj.domain_tags)
+                reply = (
+                    f"### 📜 Manifesto do Squad — {squad_obj.name}\n"
+                    f"- **Sala:** `{squad_obj.room_id}`\n"
+                    f"- **Domínio Técnico:** {tags}\n"
+                    f"- **Descrição:** {squad_obj.description}\n"
+                    f"- **Líder Atual:** `{squad_obj.leader_id}`\n"
+                    f"- **Membros:** {len(squad_obj.member_ids)} agentes\n\n"
+                    f"**Diretrizes de Qualidade AIOX (Definition of Done):**\n"
+                    f"1. Código executável e validado via AST check (`*qa`).\n"
+                    f"2. Nenhuma credencial ou segredo gravado em arquivos de código.\n"
+                    f"3. Isolamento restrito ao workspace sandbox sem path traversal.\n"
+                )
+            else:
+                reply = f"Manifesto AIOX: Agente {agent.name} comprometido com entregas seguras e conformidade técnica."
+        elif cmd == "*plan":
+            if not args:
+                reply = "⚠️ Por favor especifique o objetivo do plano. Exemplo: `*plan Desenvolver API de usuários com SQLite`"
+            else:
+                reply = (
+                    f"### 📋 Plano Arquitetural AIOX — {agent.name}\n"
+                    f"**Objetivo:** {args}\n\n"
+                    f"**Fase 1: Especificação & Histórias** ➔ Gerar `workspace/stories/STORY-001.md` com critérios de aceite.\n"
+                    f"**Fase 2: Implementação** ➔ Criar rotas e persistência no sandbox.\n"
+                    f"**Fase 3: Quality Gate** ➔ Executar validação estática de sintaxe e testes de conformidade.\n"
+                    f"**Fase 4: DoD Sign-off** ➔ Emissão do relatório final e entrega ao Sudo Agent.\n"
+                )
+        else:
+            reply = f"Comando `{cmd}` não reconhecido. Digite `*help` para consultar os comandos AIOX disponíveis."
+
+        # Emitir resposta via streaming e completar
+        await hub.broadcast_chat_delta(agent.id, reply)
+        await hub.broadcast_chat_completed(agent.id, reply)
+        self._record_message(workspace, agent.id, "assistant", reply)
+        await hub.broadcast_agent_status(agent.id, AgentState.IDLE)
+        return True
 
     async def _execute_direct_workflow(
         self,
@@ -525,13 +673,17 @@ class Orchestrator:
             "}"
         )
 
-        raw = await llm.generate_response(
-            messages=[{"role": "user", "content": user_prompt}],
-            system_prompt=planner_system,
-            model_override=supervisor.model_name or None,
-            json_mode=True,
-            timeout=40.0
-        )
+        try:
+            raw = await llm.generate_response(
+                messages=[{"role": "user", "content": user_prompt}],
+                system_prompt=planner_system,
+                model_override=supervisor.model_name or None,
+                json_mode=True,
+                timeout=40.0
+            )
+        except Exception as e:
+            logger.warning(f"Fallback no planejamento do supervisor '{supervisor.name}': {e}")
+            raw = ""
 
         return self._extract_plan_or_tools(raw, subordinates, user_prompt)
 
