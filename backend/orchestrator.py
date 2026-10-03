@@ -200,9 +200,11 @@ class Orchestrator:
 
         technical_triggers = [
             "desenvolv", "crie", "criacao", "criação", "faça", "fazer", "implement", "construa", "gere",
+            "melhor", "aprimor", "otimiz", "arrum", "ajust", "atualiz", "modific", "showoff",
             "api", "endpoint", "sqlite", "banco", "database", "crud", "rotas", "vulnerab",
             "audite", "auditoria", "refatore", "arquivo", "script", "codigo", "código", "backend", "frontend",
-            "tabela", "migrat", "schema", "post", "get", "put", "delete", "spawn", "contrat"
+            "tabela", "migrat", "schema", "post", "get", "put", "delete", "spawn", "contrat",
+            "visual", "design", "layout", "minimalista", "pode começar", "comece", "inicie", "bora", "vamos"
         ]
         has_tech = any(trig in t for trig in technical_triggers)
         if not has_tech and len(t.split()) <= 6:

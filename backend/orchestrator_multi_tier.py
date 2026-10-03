@@ -16,6 +16,7 @@ import re
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
+from backend.config import BASE_DIR
 from backend.llm_client import LLMClient
 from backend.models import (
     Agent,
@@ -93,7 +94,7 @@ Suas atribuições:
 
 class MultiTierOrchestrator:
     def __init__(self):
-        pass
+        self._pending_clarifications: Dict[str, Dict[str, Any]] = {}
 
     def _record_message(self, workspace: WorkspaceData, agent_id: str, role: str, text: str):
         """Persiste mensagens na estrutura de conversas do workspace para o histórico do chat."""
@@ -107,40 +108,215 @@ class MultiTierOrchestrator:
         })
         storage.save_workspace(workspace, backup=False)
 
-    def _is_conversational(self, prompt: str) -> bool:
-        """Determina se a mensagem é uma conversa/saudação/dúvida de status ou um épico de desenvolvimento."""
-        t = prompt.lower().strip().rstrip("?!.,:;")
-        greetings = {
+    def _get_sudo_conversation_history(self, workspace: WorkspaceData, sudo_agent_id: str, limit: int = 12) -> List[Dict[str, Any]]:
+        """Retorna as mensagens recentes do histórico da conversa com o Sudo Agent."""
+        convs = workspace.conversations.get(sudo_agent_id, [])
+        return convs[-limit:] if convs else []
+
+    def _find_last_actionable_goal_from_history(self, workspace: WorkspaceData, sudo_agent_id: str) -> Optional[str]:
+        """Varre o histórico reverso em busca do último objetivo/meta expressada pelo usuário."""
+        convs = workspace.conversations.get(sudo_agent_id, [])
+        if not convs:
+            return None
+        pure_confirmations = {
+            "pode começar", "pode comecar", "pode iniciar", "comece", "inicie",
+            "bora", "vamos", "vai", "manda ver", "manda bala", "ok", "sim", "pode ser",
+            "oi", "ola", "olá", "hello", "hi", "bom dia", "boa tarde", "boa noite"
+        }
+        for m in reversed(convs):
+            if m.get("role") == "user":
+                txt = m.get("text", "").strip()
+                t_lower = txt.lower().rstrip("?!.,:;")
+                if t_lower in pure_confirmations or len(t_lower) <= 2:
+                    continue
+                return txt
+        return None
+
+    def _resolve_target_project_folder(self, user_prompt: str, epic_title: str) -> str:
+        """Determina o nome da pasta em public/ priorizando projetos existentes ou criando slugs limpos."""
+        combined = f"{user_prompt} {epic_title}".lower()
+
+        # 1. Verificar se refere a pastas existentes em workspace/public/
+        workspace_public = Path(BASE_DIR) / "workspace" / "public"
+        if workspace_public.exists():
+            existing_folders = [f.name for f in workspace_public.iterdir() if f.is_dir()]
+            for folder_name in existing_folders:
+                clean_f = folder_name.lower()
+                if clean_f in combined:
+                    return folder_name
+                # Partes relevantes com 4+ letras (ex: "showoff")
+                parts = [p for p in re.split(r'[-_]', clean_f) if len(p) >= 4]
+                if any(p in combined for p in parts):
+                    return folder_name
+
+        # 2. Slugs conhecidos por tema
+        if "showoff" in combined or "showcase" in combined:
+            return "agentoffice-showoff"
+        if "jogo" in combined or "game" in combined or "arcade" in combined:
+            return "arcade-game"
+        if "tarefa" in combined or "todo" in combined or "task" in combined:
+            return "todo-app"
+        if "loja" in combined or "ecommerce" in combined or "carrinho" in combined:
+            return "store-catalog"
+        if "dashboard" in combined or "metrica" in combined:
+            return "metrics-dashboard"
+
+        # 3. Gerar um slug limpo e conciso (máximo 3 palavras) a partir do título do épico ou do prompt
+        words = [w for w in re.findall(r'[a-zA-Z0-9]+', epic_title.lower()) if w not in {"do", "da", "de", "e", "para", "com", "o", "a", "em", "um", "uma"}]
+        slug = "-".join(words[:3]) if words else "novo-projeto"
+        return slug
+
+    async def _evaluate_sudo_goal_readiness(
+        self,
+        sudo_agent: Agent,
+        available_squads: List[Squad],
+        workspace: WorkspaceData,
+        user_prompt: str
+    ) -> Dict[str, Any]:
+        """
+        Avalia se a mensagem do usuário é:
+        1. 'EXECUTE_SQUADS': Meta clara, resposta a esclarecimento ou confirmação -> Comandar squads imediatamente!
+        2. 'ASK_CLARIFICATION': Meta aberta/ambígua -> Perguntar preferências antes e salvar no _pending_clarifications.
+        3. 'PURE_GREETING': Saudação pura ou dúvida sobre status do sistema.
+        """
+        raw_text = user_prompt.strip()
+        t = raw_text.lower().rstrip("?!.,:;")
+
+        confirmation_phrases = [
+            "pode começar", "pode comecar", "pode iniciar", "comece", "inicie", "iniciar",
+            "bora", "vamos", "vai", "manda ver", "manda bala", "prossiga", "execute", "executar",
+            "faça", "faca", "faz", "ok", "pode ser", "sim", "claro", "com certeza", "adelante",
+            "avançar", "avancar", "mãos à obra", "maos a obra", "concordo", "aprovado"
+        ]
+        is_confirmation = any(bool(re.search(rf"\b{re.escape(cp)}\b", t)) for cp in confirmation_phrases)
+
+        # 1. Verificar se existe esclarecimento pendente para este Sudo Agent
+        if sudo_agent.id in self._pending_clarifications:
+            pending = self._pending_clarifications.pop(sudo_agent.id)
+            original_goal = pending.get("original_goal", "")
+
+            if is_confirmation:
+                consolidated = original_goal
+            else:
+                consolidated = f"{original_goal} — Requisitos/preferências fornecidos: {raw_text}"
+
+            logger.info(f"[MultiTier] Esclarecimento respondido pelo usuário! Meta consolidada: '{consolidated}'")
+            return {
+                "action": "EXECUTE_SQUADS",
+                "consolidated_goal": consolidated,
+                "reason": "answered_pending_clarification"
+            }
+
+        # 2. Se for confirmação isolada (ex: "ok, pode ser, pode começar"), recuperar último objetivo do histórico
+        if is_confirmation:
+            last_goal = self._find_last_actionable_goal_from_history(workspace, sudo_agent.id)
+            if last_goal:
+                consolidated = f"{last_goal} (Confirmado pelo usuário: '{raw_text}')"
+                logger.info(f"[MultiTier] Confirmação recebida do usuário com histórico ativo: '{consolidated}'")
+                return {
+                    "action": "EXECUTE_SQUADS",
+                    "consolidated_goal": consolidated,
+                    "reason": "confirmed_from_history"
+                }
+
+        # 3. Triggers de Ação / Metas de Desenvolvimento / Melhoria
+        action_triggers = [
+            "melhor", "aprimor", "otimiz", "arrum", "ajust", "atualiz", "modific", "alter",
+            "cri", "desenvolv", "constru", "faça", "fazer", "ger", "implement", "codific",
+            "adicion", "remov", "mud", "refator", "audit", "test", "document", "analis",
+            "showoff", "jogo", "game", "landing", "site", "web", "frontend", "backend",
+            "api", "crud", "endpoint", "sqlite", "banco", "database", "rotas", "tabela",
+            "login", "auth", "seguran", "vulnerab", "dashboard", "componente", "layout", "visual", "design"
+        ]
+        has_action_trigger = any(trig in t for trig in action_triggers)
+
+        # Saudações e consultas de status puras
+        greetings = [
             "oi", "ola", "olá", "hello", "hi", "opa", "e ai", "e aí", "fala",
             "bom dia", "boa tarde", "boa noite", "eae", "salve", "hey"
-        }
-        if t in greetings:
-            return True
-
-        technical_triggers = [
-            "desenvolv", "crie", "criacao", "criação", "faça", "fazer", "implement", "construa", "gere",
-            "api", "endpoint", "sqlite", "banco", "database", "crud", "rotas", "vulnerab",
-            "audite", "auditoria", "refatore", "arquivo", "script", "codigo", "código", "backend", "frontend",
-            "tabela", "migrat", "schema", "post", "get", "put", "delete", "test"
         ]
-        has_tech_trigger = any(trig in t for trig in technical_triggers)
-
         status_phrases = [
             "como ta", "como tá", "como vai", "como estao", "como estão", "tudo bem", "tudo bom",
             "quem e voce", "quem é você", "o que voce faz", "o que você faz", "qual o status",
             "como funciona", "me ajude", "quais squads", "quais salas", "o que tem", "ta online",
             "está online", "ta vivo", "bom te ver"
         ]
-        is_status_phrase = any(sp in t for sp in status_phrases)
+        is_greeting = any(g == t or t.startswith(f"{g} ") or t.endswith(f" {g}") or f" {g} " in f" {t} " for g in greetings)
+        is_status = any(sp in t for sp in status_phrases)
+        is_greeting_or_status = is_greeting or is_status
 
-        if is_status_phrase and not has_tech_trigger:
-            return True
+        # Se for puramente saudação/status sem intenção de ação
+        if is_greeting_or_status and not has_action_trigger:
+            return {
+                "action": "PURE_GREETING",
+                "consolidated_goal": None
+            }
 
-        # Se for mensagem curta sem triggers técnicos, tratar como conversa
-        if not has_tech_trigger and len(t.split()) <= 6:
-            return True
+        # 4. Se o texto for vago/aberto sem alvo técnico concreto (ex: "tenho uma ideia", "quero fazer algo")
+        vague_prompts = [
+            "tenho uma ideia", "quero fazer algo", "vamos criar algo", "o que acha",
+            "uma ideia", "estou pensando", "criar algo novo", "fazer algo novo", "algo novo"
+        ]
+        concrete_targets = [
+            "api", "crud", "banco", "database", "sqlite", "showoff", "jogo", "game",
+            "landing", "site", "dashboard", "ecommerce", "loja", "tarefa", "todo",
+            "login", "auth", "script", "router", "tela", "frontend", "backend", "refator",
+            "pagina", "página", "servidor", "rotas", "tabela", "html", "css"
+        ]
+        has_concrete_target = any(ct in t for ct in concrete_targets)
+        is_vague = any(vp in t for vp in vague_prompts) or (not has_concrete_target and not has_action_trigger and len(t.split()) <= 4)
 
-        return False
+        if is_vague and not has_concrete_target:
+            # Sudo Agent faz uma pergunta de alinhamento executivo antes de iniciar as ordens aos squads!
+            clarification_reply = (
+                f"Excelente! Como Diretor Geral do AgentOffice 2D, estou pronto para delegar e comandar os squads corporativos. 🏛️✨\n\n"
+                f"Antes de acionar os Líderes de Departamento, para que a entrega seja cirúrgica:\n"
+                f"1. **Foco do Entregável:** Deseja uma aplicação interativa em `public/` (ex: Landing page moderna, Dashboard, Jogo) ou uma API/Microsserviço com rotas e banco SQLite?\n"
+                f"2. **Preferências de Design/Estilo:** Alguma diretriz visual específica (ex: dark mode, minimalista, pixel art)?\n\n"
+                f"*(💡 **Ou simplesmente responda 'pode começar'** que assumo as melhores práticas corporativas e inicio as ordens aos squads imediatamente!)*"
+            )
+            self._pending_clarifications[sudo_agent.id] = {
+                "original_goal": raw_text,
+                "question": clarification_reply,
+                "timestamp": time.time()
+            }
+            return {
+                "action": "ASK_CLARIFICATION",
+                "reply": clarification_reply
+            }
+
+        # 5. Se houver trigger de ação ou alvo técnico (ex: "melhore o showoff...", "crie uma api...", "visual minimalista")
+        if has_action_trigger or has_concrete_target:
+            # Se for um refinamento visual ou técnico (ex: "visual mais atraente e minimalista") e houver meta anterior no histórico
+            if any(k in t for k in ["visual", "design", "layout", "minimalista", "dark", "moderno", "atraente", "cor"]):
+                last_goal = self._find_last_actionable_goal_from_history(workspace, sudo_agent.id)
+                if last_goal and last_goal.lower() != t:
+                    consolidated = f"{last_goal} — Especificações visuais: {raw_text}"
+                    return {
+                        "action": "EXECUTE_SQUADS",
+                        "consolidated_goal": consolidated,
+                        "reason": "visual_refinement_of_previous_goal"
+                    }
+
+            # Meta de ação direta e clara
+            return {
+                "action": "EXECUTE_SQUADS",
+                "consolidated_goal": raw_text,
+                "reason": "direct_actionable_goal"
+            }
+
+        # Fallback padrão: tratar como meta direta e comandar os squads
+        return {
+            "action": "EXECUTE_SQUADS",
+            "consolidated_goal": raw_text,
+            "reason": "default_execute"
+        }
+
+    def _is_conversational(self, prompt: str) -> bool:
+        """Compatibilidade: determina se a mensagem é puramente conversacional."""
+        t = prompt.lower().strip().rstrip("?!.,:;")
+        greetings = {"oi", "ola", "olá", "hello", "hi", "opa", "e ai", "e aí", "bom dia", "boa tarde", "boa noite"}
+        return t in greetings
 
     async def _generate_conversational_response(
         self,
@@ -502,8 +678,17 @@ class MultiTierOrchestrator:
                     "reply": cmd_reply
                 }
 
-            # 3. Verificar se é uma mensagem conversacional (saudação / status / dúvida)
-            if self._is_conversational(user_prompt):
+            # 3. Avaliar prontidão da meta executiva e intenção do usuário
+            evaluation = await self._evaluate_sudo_goal_readiness(
+                sudo_agent=sudo_agent,
+                available_squads=available_squads,
+                workspace=workspace,
+                user_prompt=user_prompt
+            )
+
+            action = evaluation.get("action")
+
+            if action == "PURE_GREETING":
                 logger.info(f"[MultiTier] Interação conversacional direta com Sudo Agent: '{user_prompt}'")
                 await hub.broadcast_system_notice(
                     f"👑 Sudo Agent '{sudo_agent.name}' está redigindo seu parecer executivo..."
@@ -528,22 +713,43 @@ class MultiTierOrchestrator:
                     "reply": conversational_reply
                 }
 
-            # Caso contrário: META MACRO CORPORATIVA (Engenharia / Governança)
+            elif action == "ASK_CLARIFICATION":
+                logger.info(f"[MultiTier] Sudo Agent solicitou alinhamento prévio ao usuário: '{user_prompt}'")
+                clarification_reply = evaluation.get("reply", "")
+                await hub.broadcast_system_notice(
+                    f"👑 Sudo Agent '{sudo_agent.name}' solicita alinhamento prévio antes de comandar os squads..."
+                )
+                await hub.broadcast_chat_delta(sudo_agent.id, clarification_reply)
+                self._record_message(workspace, sudo_agent.id, "assistant", clarification_reply)
+                await hub.broadcast_chat_completed(sudo_agent.id, clarification_reply)
+                await hub.broadcast_agent_status(sudo_agent.id, AgentState.IDLE)
+
+                return {
+                    "status": "success",
+                    "mode": "clarification",
+                    "sudo_agent": sudo_agent.name,
+                    "reply": clarification_reply
+                }
+
+            # 4. Caso contrário: META MACRO CORPORATIVA APROVADA - COMANDAR OS SQUADS!
+            consolidated_goal = evaluation.get("consolidated_goal", user_prompt)
+            logger.info(f"[MultiTier] Sudo Agent assumiu o comando dos squads com a meta: '{consolidated_goal}'")
+
             await hub.broadcast_system_notice(
-                f"👑 Sudo Agent '{sudo_agent.name}' assumiu o comando na Sala da Diretoria..."
+                f"👑 Sudo Agent '{sudo_agent.name}' assumiu o comando na Sala da Diretoria e mobilizou os squads..."
             )
 
             # Notificar chat drawer sobre o início da governança
             intro_msg = (
                 f"👑 **[Diretoria Executiva — Sudo Agent]**\n"
-                f"Meta macro recebida:\n"
-                f"> *\"{user_prompt}\"*\n\n"
-                f"🏛️ Iniciando decomposição estratégica e despacho de épicos para os squads competentes...\n"
+                f"Alinhamento corporativo concluído! Meta macro aprovada para execução:\n"
+                f"> *\"{consolidated_goal}\"*\n\n"
+                f"🏛️ Comandando os Líderes de Departamento e despachando épicos operacionais aos squads...\n"
             )
             await hub.broadcast_chat_delta(sudo_agent.id, intro_msg)
 
             # Decomposição estratégica via LLM (ou fallback estruturado)
-            epics_plan = await self._plan_sudo_epics(sudo_agent, available_squads, user_prompt)
+            epics_plan = await self._plan_sudo_epics(sudo_agent, available_squads, consolidated_goal)
 
             dispatched_results = []
             squad_deliveries = []
@@ -582,7 +788,7 @@ class MultiTierOrchestrator:
                         leader=leader,
                         squad=squad_obj,
                         epic=epic,
-                        user_prompt=user_prompt,
+                        user_prompt=consolidated_goal,
                         workspace=workspace
                     )
                     squad_deliveries.append({
@@ -608,7 +814,7 @@ class MultiTierOrchestrator:
             # 6. Sudo Agent consolida as entregas e emite sudo.final_delivery
             final_summary = await self._consolidate_sudo_delivery(
                 sudo_agent=sudo_agent,
-                user_prompt=user_prompt,
+                user_prompt=consolidated_goal,
                 squad_deliveries=squad_deliveries
             )
 
@@ -631,7 +837,7 @@ class MultiTierOrchestrator:
             await hub.broadcast_sudo_final_delivery({
                 "sudo_agent_id": sudo_agent.id,
                 "sudo_name": sudo_agent.name,
-                "user_prompt": user_prompt,
+                "user_prompt": consolidated_goal,
                 "squads_involved": [d["squad_id"] for d in squad_deliveries],
                 "final_summary": final_summary,
                 "timestamp": time.time()
@@ -739,22 +945,41 @@ class MultiTierOrchestrator:
         lower = user_prompt.lower()
         epics = []
 
-        # Sempre incluir engenharia para desenvolvimento/API/SQLite
-        epics.append({
-            "target_squad_id": "squad-core-engineering",
-            "epic_title": "Desenvolvimento do Módulo Principal & Persistência",
-            "objective": f"Implementar a estrutura de código solicitada: {user_prompt}",
-            "acceptance_criteria": "Código funcional, banco SQLite configurado e rotas estruturadas."
-        })
-
-        # Se mencionar segurança ou vulnerabilidade, incluir também o Squad de Segurança
-        if "seguran" in lower or "vulnerab" in lower or "audit" in lower or "hash" in lower:
+        if "showoff" in lower or "frontend" in lower or "site" in lower or "landing" in lower or "visual" in lower or "design" in lower:
             epics.append({
-                "target_squad_id": "squad-security",
-                "epic_title": "Auditoria de Vulnerabilidades & Hardening de Rotas",
-                "objective": "Inspecionar as rotas da API em busca de falhas de segurança e injection.",
-                "acceptance_criteria": "Relatório de conformidade sem brechas críticas."
+                "target_squad_id": "squad-core-engineering",
+                "epic_title": "Modernização & Refatoração Frontend (Showoff)",
+                "objective": f"Aprimorar a interface web em public/agentoffice-showoff com base nas instruções: {user_prompt}",
+                "acceptance_criteria": "Interface visual moderna, responsiva, minimalista com HTML, CSS e JS aprimorados."
             })
+            epics.append({
+                "target_squad_id": "squad-documentation",
+                "epic_title": "Atualização da Documentação & Release Notes do Showoff",
+                "objective": "Documentar as novas melhorias, estrutura de componentes e guia de execução da interface.",
+                "acceptance_criteria": "README.md e especificações atualizadas em public/agentoffice-showoff/."
+            })
+            if "seguran" in lower or "audit" in lower or "vulnerab" in lower:
+                epics.append({
+                    "target_squad_id": "squad-security",
+                    "epic_title": "Auditoria de Segurança & Headers da Aplicação Web",
+                    "objective": "Verificar proteção de assets, scripts inline e políticas de Content Security Policy (CSP).",
+                    "acceptance_criteria": "Relatório de conformidade sem brechas críticas."
+                })
+        else:
+            epics.append({
+                "target_squad_id": "squad-core-engineering",
+                "epic_title": "Desenvolvimento do Módulo Principal & Persistência",
+                "objective": f"Implementar a estrutura de código solicitada: {user_prompt}",
+                "acceptance_criteria": "Código funcional, banco SQLite configurado e rotas estruturadas."
+            })
+
+            if "seguran" in lower or "vulnerab" in lower or "audit" in lower or "hash" in lower:
+                epics.append({
+                    "target_squad_id": "squad-security",
+                    "epic_title": "Auditoria de Vulnerabilidades & Hardening de Rotas",
+                    "objective": "Inspecionar as rotas da API em busca de falhas de segurança e injection.",
+                    "acceptance_criteria": "Relatório de conformidade sem brechas críticas."
+                })
 
         return {"epics": epics}
 
@@ -805,16 +1030,24 @@ class MultiTierOrchestrator:
         # Injetar Claude Skills ativas no system prompt
         system_prompt = skill_manager.inject_skills_into_prompt(leader, system_prompt, squad)
 
+        clean_project_name = self._resolve_target_project_folder(user_prompt=user_prompt, epic_title=epic_title)
+
+        existing_info = ""
+        project_dir = Path(BASE_DIR) / "workspace" / "public" / clean_project_name
+        if project_dir.exists() and project_dir.is_dir():
+            files_in_proj = [f.name for f in project_dir.iterdir() if f.is_file()]
+            if files_in_proj:
+                existing_info = f"\nO projeto '{clean_project_name}' já existe na pasta public/{clean_project_name} com os seguintes arquivos: {', '.join(files_in_proj)}. Você deve aprimorar/atualizar os arquivos deste projeto conforme solicitado."
+
         user_content = (
             f"DEMANDA DO USUÁRIO:\n{user_prompt}\n\n"
             f"ÉPICO DO SQUAD ({squad_id}):\n"
             f"Título: {epic_title}\n"
             f"Objetivo: {objective}\n"
-            f"Critérios: {acceptance_criteria}\n\n"
-            "Gere os arquivos necessários em JSON com todos os caminhos organizados dentro de uma pasta em 'public/<nome-do-projeto>/':"
+            f"Critérios: {acceptance_criteria}\n"
+            f"{existing_info}\n\n"
+            f"Gere ou atualize os arquivos necessários em JSON com todos os caminhos organizados dentro de 'public/{clean_project_name}/':"
         )
-
-        clean_project_name = re.sub(r'[^a-zA-Z0-9_-]', '_', epic_title.lower()).strip('_') or "novo_projeto"
 
         def _ensure_in_public_folder(file_list: List[Dict[str, str]]) -> List[Dict[str, str]]:
             """Garante com 100% de certeza que todo arquivo novo fique em uma pasta dedicada em public/."""
@@ -885,19 +1118,19 @@ class MultiTierOrchestrator:
                 "path": f"{folder}/game_engine.py",
                 "content": f"# {folder}/game_engine.py - Backend Game Logic\nclass GameLogic:\n    def __init__(self):\n        self.score = 0\n    def update(self):\n        self.score += 10\n        return {{'status': 'playing', 'score': self.score}}\n"
             })
-        elif "site" in lower or "html" in lower or "web" in lower or "frontend" in lower or "showcase" in lower or "landing" in lower:
+        elif "site" in lower or "html" in lower or "web" in lower or "frontend" in lower or "showcase" in lower or "landing" in lower or "showoff" in lower or "visual" in lower:
             folder = f"public/{clean_project_name}"
             files.append({
                 "path": f"{folder}/index.html",
-                "content": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <title>AgentOffice Showcase</title>\n  <link rel=\"stylesheet\" href=\"style.css\" />\n</head>\n<body>\n  <header class=\"hero\">\n    <h1>AgentOffice 2D</h1>\n    <p>Escritório Virtual em Pixel Art com Inteligência Artificial Multinível</p>\n    <a href=\"#features\" class=\"btn-cta\">Conhecer os Agentes</a>\n  </header>\n  <main class=\"container\" id=\"features\">\n    <section class=\"card\">\n      <h2>Pax (@aiox-master)</h2>\n      <p>Sudo Agent Supremo orquestrando squads departamentais em salas isoladas.</p>\n    </section>\n    <section class=\"card\">\n      <h2>Aria & Dex (@dev)</h2>\n      <p>Arquitetura de microsserviços e codificação autônoma no sandbox seguro.</p>\n    </section>\n    <section class=\"card\">\n      <h2>Quinn (@qa) & Cipher (@sec)</h2>\n      <p>Quality Gate automatizado, AST parser e auditoria contínua de vulnerabilidades.</p>\n    </section>\n  </main>\n  <script src=\"app.js\"></script>\n</body>\n</html>\n"
+                "content": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <title>AgentOffice Showcase</title>\n  <link rel=\"stylesheet\" href=\"style.css\" />\n</head>\n<body>\n  <header class=\"hero\">\n    <div class=\"badge\">👑 AIOX Multi-Tier Architecture</div>\n    <h1>AgentOffice 2D</h1>\n    <p>Escritório Virtual em Pixel Art com Inteligência Artificial Multinível</p>\n    <a href=\"#features\" class=\"btn-cta\">Explorar Recursos</a>\n  </header>\n  <main class=\"container\" id=\"features\">\n    <section class=\"card\">\n      <div class=\"card-icon\">👑</div>\n      <h2>Pax (@aiox-master)</h2>\n      <p>Master Orchestrator e Diretor Geral gerenciando governança corporativa, despacho de épicos e validação final.</p>\n    </section>\n    <section class=\"card\">\n      <div class=\"card-icon\">⚙️</div>\n      <h2>Aria & Dex (@dev)</h2>\n      <p>Engenharia de microsserviços, codificação autônoma, persistência SQLite e sandbox isolado em <code>public/</code>.</p>\n    </section>\n    <section class=\"card\">\n      <div class=\"card-icon\">🛡️</div>\n      <h2>Quinn (@qa) & Cipher (@sec)</h2>\n      <p>Quality Gate automatizado, AST parser rigoroso e auditoria de vulnerabilidades com tickets inter-squad.</p>\n    </section>\n  </main>\n  <script src=\"app.js\"></script>\n</body>\n</html>\n"
             })
             files.append({
                 "path": f"{folder}/style.css",
-                "content": "/* Stylesheet */\n:root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --accent: #6366f1; }\nbody { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); }\n.hero { text-align: center; padding: 4rem 1rem; background: linear-gradient(180deg, #1e1b4b, var(--bg)); }\n.hero h1 { font-size: 2.8rem; margin-bottom: 0.5rem; color: #38bdf8; }\n.btn-cta { display: inline-block; margin-top: 1.5rem; padding: 0.8rem 1.8rem; background: var(--accent); color: #fff; text-decoration: none; border-radius: 8px; font-weight: bold; }\n.container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }\n.card { background: var(--card); padding: 1.5rem; border-radius: 12px; border: 1px solid #334155; }\n"
+                "content": "/* AgentOffice 2D - Modern Minimalist Showcase */\n:root {\n  --bg-color: #090d16;\n  --card-bg: rgba(22, 29, 47, 0.7);\n  --card-border: rgba(99, 102, 241, 0.25);\n  --text-primary: #f8fafc;\n  --text-secondary: #94a3b8;\n  --accent: #6366f1;\n  --accent-glow: rgba(99, 102, 241, 0.4);\n  --badge-bg: rgba(99, 102, 241, 0.15);\n}\n* { box-sizing: border-box; margin: 0; padding: 0; }\nbody {\n  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;\n  background: var(--bg-color);\n  color: var(--text-primary);\n  line-height: 1.6;\n  overflow-x: hidden;\n}\n.hero {\n  text-align: center;\n  padding: 5rem 1.5rem 4rem;\n  background: radial-gradient(circle at 50% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 70%);\n}\n.badge {\n  display: inline-block;\n  background: var(--badge-bg);\n  color: #a5b4fc;\n  padding: 0.35rem 1rem;\n  border-radius: 20px;\n  font-size: 0.85rem;\n  font-weight: 600;\n  border: 1px solid var(--card-border);\n  margin-bottom: 1.5rem;\n  letter-spacing: 0.5px;\n}\n.hero h1 {\n  font-size: 3.2rem;\n  font-weight: 800;\n  letter-spacing: -0.03em;\n  margin-bottom: 0.8rem;\n  background: linear-gradient(135deg, #ffffff 30%, #a5b4fc 100%);\n  -webkit-background-clip: text;\n  -webkit-text-fill-color: transparent;\n}\n.hero p {\n  font-size: 1.15rem;\n  color: var(--text-secondary);\n  max-width: 600px;\n  margin: 0 auto 2rem;\n}\n.btn-cta {\n  display: inline-block;\n  padding: 0.8rem 2rem;\n  background: var(--accent);\n  color: #fff;\n  text-decoration: none;\n  border-radius: 8px;\n  font-weight: 600;\n  transition: all 0.25s ease;\n  box-shadow: 0 4px 15px var(--accent-glow);\n}\n.btn-cta:hover {\n  transform: translateY(-2px);\n  box-shadow: 0 8px 25px var(--accent-glow);\n}\n.container {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));\n  gap: 1.5rem;\n  max-width: 1050px;\n  margin: 0 auto;\n  padding: 1rem 1.5rem 5rem;\n}\n.card {\n  background: var(--card-bg);\n  backdrop-filter: blur(12px);\n  -webkit-backdrop-filter: blur(12px);\n  border: 1px solid var(--card-border);\n  border-radius: 14px;\n  padding: 2rem;\n  transition: transform 0.25s ease, border-color 0.25s ease;\n}\n.card:hover {\n  transform: translateY(-4px);\n  border-color: rgba(99, 102, 241, 0.5);\n}\n.card-icon { font-size: 2rem; margin-bottom: 1rem; }\n.card h2 {\n  font-size: 1.3rem;\n  margin-bottom: 0.6rem;\n  color: #fff;\n}\n.card p {\n  font-size: 0.95rem;\n  color: var(--text-secondary);\n}\ncode {\n  background: rgba(255, 255, 255, 0.1);\n  padding: 2px 6px;\n  border-radius: 4px;\n  font-size: 0.85em;\n}\n"
             })
             files.append({
                 "path": f"{folder}/app.js",
-                "content": "// Client Script\ndocument.addEventListener('DOMContentLoaded', () => {\n  console.log('Aplicação carregada com sucesso!');\n});\n"
+                "content": "// AgentOffice Showcase Client Logic\ndocument.addEventListener('DOMContentLoaded', () => {\n  console.log('🏛️ AgentOffice 2D Showcase inicializado com sucesso.');\n});\n"
             })
         elif "produto" in lower or "ecommerce" in lower or "loja" in lower or "carrinho" in lower:
             folder = f"public/{clean_project_name}"
