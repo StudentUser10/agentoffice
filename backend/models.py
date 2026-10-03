@@ -206,7 +206,22 @@ class SpawnSubagentParams(BaseModel):
     
     # Ferramentas e Recursos Permitidos
     allowed_tools: List[str] = Field(
-        default=["fs_read_file", "fs_write_file", "fs_create_directory", "fs_list_directory"],
+        default=[
+            "fs_read_file",
+            "fs_write_file",
+            "fs_edit_file",
+            "fs_copy",
+            "fs_compare_files",
+            "fs_observe_file",
+            "fs_create_directory",
+            "fs_list_directory",
+            "fs_tree_view",
+            "fs_find_files",
+            "fs_search_content",
+            "fs_file_info",
+            "fs_delete_path",
+            "fs_rename_or_move",
+        ],
         description="Lista explícita de ferramentas que o subagente pode usar."
     )
     
@@ -597,6 +612,7 @@ class FSWriteFileRequest(BaseModel):
     path: str
     content: str
     mode: str = "overwrite"  # "overwrite" ou "append"
+    encoding: str = "auto"   # "auto", "utf-8", "base64", "hex"
 
 
 class FSEditFileRequest(BaseModel):
@@ -626,6 +642,17 @@ class FSSearchRequest(BaseModel):
     file_pattern: str = "*"
     is_regex: bool = False
     case_insensitive: bool = True
+
+
+class FSCompareRequest(BaseModel):
+    path_a: str
+    path_b: str
+
+
+class FSObserveRequest(BaseModel):
+    path: str
+    tail_lines: int = 30
+    head_lines: int = 15
 
 
 

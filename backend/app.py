@@ -67,11 +67,14 @@ from backend.models import (
     FSMoveRequest,
     FSCopyRequest,
     FSSearchRequest,
+    FSCompareRequest,
+    FSObserveRequest,
 )
 from backend.tools.filesystem import (
     SecuritySandboxError,
     _get_workspace_dir,
     ensure_public_project_folder,
+    fs_compare_files,
     fs_copy,
     fs_create_directory,
     fs_delete_path,
@@ -79,6 +82,7 @@ from backend.tools.filesystem import (
     fs_file_info,
     fs_find_files,
     fs_list_directory,
+    fs_observe_file,
     fs_read_file,
     fs_rename_or_move,
     fs_search_content,
@@ -1501,15 +1505,17 @@ async def read_workspace_file(
     path: str,
     start_line: int = 1,
     max_lines: int = 500,
-    show_line_numbers: bool = False
+    show_line_numbers: bool = False,
+    encoding: str = "auto"
 ):
-    """Lê o conteúdo de um arquivo com suporte a fatiamento e numeração de linhas."""
+    """Lê o conteúdo de qualquer arquivo (texto ou binário) com fatiamento ou encoding base64/hex."""
     try:
         content = await fs_read_file(
             path,
             start_line=start_line,
             max_lines=max_lines,
-            show_line_numbers=show_line_numbers
+            show_line_numbers=show_line_numbers,
+            encoding=encoding
         )
         return {"path": path, "content": content}
     except SecuritySandboxError as se:
@@ -1520,9 +1526,9 @@ async def read_workspace_file(
 
 @app.post("/api/workspace/file")
 async def write_workspace_file(req: FSWriteFileRequest):
-    """Cria ou substitui um arquivo de texto no workspace sandbox de forma atômica."""
+    """Cria ou substitui qualquer arquivo (texto ou binário via base64/hex) no workspace sandbox."""
     try:
-        msg = await fs_write_file(req.path, req.content, mode=req.mode)
+        msg = await fs_write_file(req.path, req.content, mode=req.mode, encoding=req.encoding)
         return {"success": True, "message": msg}
     except SecuritySandboxError as se:
         raise HTTPException(status_code=403, detail=str(se))
@@ -1627,6 +1633,35 @@ async def get_workspace_item_info(path: str):
         raise HTTPException(status_code=403, detail=str(se))
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/workspace/compare")
+async def compare_workspace_files(req: FSCompareRequest):
+    """Compara dois arquivos no sandbox (diff de texto unificado ou bytes/SHA-256 para binários)."""
+    try:
+        output = await fs_compare_files(req.path_a, req.path_b)
+        return {"path_a": req.path_a, "path_b": req.path_b, "output": output}
+    except SecuritySandboxError as se:
+        raise HTTPException(status_code=403, detail=str(se))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/api/workspace/observe")
+async def observe_workspace_file(
+    path: str,
+    tail_lines: int = 30,
+    head_lines: int = 15
+):
+    """Telemetria profunda, auditoria, SHA-256, AST e head/tail de qualquer arquivo."""
+    try:
+        output = await fs_observe_file(path, tail_lines=tail_lines, head_lines=head_lines)
+        return {"path": path, "output": output}
+    except SecuritySandboxError as se:
+        raise HTTPException(status_code=403, detail=str(se))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 
 
 

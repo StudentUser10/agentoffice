@@ -30,6 +30,7 @@ from backend.tools.filesystem import (
     SecuritySandboxError,
     _get_workspace_dir,
     aiox_validate_code_syntax,
+    fs_compare_files,
     fs_copy,
     fs_create_directory,
     fs_delete_path,
@@ -37,6 +38,7 @@ from backend.tools.filesystem import (
     fs_file_info,
     fs_find_files,
     fs_list_directory,
+    fs_observe_file,
     fs_read_file,
     fs_rename_or_move,
     fs_search_content,
@@ -75,14 +77,16 @@ FERRAMENTAS DISPONÍVEIS:
 3. `fs_find_files`: Localiza pastas e arquivos pelo nome ou padrão glob. Parâmetros: `pattern` (string, ex: "*.py", "test_*"), `path` (string, default: ".")
 4. `fs_search_content`: Busca por ocorrências de texto/código (grep) nos arquivos. Parâmetros: `query` (string), `path` (string, default: "."), `file_pattern` (string, default: "*")
 5. `fs_file_info`: Retorna metadados técnicos de arquivo ou pasta (tamanho, linhas, data, AST check). Parâmetro: `path` (string)
-6. `fs_read_file`: Lê conteúdo de um arquivo com fatiamento opcional. Parâmetros: `path` (string), `max_lines` (int, default: 500), `start_line` (int, default: 1), `show_line_numbers` (bool, default: false)
-7. `fs_write_file`: Cria ou sobrescreve arquivos de texto de forma atômica no sandbox. Parâmetros: `path` (string), `content` (string), `mode` ("overwrite" ou "append")
+6. `fs_read_file`: Lê conteúdo de qualquer tipo de arquivo (texto, código, imagens, binários). Parâmetros: `path` (string), `max_lines` (int, default: 500), `start_line` (int, default: 1), `show_line_numbers` (bool, default: false), `encoding` ("auto", "base64", "hex", "utf-8")
+7. `fs_write_file`: Cria ou sobrescreve arquivos de texto ou binários de forma atômica no sandbox. Parâmetros: `path` (string), `content` (string), `mode` ("overwrite" ou "append"), `encoding` ("auto", "utf-8", "base64", "hex")
 8. `fs_edit_file`: Edição cirúrgica substituindo um trecho específico de texto/código por outro. Parâmetros: `path` (string), `target_text` (string exata existente), `replacement_text` (string nova), `allow_multiple` (bool, default: false)
 9. `fs_create_directory`: Cria pastas e subpastas no sandbox. Parâmetro: `path` (string, ex: "public/meu-app")
 10. `fs_rename_or_move`: Renomeia ou move arquivos e pastas com segurança. Parâmetros: `source_path` (string), `target_path` (string)
 11. `fs_copy`: Copia arquivos ou pastas no sandbox. Parâmetros: `source_path` (string), `target_path` (string)
 12. `fs_delete_path`: Remove arquivos ou pastas no sandbox. Parâmetros: `path` (string), `recursive` (bool, default: false)
-13. `spawn_subagent`: Contrata e aloca um subagente especialista em uma mesa vaga para uma missão cirúrgica.
+13. `fs_compare_files`: Compara minuciosamente dois arquivos de qualquer tipo (diff de texto ou bytes/SHA-256 para binários). Parâmetros: `path_a` (string), `path_b` (string)
+14. `fs_observe_file`: Auditoria, telemetria profunda, SHA-256, AST e head/tail de qualquer arquivo. Parâmetros: `path` (string), `tail_lines` (int, default: 30), `head_lines` (int, default: 15)
+15. `spawn_subagent`: Contrata e aloca um subagente especialista em uma mesa vaga para uma missão cirúrgica.
    - Parâmetros:
      - `name`: string (ex: "SQL_Architect", "Web_Developer")
      - `role_title`: string (ex: "Engenheiro Frontend", "Desenvolvedor de Banco")
@@ -91,7 +95,7 @@ FERRAMENTAS DISPONÍVEIS:
      - `what_out_of_scope`: string (o que o subagente NÃO tem permissão de fazer)
      - `when_triggers`: string (gatilhos e dependências)
      - `how_instructions`: string (passo a passo técnico rigoroso e convenções)
-     - `allowed_tools`: list[string] (ferramentas autorizadas, ex: ["fs_write_file", "fs_read_file", "fs_create_directory"])
+     - `allowed_tools`: list[string] (ferramentas autorizadas, ex: ["fs_write_file", "fs_read_file", "fs_create_directory", "fs_compare_files", "fs_observe_file", "fs_copy"])
      - `exit_condition`: string (critério objetivo para considerar o trabalho concluído)
 
 COMO INVOCAR FERRAMENTAS:
@@ -118,13 +122,15 @@ FERRAMENTAS DE SISTEMA DE ARQUIVOS DISPONÍVEIS NO SANDBOX:
 3. `fs_find_files`: Busca arquivos por nome/glob. `{"pattern": "*.py", "path": "."}`
 4. `fs_search_content`: Busca texto/código (grep). `{"query": "def ", "path": "."}`
 5. `fs_file_info`: Metadados do arquivo/pasta. `{"path": "caminho/arquivo.ext"}`
-6. `fs_read_file`: Lê arquivo. `{"path": "caminho/arquivo.ext", "start_line": 1, "max_lines": 500}`
-7. `fs_write_file`: Grava arquivo completo. `{"path": "public/meu-app/arquivo.ext", "content": "conteúdo", "mode": "overwrite"}`
+6. `fs_read_file`: Lê qualquer arquivo (texto ou binário com encoding auto/base64/hex). `{"path": "caminho/arquivo.ext", "start_line": 1, "max_lines": 500}`
+7. `fs_write_file`: Grava arquivo completo (texto ou binário via base64). `{"path": "public/meu-app/arquivo.ext", "content": "conteúdo", "mode": "overwrite"}`
 8. `fs_edit_file`: Edição cirúrgica de trecho. `{"path": "public/meu-app/arquivo.ext", "target_text": "antigo", "replacement_text": "novo"}`
 9. `fs_create_directory`: Cria pastas. `{"path": "public/meu-app"}`
 10. `fs_rename_or_move`: Renomeia ou move. `{"source_path": "origem", "target_path": "destino"}`
 11. `fs_copy`: Copia arquivo ou pasta. `{"source_path": "origem", "target_path": "destino"}`
 12. `fs_delete_path`: Exclui arquivo/pasta. `{"path": "caminho/arquivo.ext", "recursive": false}`
+13. `fs_compare_files`: Compara 2 arquivos (diff de texto ou bytes de binários). `{"path_a": "origem", "path_b": "destino"}`
+14. `fs_observe_file`: Telemetria profunda, SHA-256 e head/tail. `{"path": "caminho/arquivo.ext", "tail_lines": 30}`
 
 REGRA MANDATÓRIA PARA NOVAS CRIAÇÕES (PASTA PUBLIC):
 Sempre que for criar algo novo (projeto, app, página, script ou ferramenta), crie uma pasta dedicada dentro de `public/` (ex: `public/<nome-do-projeto>/`) e coloque todos os arquivos criados dentro dela!
@@ -224,13 +230,16 @@ class Orchestrator:
                 f"- **Tier:** `{agent.tier.value if hasattr(agent.tier, 'value') else agent.tier}`\n"
                 f"- **Squad / Sala:** `{agent.squad_id or 'Geral'}` (Sala: `{getattr(agent, 'room_id', 'escritório')}`)\n"
                 f"- **Mesa Atribuída:** `{agent.desk_id}`\n"
-                f"- **Ferramentas Habilitadas:** `fs_list_directory`, `fs_tree_view`, `fs_find_files`, `fs_search_content`, `fs_file_info`, `fs_read_file`, `fs_write_file`, `fs_edit_file`, `fs_create_directory`, `fs_rename_or_move`, `fs_copy`, `fs_delete_path`\n\n"
+                f"- **Ferramentas Habilitadas:** `fs_list_directory`, `fs_tree_view`, `fs_find_files`, `fs_search_content`, `fs_file_info`, `fs_read_file`, `fs_write_file`, `fs_edit_file`, `fs_create_directory`, `fs_rename_or_move`, `fs_copy`, `fs_delete_path`, `fs_compare_files`, `fs_observe_file`\n\n"
                 "**Comandos Rápidos AIOX & Sistema de Arquivos (CLI First):**\n"
                 "- `*help`: Exibe esta matriz de recursos e comandos do agente.\n"
                 "- `*status`: Exibe o estado operacional, ocupação e tickets inter-squad.\n"
                 "- `*ls [caminho]`: Lista os arquivos e pastas do diretório no sandbox.\n"
                 "- `*tree [caminho]`: Mapeia a árvore completa de pastas e arquivos no sandbox.\n"
-                "- `*cat <arquivo>`: Lê e exibe o conteúdo de um arquivo com linhas numeradas.\n"
+                "- `*cat <arquivo>`: Lê e exibe o conteúdo de qualquer arquivo (com suporte a binários).\n"
+                "- `*observe <caminho>`: Telemetria profunda, SHA-256, AST e head/tail de qualquer arquivo.\n"
+                "- `*tail <caminho> [linhas]`: Observa as últimas linhas de um arquivo ou log.\n"
+                "- `*diff <origem> <destino>`: Compara dois arquivos (diff para texto, bytes/hash para binários).\n"
                 "- `*find <padrão>`: Localiza pastas e arquivos por nome ou glob (ex: `*find *.py`).\n"
                 "- `*grep <termo>`: Busca por ocorrências de texto/código dentro dos arquivos.\n"
                 "- `*info <caminho>`: Exibe metadados, tamanho, linhas e sintaxe de um item.\n"
@@ -485,6 +494,24 @@ class Orchestrator:
                 reply = "⚠️ Uso correto: `*cp <caminho_origem> <caminho_destino>`"
             else:
                 reply = await fs_copy(parts[0].strip(), parts[1].strip(), agent_id=agent.id)
+        elif cmd in ("*diff", "*compare"):
+            parts = args.split(maxsplit=1)
+            if len(parts) < 2:
+                reply = "⚠️ Uso correto: `*diff <caminho_origem> <caminho_destino>`"
+            else:
+                reply = await fs_compare_files(parts[0].strip(), parts[1].strip(), agent_id=agent.id)
+        elif cmd == "*observe":
+            if not args:
+                reply = "⚠️ Por favor especifique o arquivo a observar. Exemplo: `*observe src/database.py`"
+            else:
+                reply = await fs_observe_file(args, agent_id=agent.id)
+        elif cmd == "*tail":
+            parts = args.split(maxsplit=1)
+            if not parts or not parts[0].strip():
+                reply = "⚠️ Por favor especifique o arquivo. Exemplo: `*tail app.log 20`"
+            else:
+                tail_cnt = int(parts[1].strip()) if len(parts) > 1 and parts[1].strip().isdigit() else 25
+                reply = await fs_observe_file(parts[0].strip(), tail_lines=tail_cnt, head_lines=0, agent_id=agent.id)
         elif cmd == "*plan":
             if not args:
                 reply = "⚠️ Por favor especifique o objetivo do plano. Exemplo: `*plan Desenvolver API de usuários com SQLite`"
@@ -832,7 +859,8 @@ class Orchestrator:
                 path = params.get("path", "")
                 content = params.get("content", "")
                 mode = params.get("mode", "overwrite")
-                return await fs_write_file(path, content, mode=mode, agent_id=agent.id)
+                encoding = params.get("encoding", "auto")
+                return await fs_write_file(path, content, mode=mode, encoding=encoding, agent_id=agent.id)
 
             elif tool_name == "fs_edit_file":
                 path = params.get("path", "")
@@ -847,12 +875,14 @@ class Orchestrator:
                 start_line = params.get("start_line", 1)
                 end_line = params.get("end_line", None)
                 show_line_numbers = params.get("show_line_numbers", False)
+                encoding = params.get("encoding", "auto")
                 return await fs_read_file(
                     path,
                     max_lines=max_lines,
                     start_line=start_line,
                     end_line=end_line,
                     show_line_numbers=show_line_numbers,
+                    encoding=encoding,
                     agent_id=agent.id
                 )
 
@@ -902,6 +932,17 @@ class Orchestrator:
                 source_path = params.get("source_path", "")
                 target_path = params.get("target_path", "")
                 return await fs_copy(source_path, target_path, agent_id=agent.id)
+
+            elif tool_name == "fs_compare_files":
+                path_a = params.get("path_a", params.get("source_path", ""))
+                path_b = params.get("path_b", params.get("target_path", ""))
+                return await fs_compare_files(path_a, path_b, agent_id=agent.id)
+
+            elif tool_name == "fs_observe_file":
+                path = params.get("path", "")
+                tail_lines = params.get("tail_lines", 30)
+                head_lines = params.get("head_lines", 15)
+                return await fs_observe_file(path, tail_lines=tail_lines, head_lines=head_lines, agent_id=agent.id)
 
             elif tool_name == "fs_delete_path":
                 path = params.get("path", "")

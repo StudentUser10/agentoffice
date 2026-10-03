@@ -39,6 +39,7 @@ from backend.tools.filesystem import (
     SecuritySandboxError,
     _get_workspace_dir,
     aiox_validate_code_syntax,
+    fs_compare_files,
     fs_copy,
     fs_create_directory,
     fs_delete_path,
@@ -46,6 +47,7 @@ from backend.tools.filesystem import (
     fs_file_info,
     fs_find_files,
     fs_list_directory,
+    fs_observe_file,
     fs_read_file,
     fs_rename_or_move,
     fs_search_content,
@@ -215,7 +217,10 @@ class MultiTierOrchestrator:
                 "- `*status`: Exibe o painel corporativo e integridade dos squads.\n"
                 "- `*ls [caminho]`: Lista os arquivos e pastas do diretório no sandbox.\n"
                 "- `*tree [caminho]`: Mapeia a árvore completa de pastas e arquivos no sandbox.\n"
-                "- `*cat <arquivo>`: Lê e exibe o conteúdo de um arquivo com linhas numeradas.\n"
+                "- `*cat <arquivo>`: Lê e exibe o conteúdo de qualquer arquivo (texto ou binário).\n"
+                "- `*observe <caminho>`: Telemetria profunda, SHA-256, AST e head/tail do arquivo.\n"
+                "- `*tail <caminho> [linhas]`: Observa as últimas linhas de um arquivo ou log.\n"
+                "- `*diff <origem> <destino>`: Compara dois arquivos (diff para texto, bytes/hash para binários).\n"
                 "- `*find <padrão>`: Localiza pastas e arquivos por nome ou glob (ex: `*find *.py`).\n"
                 "- `*grep <termo>`: Busca por ocorrências de texto/código dentro dos arquivos.\n"
                 "- `*info <caminho>`: Exibe metadados, tamanho, linhas e integridade de um item.\n"
@@ -413,6 +418,21 @@ class MultiTierOrchestrator:
             if len(parts) < 2:
                 return "⚠️ Uso correto: `*cp <caminho_origem> <caminho_destino>`"
             return await fs_copy(parts[0].strip(), parts[1].strip(), agent_id=sudo_agent.id)
+        elif cmd in ("*diff", "*compare"):
+            parts = args.split(maxsplit=1)
+            if len(parts) < 2:
+                return "⚠️ Uso correto: `*diff <caminho_origem> <caminho_destino>`"
+            return await fs_compare_files(parts[0].strip(), parts[1].strip(), agent_id=sudo_agent.id)
+        elif cmd == "*observe":
+            if not args:
+                return "⚠️ Por favor especifique o arquivo a observar. Exemplo: `*observe src/database.py`"
+            return await fs_observe_file(args, agent_id=sudo_agent.id)
+        elif cmd == "*tail":
+            parts = args.split(maxsplit=1)
+            if not parts or not parts[0].strip():
+                return "⚠️ Por favor especifique o arquivo. Exemplo: `*tail app.log 20`"
+            tail_cnt = int(parts[1].strip()) if len(parts) > 1 and parts[1].strip().isdigit() else 25
+            return await fs_observe_file(parts[0].strip(), tail_lines=tail_cnt, head_lines=0, agent_id=sudo_agent.id)
         elif cmd == "*plan":
             if not args:
                 return "⚠️ Por favor especifique a meta corporativa para planejamento. Exemplo: `*plan Desenvolver API com autenticação e SQLite`"
